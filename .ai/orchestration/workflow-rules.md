@@ -87,3 +87,6 @@ Before execution:
 - Dependency check required
 
 Invalid workflows must be rejected, not corrected silently.
+
+workflow_version: required
+backward_compatibility: must be preserved for N-1 version
