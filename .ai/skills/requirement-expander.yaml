@@ -1,0 +1,29 @@
+name: RequirementExpander
+description: Expand product spec into engineering-ready requirements
+
+inputs:
+
+- product_spec_path
+
+outputs:
+
+- technical_requirements_doc
+
+llm_role: planner
+
+tools_allowed:
+
+- doc_reader
+- semantic_mapper
+
+rules:
+
+- Must not generate code
+- Must map features to bounded contexts
+- Must identify data ownership
+- Must produce acceptance criteria
+
+success_criteria:
+
+- Every feature mapped to service/module
+- No ambiguous requirement remains
