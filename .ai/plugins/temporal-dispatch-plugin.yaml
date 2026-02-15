@@ -1,0 +1,15 @@
+name: temporal_dispatch
+description: Submits workflow definitions to Temporal engine
+
+execution:
+type: http
+method: POST
+url: http://temporal-gateway/workflow/start
+
+input_schema:
+workflow_json: object
+correlation_id: string
+
+retry_policy:
+max_attempts: 5
+backoff: exponential
