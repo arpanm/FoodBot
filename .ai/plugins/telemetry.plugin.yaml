@@ -1,0 +1,13 @@
+name: telemetry
+description: Emits execution signals for orchestration tracking
+
+execution:
+type: http
+method: POST
+url: http://observability/events
+
+input_schema:
+jobId: string
+stage: string
+status: string
+metadata: object
