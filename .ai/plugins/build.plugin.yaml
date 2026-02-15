@@ -1,0 +1,12 @@
+name: build_runner
+description: Validates code compiles and dependencies resolve
+
+execution:
+type: command
+command: pnpm build
+
+timeout: 300000
+
+failure_conditions:
+
+- non_zero_exit
