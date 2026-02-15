@@ -137,3 +137,206 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+--------------------------------------------------
+
+General
+
+--------------------------------------------------
+
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.bak
+
+--------------------------------------------------
+
+Environment / Secrets (NEVER COMMIT)
+
+--------------------------------------------------
+
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+*.crt
+
+AI / LLM secrets accidentally created
+
+.ai/local-secrets.yaml
+
+--------------------------------------------------
+
+Node / PNPM / JS Ecosystem
+
+--------------------------------------------------
+
+node_modules/
+.pnpm-store/
+.npm/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+Logs
+
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+--------------------------------------------------
+
+React / Capacitor Builds
+
+--------------------------------------------------
+
+apps//build/
+apps//dist/
+apps//.vite/
+apps//.next/
+apps//android/app/build/
+apps//ios/App/build/
+
+Capacitor platform artifacts
+
+android/.gradle/
+android/local.properties
+ios/Pods/
+ios/DerivedData/
+
+--------------------------------------------------
+
+NestJS Output
+
+--------------------------------------------------
+
+apps//dist/
+apps//coverage/
+
+--------------------------------------------------
+
+Java / Spring Boot
+
+--------------------------------------------------
+
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+.gradle/
+
+IntelliJ / Eclipse
+
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+--------------------------------------------------
+
+Temporal / Local Infra State
+
+--------------------------------------------------
+
+.temporal/
+.temporal-data/
+docker-data/
+volumes/
+
+--------------------------------------------------
+
+Elasticsearch / Kafka Local Data
+
+--------------------------------------------------
+
+.esdata/
+kafka-logs/
+
+--------------------------------------------------
+
+Devcontainer / Codespaces Runtime Artifacts
+
+--------------------------------------------------
+
+.devcontainer/.cache/
+.devcontainer/docker-compose.override.yml
+
+--------------------------------------------------
+
+Tooling Temp Files
+
+--------------------------------------------------
+
+.tmp_patch.diff
+tools/**/.cache/
+
+--------------------------------------------------
+
+Test Artifacts
+
+--------------------------------------------------
+
+reports/
+test-results/
+playwright-report/
+
+--------------------------------------------------
+
+Coverage & Analysis
+
+--------------------------------------------------
+
+coverage/
+.sonar/
+.snyk/
+
+--------------------------------------------------
+
+AI Generated (Ephemeral)
+
+--------------------------------------------------
+
+generated/
+.ai/tmp/
+.ai/cache/
+
+--------------------------------------------------
+
+OS / Editors
+
+--------------------------------------------------
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+JetBrains
+
+.idea/
+
+--------------------------------------------------
+
+Git Safety (Never Commit These)
+
+--------------------------------------------------
+
+*.local.json
+secrets.json
+credentials.json
+
+--------------------------------------------------
+
+Optional: Ignore MCP sandbox data
+
+--------------------------------------------------
+
+mcp-runtime/
