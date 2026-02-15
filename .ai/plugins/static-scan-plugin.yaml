@@ -1,0 +1,10 @@
+name: static_scan
+description: Runs lint + code quality checks
+
+execution:
+type: command
+command: pnpm lint && pnpm sonar
+
+output_capture:
+format: text
+map_to: static_analysis_report
