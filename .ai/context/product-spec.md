@@ -312,4 +312,13 @@ not a chatbot.»
 
 ---
 
+Contexts:
+- CustomerOrdering
+- RestaurantManagement
+- SearchDiscovery
+- Orchestration
+- Personalization
+
+---
+
 END OF SPEC
