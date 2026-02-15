@@ -106,3 +106,10 @@ System must scale independently across:
 - Restaurant operations
 
 No shared bottlenecks allowed.
+
+## 9. Mandatory Contracts
+
+LLM Output Schema: packages/workflow-schema
+Temporal Entry: services/orchestration
+MCP Interface: services/mcp-adapter/contracts
+Search Write Path: Kafka Only (No Direct ES Writes)
