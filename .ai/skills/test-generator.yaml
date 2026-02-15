@@ -1,0 +1,22 @@
+name: TestGenerator
+description: Create automated tests aligned to generated code
+
+inputs:
+
+- code_patch
+
+outputs:
+
+- test_suite
+
+llm_role: validator
+
+rules:
+
+- Must generate unit + contract tests
+- Must include workflow simulation tests
+- Must cover happy + failure paths
+
+success_criteria:
+
+- Coverage ≥ configured threshold
