@@ -1,0 +1,14 @@
+name: security_scan
+description: Performs dependency + vulnerability scanning
+
+execution:
+type: command
+command: pnpm snyk test --json
+
+output_capture:
+format: json
+map_to: security_report
+
+failure_conditions:
+
+- severity: high
