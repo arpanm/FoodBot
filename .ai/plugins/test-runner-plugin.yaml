@@ -1,0 +1,12 @@
+name: test_runner
+description: Executes automated test suites
+
+execution:
+type: command
+command: pnpm test --reporter=json
+
+output_capture:
+format: json
+map_to: test_report
+
+timeout: 600000
