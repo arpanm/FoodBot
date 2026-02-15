@@ -15,3 +15,22 @@ validation: openai
 fast_tasks: gemini
 
 memory_store: .ai/memory
+
+skills_dir: .ai/skills
+plugins_dir: .ai/plugins
+
+execution_pipeline:
+  - requirement
+  - architecture
+  - planning
+  - codegen
+  - testgen
+  - testrun
+  - review
+  - security
+  - fix
+
+quality_gates:
+  min_test_coverage: 80
+  max_retry_iterations: 3
+  security_block_on_high: true
