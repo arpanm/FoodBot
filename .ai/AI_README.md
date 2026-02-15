@@ -8,3 +8,6 @@ Primary machine-readable context lives in:
 .ai/orchestration/
 
 All development agents must load these before making changes.
+
+Load config.yaml → hydrate context → initialize skills → begin task graph.
+
