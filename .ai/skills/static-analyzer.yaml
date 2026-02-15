@@ -1,0 +1,14 @@
+name: StaticAnalyzer
+description: Run linting and static code analysis tools
+
+inputs:
+
+- code_patch
+
+outputs:
+
+- static_analysis_report
+
+tools_required:
+
+- static_scan
