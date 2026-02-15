@@ -106,3 +106,7 @@ Generated code must pass:
 - Static analysis
 - Security scan
 - Architectural compliance check
+
+/generated → AI may overwrite
+/core → AI must patch via diff only
+/contracts → immutable without approval
