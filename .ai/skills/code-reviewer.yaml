@@ -1,0 +1,18 @@
+name: CodeReviewer
+description: Perform semantic review of generated code
+
+inputs:
+
+- code_patch
+
+outputs:
+
+- review_report
+
+llm_role: validator
+
+rules:
+
+- Must check architectural compliance
+- Must reject anti-patterns
+- Must verify observability + retries
