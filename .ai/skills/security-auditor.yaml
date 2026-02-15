@@ -1,0 +1,19 @@
+name: SecurityAuditor
+description: Detect vulnerabilities and unsafe patterns
+
+inputs:
+
+- code_patch
+
+outputs:
+
+- security_report
+
+tools_required:
+
+- security_scan
+
+rules:
+
+- Must block secrets exposure
+- Must flag unsafe dependencies
