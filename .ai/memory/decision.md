@@ -49,6 +49,10 @@ Why: Enables shared schemas while keeping bounded contexts clean.
 
 ---
 
+Status: Active | Superseded | Experimental
+
+---
+
 How to Add New Decisions
 
 Format:
