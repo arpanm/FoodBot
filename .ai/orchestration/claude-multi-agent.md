@@ -298,4 +298,11 @@ with traceable reasoning and safety controls.
 
 ---
 
+repo_writer → git.apply_patch
+test_runner → pnpm test
+static_scan → eslint + sonar
+security_scan → snyk test
+
+---
+
 END OF CLAUDE MULTI-AGENT SDLC SPEC
