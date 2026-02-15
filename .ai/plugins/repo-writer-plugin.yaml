@@ -1,0 +1,19 @@
+name: repo_writer
+description: Applies structured patches to repository
+
+execution:
+type: command
+command: node tools/repo-writer/applyPatch.js
+
+input_schema:
+patch: string
+target_paths: array
+
+guardrails:
+
+- deny_overwrite:
+  - "/packages/contracts"
+  - "/.ai"
+- require_diff_format: true
+
+success_signal: exit_code_0
