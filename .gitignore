@@ -340,3 +340,6 @@ Optional: Ignore MCP sandbox data
 --------------------------------------------------
 
 mcp-runtime/
+
+__MACOSX/
+._*
