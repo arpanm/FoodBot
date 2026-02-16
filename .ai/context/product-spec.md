@@ -1,6 +1,6 @@
-🍽️ Agentic Restaurant Commerce Platform — Spec-Driven Development (SDD)
+## 🍽️ Agentic Restaurant Commerce Platform — Spec-Driven Development (SDD)
 
-0. Purpose
+### 0. Purpose
 
 Build an Agentic, LLM-Orchestrated Restaurant Commerce Platform with:
 
@@ -16,7 +16,7 @@ This system behaves like a goal-driven assistant, not a chatbot.
 
 ---
 
-1. High-Level Architecture
+### 1. High-Level Architecture
 ```
 Mobile App (Capacitor + React)
         ↓
@@ -38,7 +38,7 @@ Restaurant Agents (NestJS)
 ```
 ---
 
-2. LLM Responsibilities (Configurable)
+### 2. LLM Responsibilities (Configurable)
 ```
 Model| Responsibility
 Claude| Planning + Workflow Generation
@@ -57,7 +57,7 @@ GEMINI_API_KEY=
 ```
 ---
 
-3. UI/UX Requirements (Chat + Rich Cards)
+### 3. UI/UX Requirements (Chat + Rich Cards)
 
 Chat Experience Must Support:
 
@@ -88,7 +88,7 @@ Example Response Payload
 ```
 ---
 
-4. Async Job Model
+### 4. Async Job Model
 
 Request
 ```
@@ -111,7 +111,7 @@ GET /agent/status/{jobId}
 ```
 ---
 
-5. Personalization Model (Graph Tree)
+### 5. Personalization Model (Graph Tree)
 
 Stored in GraphDB:
 ```
@@ -127,7 +127,7 @@ Used to enrich LLM prompt before reasoning.
 
 ---
 
-6. Vector Cache (Token Reduction)
+### 6. Vector Cache (Token Reduction)
 ```
 Prompt → Intent → Workflow stored in VectorDB.
 ```
@@ -139,7 +139,7 @@ ELSE → call LLM
 ```
 ---
 
-7. Workflow JSON Contract (LLM Output)
+### 7. Workflow JSON Contract (LLM Output)
 ```
 {
   intent: "ORDER_FOOD",
@@ -153,7 +153,7 @@ ELSE → call LLM
 ```
 ---
 
-8. Temporal Execution Requirements
+### 8. Temporal Execution Requirements
 
 Temporal must implement:
 
@@ -168,7 +168,7 @@ Each step must update job status.
 
 ---
 
-9. MCP Layer
+### 9. MCP Layer
 
 Supported Providers
 ```
@@ -182,7 +182,7 @@ MCP_ZOMATO_ENABLED=false
 
 ---
 
-10. MCP APIs to Implement
+### 10. MCP APIs to Implement
 
 Discovery
 
@@ -207,7 +207,7 @@ Engagement
 
 ---
 
-11. ElasticSearch Index Model
+### 11. ElasticSearch Index Model
 
 Indexed Entities:
 
@@ -227,7 +227,7 @@ PRICE_CHANGED
 ```
 ---
 
-12. Restaurant Owner Agent (Capacitor + React)
+### 12. Restaurant Owner Agent (Capacitor + React)
 
 Features:
 
@@ -239,7 +239,7 @@ Features:
 
 ---
 
-13. Spec-Driven Development Flow (Claude Code Role)
+### 13. Spec-Driven Development Flow (Claude Code Role)
 
 Claude must:
 
@@ -256,7 +256,7 @@ Claude must:
 
 ---
 
-14. Guardrails
+### 14. Guardrails
 
 - LLM never calls APIs directly.
 - Only Temporal executes actions.
@@ -265,7 +265,7 @@ Claude must:
 
 ---
 
-15. Tech Stack Summary
+### 15. Tech Stack Summary
 ```
 Layer| Tech
 Frontend| Capacitor + React
@@ -280,7 +280,7 @@ Vector| Pinecone/Weaviate
 ```
 ---
 
-16. Observability
+### 16. Observability
 
 Track:
 
@@ -291,7 +291,7 @@ Track:
 
 ---
 
-17. Deliverables Expected from Claude Code
+### 17. Deliverables Expected from Claude Code
 
 - Complete repo scaffold
 - Environment configs
@@ -303,13 +303,12 @@ Track:
 
 ---
 
-18. Success Definition
+### 18. Success Definition
 
 System behaves like:
-
-«A reasoning commerce operator that plans, executes, adapts, and learns —
-not a chatbot.»
-
+```
+«A reasoning commerce operator that plans, executes, adapts, and learns — not a chatbot.»
+```
 ---
 
 Contexts:

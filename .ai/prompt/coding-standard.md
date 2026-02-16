@@ -1,6 +1,6 @@
-Coding Standards — Rules for Generated and Human Code
+## Coding Standards — Rules for Generated and Human Code
 
-1. Code Philosophy
+### 1. Code Philosophy
 
 All code must be:
 
@@ -13,21 +13,21 @@ Avoid cleverness. Prefer clarity.
 
 ---
 
-2. Structure Rules
+### 2. Structure Rules
 
 Each service must follow:
-
+```
 controller/
 service/
 domain/
 infrastructure/
 contracts/
-
+```
 No business logic allowed in controllers.
 
 ---
 
-3. API Design Rules
+### 3. API Design Rules
 
 APIs must be:
 
@@ -38,28 +38,28 @@ APIs must be:
 
 ---
 
-4. Error Handling Standard
+### 4. Error Handling Standard
 
 Never throw raw exceptions.
 
 Use:
-
+```
 DomainError → ApplicationError → APIError
-
+```
 ---
 
-5. Logging Standard
+### 5. Logging Standard
 
 Every external call must log:
-
+```
 correlationId
 provider
 latency
 result
-
+```
 ---
 
-6. Test Requirements
+### 6. Test Requirements
 
 Minimum:
 
@@ -71,7 +71,7 @@ LLM-generated code without tests is invalid.
 
 ---
 
-7. Security Requirements
+### 7. Security Requirements
 
 Never:
 
@@ -81,7 +81,7 @@ Never:
 
 ---
 
-8. Temporal Activities Rule
+### 8. Temporal Activities Rule
 
 Activities must:
 
@@ -91,7 +91,7 @@ Activities must:
 
 ---
 
-9. UI Standards
+### 9. UI Standards
 
 Frontend must render based on backend schema.
 
@@ -99,7 +99,7 @@ No hardcoded business decisions in React.
 
 ---
 
-10. Code Review Expectation
+### 10. Code Review Expectation
 
 Generated code must pass:
 

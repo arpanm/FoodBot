@@ -1,26 +1,26 @@
-# 🍽️ Agentic Food Platform (FoodBot)
+## 🍽️ Agentic Food Platform (FoodBot)
 
 An AI-Orchestrated, Spec-Driven Restaurant Commerce Platform that combines conversational UX, multi-LLM reasoning, and deterministic workflow execution using Temporal.
-
+```
 «This is not a chatbot.
 It is a goal-driven commerce agent that plans, validates, and executes workflows safely across multiple providers (Mock, Swiggy MCP, Zomato MCP).»
-
+```
 ---
 
-🚀 What This Project Does
+### 🚀 What This Project Does
 
 Transforms a natural request like:
-
+```
 «“Order dinner for 5 veg and 2 non-veg friends tonight”»
-
+```
 into a validated execution workflow:
-
+```
 Intent → Planned Workflow → Temporal Execution → MCP Providers → Order Complete
-
+```
 ---
 
-🧠 Core Principles
-
+### 🧠 Core Principles
+```
 Principle| Meaning
 LLM-Planned| AI decides WHAT should happen
 Deterministic Execution| Services decide HOW it happens
@@ -28,10 +28,10 @@ Workflow-First| No direct action without validated workflow
 Provider-Agnostic| Swiggy/Zomato/Mock via MCP
 Spec-Driven Development| Repo is governed by machine-readable specs
 Self-Healing SDLC| Agents generate → test → fix → validate
-
+```
 ---
 
-🏗️ Architecture Overview
+### 🏗️ Architecture Overview
 ```
 Capacitor + React Apps (Customer / Restaurant Owner)
             ↓
@@ -53,7 +53,7 @@ Restaurant Services / External MCP Providers
 ```
 ---
 
-🤖 Multi-LLM Strategy
+### 🤖 Multi-LLM Strategy
 ```
 Model| Role
 Claude| Planning + Workflow Generation
@@ -64,7 +64,7 @@ Configurable via ".env".
 
 ---
 
-🧩 Monorepo Structure
+### 🧩 Monorepo Structure
 ```
 .ai/                  → AI control plane (rules, skills, orchestration)
 apps/
@@ -87,7 +87,7 @@ infra/                → Docker / Temporal / Elastic setup
 ```
 ---
 
-📜 Spec-Driven Development (SDD)
+### 📜 Spec-Driven Development (SDD)
 
 This repository is governed by machine-readable intent:
 ```
@@ -101,7 +101,7 @@ Agents MUST read ".ai/config.yaml" before acting.
 
 ---
 
-🔄 Execution Flow
+### 🔄 Execution Flow
 ```
 1️⃣ User Prompt
 
@@ -131,7 +131,7 @@ User sees live progress updates.
 ```
 ---
 
-🔐 Guardrails
+### 🔐 Guardrails
 
 - LLMs cannot mutate data directly.
 - All actions flow through Temporal.
@@ -141,21 +141,21 @@ User sees live progress updates.
 
 ---
 
-⚙️ Local Development (GitHub Codespaces Recommended)
+### ⚙️ Local Development (GitHub Codespaces Recommended)
 
 Start Environment
-
+```
 pnpm install
 docker compose up
-
+```
 Run Gateway
-
+```
 cd apps/gateway-api
 pnpm start:dev
-
+```
 ---
 
-🌐 Required Services
+### 🌐 Required Services
 ```
 Service| Purpose
 Temporal| Durable orchestration
@@ -168,7 +168,7 @@ Spring Boot| MCP aggregator
 ```
 ---
 
-🔌 MCP Provider Support
+### 🔌 MCP Provider Support
 ```
 Provider| Status
 Mock| Enabled by default
@@ -179,7 +179,7 @@ Toggle via environment config.
 
 ---
 
-📊 Observability
+### 📊 Observability
 
 Platform emits structured telemetry for:
 
@@ -190,7 +190,7 @@ Platform emits structured telemetry for:
 
 ---
 
-🧪 AI-Driven SDLC Pipeline
+### 🧪 AI-Driven SDLC Pipeline
 
 Claude agents automatically perform:
 
@@ -205,7 +205,7 @@ Requirement Expansion
 
 ---
 
-🔑 Environment Configuration
+### 🔑 Environment Configuration
 
 Create ".env":
 ```
@@ -221,25 +221,25 @@ Never commit secrets.
 
 ---
 
-🛠 Tooling Layer
+### 🛠 Tooling Layer
 
 All executable automation lives under:
-
+```
 tools/
-
+```
 AI instructions stay in ".ai/" (declarative vs executable separation).
 
 ---
 
-📌 Project Status
+### 📌 Project Status
 
 This is a foundational platform repo designed to evolve into:
-
+```
 «A generalized Agentic Commerce Operating System.»
-
+```
 ---
 
-🤝 Contribution Model
+### 🤝 Contribution Model
 
 This repo expects:
 
@@ -250,13 +250,13 @@ This repo expects:
 
 ---
 
-📄 License
+### 📄 License
 
 Internal / TBD.
 
 ---
 
-🔭 Future Extensions
+### 🔭 Future Extensions
 
 - Cross-vertical commerce agents
 - Learning personalization engine
@@ -265,7 +265,7 @@ Internal / TBD.
 
 ---
 
-🧠 Philosophy
+### 🧠 Philosophy
 
 Traditional systems execute instructions.
 

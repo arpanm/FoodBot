@@ -1,4 +1,4 @@
-Architectural Decision Memory (ADM)
+## Architectural Decision Memory (ADM)
 
 This file records WHY decisions were made.
 Agents must consult this before suggesting alternatives.

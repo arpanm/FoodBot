@@ -1,6 +1,6 @@
-System Architecture — Agentic Restaurant Commerce Platform
+## System Architecture — Agentic Restaurant Commerce Platform
 
-1. Architectural Principle
+### 1. Architectural Principle
 
 This system follows LLM-Planned, Deterministically Executed Architecture.
 
@@ -11,7 +11,7 @@ LLMs must never directly call infrastructure or mutate state.
 
 ---
 
-2. Layered Architecture
+### 2. Layered Architecture
 ```
 UI (Capacitor + React)
     ↓
@@ -33,7 +33,7 @@ Restaurant Service APIs
 ```
 ---
 
-3. Responsibilities by Layer
+### 3. Responsibilities by Layer
 ```
 Layer| Responsibility
 Frontend| Conversational UI + structured actions
@@ -46,7 +46,7 @@ Restaurant Services| Domain ownership
 ```
 ---
 
-4. State Ownership Rules
+### 4. State Ownership Rules
 ```
 Data| Owner
 Orders| Restaurant Service
@@ -59,7 +59,7 @@ LLMs must not become state holders.
 
 ---
 
-5. Failure Handling Philosophy
+### 5. Failure Handling Philosophy
 
 All execution must be:
 
@@ -72,21 +72,23 @@ Temporal enforces these properties.
 
 ---
 
-6. LLM Usage Philosophy
+### 6. LLM Usage Philosophy
 
 LLMs are:
+```
 ✔ Planners
 ✔ Interpreters
 ✔ Validators
-
+```
 LLMs are NOT:
+```
 ✘ Executors
 ✘ Databases
 ✘ Source of truth
-
+```
 ---
 
-7. Integration Strategy
+### 7. Integration Strategy
 
 External MCP providers must always be wrapped via:
 
@@ -96,7 +98,7 @@ Never integrate providers directly into agents.
 
 ---
 
-8. Scalability Model
+### 8. Scalability Model
 
 System must scale independently across:
 
@@ -107,7 +109,7 @@ System must scale independently across:
 
 No shared bottlenecks allowed.
 
-## 9. Mandatory Contracts
+### 9. Mandatory Contracts
 
 LLM Output Schema: packages/workflow-schema
 Temporal Entry: services/orchestration

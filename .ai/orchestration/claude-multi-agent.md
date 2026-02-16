@@ -1,6 +1,6 @@
-🤖 Claude Multi-Agent SDLC Automation — Hooks, Skills & Plugin Framework
+## 🤖 Claude Multi-Agent SDLC Automation — Hooks, Skills & Plugin Framework
 
-0. Objective
+### 0. Objective
 
 Enable Claude-driven Spec → Build → Validate → Harden → Ship lifecycle using coordinated agents that can run:
 
@@ -12,7 +12,7 @@ Claude acts as the Meta-Orchestrator, while tools execute deterministically.
 
 ---
 
-1. Conceptual Model
+### 1. Conceptual Model
 ```
 Claude (Meta Agent)
    ├── Requirement Agent
@@ -32,7 +32,7 @@ Execution controlled via Hooks + Tool Plugins.
 
 ---
 
-2. Claude Skills Definition
+### 2. Claude Skills Definition
 
 Each skill = prompt template + tool bindings + validation schema.
 
@@ -70,7 +70,7 @@ rules:
 ```
 ---
 
-3. Hook System (Lifecycle Triggers)
+### 3. Hook System (Lifecycle Triggers)
 
 Hooks allow Claude to attach intelligence at execution checkpoints.
 ```
@@ -95,7 +95,7 @@ action:
 ```
 ---
 
-4. Plugin Tooling Layer (Deterministic Executors)
+### 4. Plugin Tooling Layer (Deterministic Executors)
 
 Claude NEVER edits infra directly — plugins execute actions.
 ```
@@ -123,7 +123,7 @@ Returns structured telemetry to Claude.
 
 ---
 
-5. Multi-Agent Execution Modes
+### 5. Multi-Agent Execution Modes
 
 Sequential Mode (Spec-Driven Build)
 
@@ -146,7 +146,7 @@ Reduces latency dramatically.
 
 ---
 
-6. Self-Healing Development Loop
+### 6. Self-Healing Development Loop
 
 Claude automatically repairs failures.
 ```
@@ -161,7 +161,7 @@ No human in loop unless confidence < threshold.
 
 ---
 
-7. Quality Gates (Scoring Model)
+### 7. Quality Gates (Scoring Model)
 
 Claude must compute composite readiness score:
 ```
@@ -177,7 +177,7 @@ Readiness ≥ 0.85
 ```
 ---
 
-8. Task Breakdown Strategy
+### 8. Task Breakdown Strategy
 
 Claude decomposes using:
 ```
@@ -192,7 +192,7 @@ observability_hooks
 ```
 ---
 
-9. Temporal Integration Hook
+### 9. Temporal Integration Hook
 
 Claude never runs business flows directly.
 
@@ -208,7 +208,7 @@ Temporal ensures retries, circuit breaking, compensation.
 
 ---
 
-10. Memory Layer (Learning System)
+### 10. Memory Layer (Learning System)
 
 Claude records:
 
@@ -221,7 +221,7 @@ Stored in Vector DB as Engineering Memory to reduce future reasoning cost.
 
 ---
 
-11. Configuration File
+### 11. Configuration File
 
 "claude-orchestrator.config.yaml"
 ```
@@ -249,7 +249,7 @@ llm_routing:
 ```
 ---
 
-12. Guardrails
+### 12. Guardrails
 
 - No direct DB writes by LLM
 - All execution via plugins
@@ -259,7 +259,7 @@ llm_routing:
 
 ---
 
-13. Expected Outcomes
+### 13. Expected Outcomes
 
 This framework transforms Claude from:
 
@@ -269,7 +269,7 @@ This framework transforms Claude from:
 
 ---
 
-14. Implementation Milestones
+### 14. Implementation Milestones
 ```
 Phase| Goal
 Phase 1| Skill registry + hooks engine
@@ -280,12 +280,12 @@ Phase 5| Continuous learning memory
 ```
 ---
 
-15. Success Definition
+### 15. Success Definition
 
 System can take:
-
+```
 «“Build restaurant ordering agent”»
-
+```
 and autonomously deliver:
 
 - Spec

@@ -1,6 +1,6 @@
-Workflow Rules — How Agents Must Execute Work
+## Workflow Rules — How Agents Must Execute Work
 
-1. Workflow is the Source of Execution Truth
+### 1. Workflow is the Source of Execution Truth
 
 All user intents must resolve to a validated workflow JSON before execution.
 
@@ -8,13 +8,13 @@ No service may execute user intent directly.
 
 ---
 
-2. Workflow Lifecycle
+### 2. Workflow Lifecycle
 ```
 Prompt → Plan → Validate → Execute → Observe → Adapt → Complete
 ```
 ---
 
-3. Mandatory Workflow Properties
+### 3. Mandatory Workflow Properties
 
 Every workflow must include:
 
@@ -26,7 +26,7 @@ Every workflow must include:
 
 ---
 
-4. Execution Rules
+### 4. Execution Rules
 ```
 Rule| Description
 No Direct Calls| Agents cannot call MCP APIs directly
@@ -36,7 +36,7 @@ Compensation Ready| Each action must support undo
 ```
 ---
 
-5. Parallelization Policy
+### 5. Parallelization Policy
 
 Parallel execution allowed only when steps are:
 
@@ -46,7 +46,7 @@ Parallel execution allowed only when steps are:
 
 ---
 
-6. Self-Healing Loop
+### 6. Self-Healing Loop
 
 If a workflow step fails:
 
@@ -56,7 +56,7 @@ Claude may regenerate sub-workflow, not entire plan.
 
 ---
 
-7. Observability Requirement
+### 7. Observability Requirement
 
 Each step must emit:
 ```
@@ -68,7 +68,7 @@ provider
 ```
 ---
 
-8. Provider Switching Rule
+### 8. Provider Switching Rule
 
 If Swiggy MCP fails → fallback to:
 
@@ -78,7 +78,7 @@ This decision is made by workflow, not runtime code.
 
 ---
 
-9. Workflow Validation
+### 9. Workflow Validation
 
 Before execution:
 
