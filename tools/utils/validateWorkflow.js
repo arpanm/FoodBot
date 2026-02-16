@@ -1,89 +1,95 @@
 #!/usr/bin/env node
 
 /**
+ * Workflow Validator
+ * Ensures all LLM-generated workflows conform to the contract
+ */
 
-* Workflow Validator
-* Ensures all LLM-generated workflows conform to the contract
-  */
+import fs from 'fs';
+import path from 'path';
 
-const fs = require("fs");
-const path = require("path");
-const Ajv = require("ajv");
-const addFormats = require("ajv-formats");
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
-const SCHEMA_PATH = path.resolve(".ai/schema/workflow.schema.json");
+const SCHEMA_PATH = path.resolve('.ai/schema/workflow.schema.json');
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function loadSchema() {
-if (!fs.existsSync(SCHEMA_PATH)) {
-throw new Error(`Workflow schema not found at ${SCHEMA_PATH}`);
-}
-return JSON.parse(fs.readFileSync(SCHEMA_PATH, "utf-8"));
+  if (!fs.existsSync(SCHEMA_PATH)) {
+    throw new Error(`Workflow schema not found at ${SCHEMA_PATH}`);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createValidator(schema) {
-const ajv = new Ajv({
-allErrors: true,
-strict: false,
-});
+  const ajv = new Ajv({
+    allErrors: true,
+    strict: false,
+  });
 
-addFormats(ajv);
+  addFormats(ajv);
 
-return ajv.compile(schema);
+  return ajv.compile(schema);
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function validateWorkflow(workflow, validateFn) {
-const valid = validateFn(workflow);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+  const valid = validateFn(workflow);
 
-if (!valid) {
-const errors = validateFn.errors.map(err => ({
-field: err.instancePath || err.schemaPath,
-message: err.message,
-}));
+  if (!valid) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const errors = validateFn.errors.map(err => ({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      field: err.instancePath || err.schemaPath,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      message: err.message,
+    }));
 
-```
-return { valid: false, errors };
-```
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    return { valid: false, errors };
+  }
 
+  return { valid: true };
 }
 
-return { valid: true };
-}
-
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function readInput() {
-const input = fs.readFileSync(0, "utf-8"); // stdin
-return JSON.parse(input);
+  const input = fs.readFileSync(0, 'utf-8'); // stdin
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return JSON.parse(input);
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function main() {
-try {
-const schema = loadSchema();
-const validator = createValidator(schema);
-const workflow = readInput();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const schema = loadSchema();
+    const validator = createValidator(schema);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const workflow = readInput();
 
-```
-const result = validateWorkflow(workflow, validator);
+    const result = validateWorkflow(workflow, validator);
 
-if (!result.valid) {
-  console.error("❌ Workflow validation failed:");
-  console.error(JSON.stringify(result.errors, null, 2));
-  process.exit(1);
+    if (!result.valid) {
+      console.error('❌ Workflow validation failed:');
+      console.error(JSON.stringify(result.errors, null, 2));
+      process.exit(1);
+    }
+
+    console.warn('✅ Workflow is valid.');
+    process.exit(0);
+  } catch (err) {
+    console.error('Validator error:', err.message);
+    process.exit(1);
+  }
 }
 
-console.log("✅ Workflow is valid.");
-process.exit(0);
-```
-
-} catch (err) {
-console.error("Validator error:", err.message);
-process.exit(1);
-}
+// ESM equivalent of require.main === module
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
 }
 
-if (require.main === module) {
-main();
-}
-
-module.exports = {
-validateWorkflow
-};
-
+export { validateWorkflow };

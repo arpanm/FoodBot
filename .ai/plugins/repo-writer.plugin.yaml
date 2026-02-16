@@ -10,10 +10,9 @@ patch: string
 target_paths: array
 
 guardrails:
-
-- deny_overwrite:
-  - "/packages/contracts"
-  - "/.ai"
-- require_diff_format: true
+  - deny_overwrite:
+      - "/packages/contracts"
+      - "/.ai"
+  - require_diff_format: true
 
 success_signal: exit_code_0

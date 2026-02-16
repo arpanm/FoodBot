@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"]
+  },
+  "include": [
+    "*.config.js",
+    "*.config.cjs",
+    "*.config.ts",
+    "jest.config.cjs",
+    "playwright.config.ts",
+    "eslint.config.js",
+    "tools/**/*"
+  ]
+}

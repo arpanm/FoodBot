@@ -1,0 +1,51 @@
+# Snyk (https://snyk.io) policy file
+
+# Project metadata
+version: v1.25.0
+
+# Ignore specific vulnerabilities (with justification)
+ignore:
+  # Example: Ignore a specific vulnerability if needed
+  # 'SNYK-JS-MINIMIST-559764':
+  #   - '*':
+  #       reason: 'Dev dependency only, not in production'
+  #       expires: '2024-12-31T00:00:00.000Z'
+
+# Patch vulnerabilities
+patch: {}
+
+# Exclude paths from scanning
+exclude:
+  code:
+    - node_modules
+    - dist
+    - build
+    - coverage
+    - .next
+    - .turbo
+    - test/fixtures
+    - e2e/fixtures
+    - '**/*.test.ts'
+    - '**/*.spec.ts'
+
+# Language settings
+language-settings:
+  javascript:
+    # Exclude dev dependencies from production scans
+    ignore-dev-dependencies: true
+
+# Severity threshold
+# fail-on: all | upgradable | patchable
+fail-on: upgradable
+
+# Policy settings
+policy:
+  # Minimum severity to report
+  severity-threshold: low
+
+  # Ignore policies
+  ignore-policy:
+    # Example: Temporarily ignore low severity issues
+    # - 'SNYK-JS-*':
+    #     severity: 'low'
+    #     expires: '2024-12-31'

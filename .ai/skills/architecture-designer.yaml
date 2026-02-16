@@ -2,22 +2,18 @@ name: ArchitectureDesigner
 description: Convert technical requirements into concrete service/module design
 
 inputs:
-
-- technical_requirements_doc
+  - technical_requirements_doc
 
 outputs:
-
-- architecture_addendum
+  - architecture_addendum
 
 llm_role: planner
 
 rules:
-
-- Must follow architecture.md constraints
-- Must not introduce new infrastructure
-- Must define APIs, schemas, and workflow boundaries
+  - Must follow architecture.md constraints
+  - Must not introduce new infrastructure
+  - Must define APIs, schemas, and workflow boundaries
 
 success_criteria:
-
-- Each module has defined contract
-- All data flows deterministic
+  - Each module has defined contract
+  - All data flows deterministic

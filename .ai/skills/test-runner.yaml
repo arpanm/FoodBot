@@ -2,18 +2,14 @@ name: TestRunner
 description: Execute automated tests and return structured telemetry
 
 inputs:
-
-- test_suite
+  - test_suite
 
 outputs:
-
-- test_report
+  - test_report
 
 tools_required:
-
-- test_runner
+  - test_runner
 
 rules:
-
-- Must not modify code
-- Must produce machine-readable output
+  - Must not modify code
+  - Must produce machine-readable output

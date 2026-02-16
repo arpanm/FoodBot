@@ -10,5 +10,4 @@ format: json
 map_to: security_report
 
 failure_conditions:
-
-- severity: high
+  - severity: high

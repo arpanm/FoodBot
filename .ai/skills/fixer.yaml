@@ -2,17 +2,14 @@ name: Fixer
 description: Repair issues identified in tests, reviews, or scans
 
 inputs:
-
-- failure_report
+  - failure_report
 
 outputs:
-
-- corrective_patch
+  - corrective_patch
 
 llm_role: builder
 
 rules:
-
-- Must apply minimal diff
-- Must not re-generate entire module
-- Must preserve contracts
+  - Must apply minimal diff
+  - Must not re-generate entire module
+  - Must preserve contracts

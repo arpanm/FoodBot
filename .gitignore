@@ -311,6 +311,17 @@ generated/
 
 --------------------------------------------------
 
+Prompt Documentation (TRACKED IN GIT)
+
+--------------------------------------------------
+
+# prompt-docs/ - Contains AI-generated documentation from Claude sessions
+# This folder is TRACKED and should be committed to preserve development history
+# Future prompt-generated docs should go in /prompt-docs/
+# Example files: fixes, troubleshooting, setup procedures, session summaries
+
+--------------------------------------------------
+
 OS / Editors
 
 --------------------------------------------------

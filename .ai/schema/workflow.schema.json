@@ -1,173 +1,171 @@
 {
-"$schema": "http://json-schema.org/draft-07/schema#",
-"$id": "https://agentic-platform.ai/schema/workflow.schema.json",
-"title": "Agentic Workflow Definition",
-"type": "object",
-
-"required": [
-"workflow_version",
-"workflow_id",
-"intent",
-"created_at",
-"steps",
-"execution_policy"
-],
-
-"properties": {
-"workflow_version": {
-"type": "string",
-"description": "Schema version for compatibility enforcement",
-"pattern": "^v[0-9]+\.[0-9]+$"
-},
-
-"workflow_id": {
-  "type": "string",
-  "description": "Unique identifier for workflow instance"
-},
-
-"intent": {
-  "type": "string",
-  "description": "Resolved user intent driving the workflow"
-},
-
-"created_at": {
-  "type": "string",
-  "format": "date-time"
-},
-
-"context": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agentic-platform.ai/schema/workflow.schema.json",
+  "title": "Agentic Workflow Definition",
   "type": "object",
-  "description": "Enriched personalization + session context",
-  "additionalProperties": true
-},
 
-"steps": {
-  "type": "array",
-  "minItems": 1,
-  "items": {
-    "$ref": "#/definitions/step"
-  }
-},
-
-"execution_policy": {
-  "$ref": "#/definitions/executionPolicy"
-},
-
-"rollback_strategy": {
-  "$ref": "#/definitions/rollbackStrategy"
-},
-
-"observability": {
-  "$ref": "#/definitions/observability"
-}
-
-},
-
-"definitions": {
-"step": {
-"type": "object",
-"required": ["step_id", "action", "provider", "input"],
+  "required": [
+    "workflow_version",
+    "workflow_id",
+    "intent",
+    "created_at",
+    "steps",
+    "execution_policy"
+  ],
 
   "properties": {
-    "step_id": {
-      "type": "string"
-    },
-
-    "action": {
+    "workflow_version": {
       "type": "string",
-      "description": "Canonical MCP action name"
+      "description": "Schema version for compatibility enforcement",
+      "pattern": "^v[0-9]+\\.[0-9]+$"
     },
 
-    "provider": {
+    "workflow_id": {
       "type": "string",
-      "enum": ["mock", "swiggy", "zomato", "internal"]
+      "description": "Unique identifier for workflow instance"
     },
 
-    "input": {
+    "intent": {
+      "type": "string",
+      "description": "Resolved user intent driving the workflow"
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "context": {
       "type": "object",
-      "description": "Validated parameters passed to activity"
+      "description": "Enriched personalization + session context",
+      "additionalProperties": true
     },
 
-    "retry_policy": {
-      "$ref": "#/definitions/retryPolicy"
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/step"
+      }
     },
 
-    "timeout_ms": {
-      "type": "integer",
-      "minimum": 100
+    "execution_policy": {
+      "$ref": "#/definitions/executionPolicy"
+    },
+
+    "rollback_strategy": {
+      "$ref": "#/definitions/rollbackStrategy"
+    },
+
+    "observability": {
+      "$ref": "#/definitions/observability"
+    }
+  },
+
+  "definitions": {
+    "step": {
+      "type": "object",
+      "required": ["step_id", "action", "provider", "input"],
+
+      "properties": {
+        "step_id": {
+          "type": "string"
+        },
+
+        "action": {
+          "type": "string",
+          "description": "Canonical MCP action name"
+        },
+
+        "provider": {
+          "type": "string",
+          "enum": ["mock", "swiggy", "zomato", "internal"]
+        },
+
+        "input": {
+          "type": "object",
+          "description": "Validated parameters passed to activity"
+        },
+
+        "retry_policy": {
+          "$ref": "#/definitions/retryPolicy"
+        },
+
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100
+        },
+
+        "compensation": {
+          "$ref": "#/definitions/compensation"
+        },
+
+        "parallelizable": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+
+    "retryPolicy": {
+      "type": "object",
+      "properties": {
+        "max_attempts": { "type": "integer", "minimum": 1 },
+        "backoff": {
+          "type": "string",
+          "enum": ["fixed", "exponential"]
+        }
+      }
+    },
+
+    "executionPolicy": {
+      "type": "object",
+      "required": ["mode"],
+
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["sequential", "parallel-hybrid"]
+        },
+        "max_concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "circuit_breaker": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+
+    "rollbackStrategy": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["compensate", "retry-only", "abort"]
+        }
+      }
     },
 
     "compensation": {
-      "$ref": "#/definitions/compensation"
+      "type": "object",
+      "required": ["action"],
+      "properties": {
+        "action": { "type": "string" },
+        "input": { "type": "object" }
+      }
     },
 
-    "parallelizable": {
-      "type": "boolean",
-      "default": false
+    "observability": {
+      "type": "object",
+      "properties": {
+        "emit_events": { "type": "boolean", "default": true },
+        "trace_level": {
+          "type": "string",
+          "enum": ["minimal", "detailed"]
+        }
+      }
     }
   }
-},
-
-"retryPolicy": {
-  "type": "object",
-  "properties": {
-    "max_attempts": { "type": "integer", "minimum": 1 },
-    "backoff": {
-      "type": "string",
-      "enum": ["fixed", "exponential"]
-    }
-  }
-},
-
-"executionPolicy": {
-  "type": "object",
-  "required": ["mode"],
-
-  "properties": {
-    "mode": {
-      "type": "string",
-      "enum": ["sequential", "parallel-hybrid"]
-    },
-    "max_concurrency": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "circuit_breaker": {
-      "type": "boolean",
-      "default": true
-    }
-  }
-},
-
-"rollbackStrategy": {
-  "type": "object",
-  "properties": {
-    "type": {
-      "type": "string",
-      "enum": ["compensate", "retry-only", "abort"]
-    }
-  }
-},
-
-"compensation": {
-  "type": "object",
-  "required": ["action"],
-  "properties": {
-    "action": { "type": "string" },
-    "input": { "type": "object" }
-  }
-},
-
-"observability": {
-  "type": "object",
-  "properties": {
-    "emit_events": { "type": "boolean", "default": true },
-    "trace_level": {
-      "type": "string",
-      "enum": ["minimal", "detailed"]
-    }
-  }
-}
-
-}
 }

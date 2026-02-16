@@ -1,0 +1,286 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL - Database for Temporal
+  # ============================================
+  postgresql:
+    image: postgres:15-alpine
+    container_name: foodbot-postgresql
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U temporal']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Temporal Server - Workflow Orchestration
+  # ============================================
+  temporal:
+    image: temporalio/auto-setup:1.22.4
+    container_name: foodbot-temporal
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=false
+      - ES_SEEDS=elasticsearch
+      - ES_VERSION=v7
+    ports:
+      - '7233:7233' # Temporal gRPC
+      - '7234:7234' # Temporal HTTP
+      - '7235:7235' # Temporal metrics
+    volumes:
+      - ./temporal-config:/etc/temporal/config/dynamicconfig
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD', 'tctl', '--address', 'temporal:7233', 'cluster', 'health']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ============================================
+  # Temporal UI - Web Interface
+  # ============================================
+  temporal-ui:
+    image: temporalio/ui:2.21.3
+    container_name: foodbot-temporal-ui
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+    ports:
+      - '8080:8080'
+    networks:
+      - foodbot-network
+
+  # ============================================
+  # Redis - Caching & Session Storage
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: foodbot-redis
+    command: redis-server --appendonly yes --requirepass foodbot-redis-password
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Redis Commander - Redis Management UI
+  # ============================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: foodbot-redis-commander
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:foodbot-redis-password
+    ports:
+      - '8081:8081'
+    networks:
+      - foodbot-network
+
+  # ============================================
+  # Elasticsearch - Search & Analytics
+  # ============================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: foodbot-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # Kibana - Elasticsearch UI
+  # ============================================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.3
+    container_name: foodbot-kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=
+    ports:
+      - '5601:5601'
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:5601/api/status || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # Zookeeper - Kafka Dependency
+  # ============================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    container_name: foodbot-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - '2181:2181'
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD', 'bash', '-c', 'echo "ruok" | nc localhost 2181']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Kafka - Event Streaming Platform
+  # ============================================
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: foodbot-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+    ports:
+      - '9092:9092'
+      - '29092:29092'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # Kafka UI - Kafka Management Interface
+  # ============================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: foodbot-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: foodbot-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - '8082:8080'
+    networks:
+      - foodbot-network
+
+  # ============================================
+  # Schema Registry - Kafka Schema Management
+  # ============================================
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.3
+    container_name: foodbot-schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8083
+    ports:
+      - '8083:8083'
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8083/']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  foodbot-network:
+    driver: bridge
+    name: foodbot-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres-data:
+    name: foodbot-postgres-data
+  redis-data:
+    name: foodbot-redis-data
+  elasticsearch-data:
+    name: foodbot-elasticsearch-data
+  kafka-data:
+    name: foodbot-kafka-data
+  zookeeper-data:
+    name: foodbot-zookeeper-data
+  zookeeper-logs:
+    name: foodbot-zookeeper-logs

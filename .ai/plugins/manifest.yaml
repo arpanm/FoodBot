@@ -1,22 +1,15 @@
 plugins:
-
-repo_writer:
-config: .ai/plugins/repo-writer.plugin.yaml
-
-test_runner:
-config: .ai/plugins/test-runner.plugin.yaml
-
-static_scan:
-config: .ai/plugins/static-scan.plugin.yaml
-
-security_scan:
-config: .ai/plugins/security-scan.plugin.yaml
-
-temporal_dispatch:
-config: .ai/plugins/temporal-dispatch.plugin.yaml
-
-build_runner:
-config: .ai/plugins/build.plugin.yaml
-
-telemetry:
-config: .ai/plugins/telemetry.plugin.yaml
+  repo_writer:
+    config: .ai/plugins/repo-writer.plugin.yaml
+  test_runner:
+    config: .ai/plugins/test-runner.plugin.yaml
+  static_scan:
+    config: .ai/plugins/static-scan.plugin.yaml
+  security_scan:
+    config: .ai/plugins/security-scan.plugin.yaml
+  temporal_dispatch:
+    config: .ai/plugins/temporal-dispatch.plugin.yaml
+  build_runner:
+    config: .ai/plugins/build.plugin.yaml
+  telemetry:
+    config: .ai/plugins/telemetry.plugin.yaml

@@ -2,15 +2,12 @@ name: ReleaseValidator
 description: Final gate before merge or deploy
 
 inputs:
-
-- aggregated_reports
+  - aggregated_reports
 
 outputs:
-
-- release_decision
+  - release_decision
 
 rules:
-
-- Must compute readiness score
-- Must enforce quality gates
-- Must fail closed (not open)
+  - Must compute readiness score
+  - Must enforce quality gates
+  - Must fail closed (not open)

@@ -2,21 +2,17 @@ name: TaskPlanner
 description: Break architecture into executable development tasks
 
 inputs:
-
-- architecture_addendum
+  - architecture_addendum
 
 outputs:
-
-- task_graph
+  - task_graph
 
 llm_role: planner
 
 rules:
-
-- Tasks must be independently executable
-- Each task must define tests
-- No task longer than 1 execution unit
+  - Tasks must be independently executable
+  - Each task must define tests
+  - No task longer than 1 execution unit
 
 success_criteria:
-
-- DAG produced (no circular dependencies)
+  - DAG produced (no circular dependencies)

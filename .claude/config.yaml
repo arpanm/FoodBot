@@ -1,0 +1,441 @@
+---
+# Claude Code Project Configuration
+# FoodBot - Agentic Restaurant Commerce Platform
+
+version: "1.0"
+project_name: "FoodBot"
+project_type: "agentic-platform"
+
+# Project Context
+context:
+  # Always load these files into Claude's context
+  entry_files:
+    - .ai/context/product-spec.md
+    - .ai/context/architecture.md
+    - .ai/orchestration/workflow-rules.md
+    - .ai/orchestration/claude-multi-agent.md
+    - .ai/prompts/system-prompt.md
+    - .ai/prompts/coding-standard.md
+    - .ai/memory/decision.md
+    - .claude/rules.md
+    - README.md
+
+  # Context priority (higher = more important)
+  priority_patterns:
+    - pattern: ".ai/**/*.md"
+      priority: 100
+      description: "AI control plane documentation"
+
+    - pattern: ".claude/**/*"
+      priority: 95
+      description: "Claude Code configuration"
+
+    - pattern: "**/*.schema.json"
+      priority: 90
+      description: "Schema definitions"
+
+    - pattern: "**/README.md"
+      priority: 85
+      description: "Documentation"
+
+    - pattern: "packages/*/contracts/**"
+      priority: 80
+      description: "API contracts"
+
+  # Automatic context inclusion based on task
+  smart_context:
+    enabled: true
+    max_files: 50
+    relevance_threshold: 0.7
+
+# Development Rules
+rules:
+  # Spec-driven development
+  spec_driven:
+    enabled: true
+    require_spec_before_code: true
+    validate_against_architecture: true
+
+  # Code generation
+  code_generation:
+    follow_existing_patterns: true
+    preserve_contracts: true
+    include_tests: true
+    include_documentation: false # Only on explicit request
+    add_observability: true
+
+  # Testing
+  testing:
+    min_coverage: 80
+    require_unit_tests: true
+    require_contract_tests: true
+    require_integration_tests: false # For services only
+
+  # Security
+  security:
+    block_on_secrets: true
+    validate_dependencies: true
+    require_security_review: true
+    allowed_secret_patterns:
+      - "**/*.example"
+      - "**/*.template"
+
+  # Architecture
+  architecture:
+    enforce_layer_boundaries: true
+    validate_dependencies: true
+    protected_paths:
+      - "/.ai"
+      - "/packages/contracts"
+      - "/.claude"
+
+# Guardrails
+guardrails:
+  # File operations
+  file_operations:
+    # Never modify these paths
+    immutable_paths:
+      - "/.git/**"
+      - "/.ai/schema/**"
+      - "/packages/contracts/published/**"
+      - "/.claude/hooks/**" # Hooks should be explicitly updated
+
+    # Require confirmation before modifying
+    protected_paths:
+      - "/.ai/**"
+      - "/packages/contracts/**"
+      - "/infra/**"
+      - "/docker-compose.yml"
+
+    # Maximum file size for modifications (KB)
+    max_file_size: 500
+
+  # Code generation
+  code_guardrails:
+    # Never generate without traceability
+    require_issue_reference: false # TODO: Enable when issue tracking set up
+    require_test_with_code: true
+
+    # Forbidden patterns
+    forbidden_patterns:
+      - pattern: "eval\\("
+        message: "eval() is forbidden for security reasons"
+
+      - pattern: "process\\.env\\.[A-Z_]+\\s*=\\s*['\"]"
+        message: "Never hardcode environment variables"
+
+      - pattern: "TODO:|FIXME:"
+        message: "Resolve TODOs before committing"
+        severity: "warning"
+
+      - pattern: "\\.only\\(|fdescribe\\(|fit\\("
+        message: "Remove test focus before committing"
+
+    # Required patterns for certain file types
+    required_patterns:
+      - file_pattern: "**/temporal/workflows/*.ts"
+        pattern: "@workflow"
+        message: "Temporal workflows must have @workflow decorator"
+
+      - file_pattern: "**/temporal/activities/*.ts"
+        pattern: "@activity"
+        message: "Temporal activities must have @activity decorator"
+
+  # LLM usage
+  llm_guardrails:
+    # LLMs must not directly mutate state
+    llm_direct_execution: false
+
+    # All LLM actions must be validated
+    validate_llm_output: true
+
+    # Cache repeated queries
+    enable_vector_cache: true
+
+# Skills (Custom Commands)
+skills:
+  # Quick access to common workflows
+  shortcuts:
+    - name: "spec"
+      description: "Create or update specification"
+      command: "open .ai/context/product-spec.md"
+
+    - name: "arch"
+      description: "Review architecture"
+      command: "open .ai/context/architecture.md"
+
+    - name: "hook"
+      description: "Test a specific hook"
+      template: ".claude/hooks/on-{hook-name}.sh"
+
+    - name: "validate"
+      description: "Run all validations"
+      command: ".claude/verify-hooks.sh"
+
+  # Integration with .ai/skills/
+  agent_skills:
+    directory: ".ai/skills"
+    auto_discover: true
+
+# Workflow Integration
+workflow:
+  # Temporal integration
+  temporal:
+    enabled: true
+    gateway_url: "${TEMPORAL_GATEWAY}"
+    validate_workflows: true
+    workflow_schema: ".ai/schema/workflow.schema.json"
+
+  # MCP integration
+  mcp:
+    enabled: true
+    providers:
+      mock:
+        enabled: true
+        priority: 1
+      swiggy:
+        enabled: "${MCP_SWIGGY_ENABLED}"
+        priority: 2
+      zomato:
+        enabled: "${MCP_ZOMATO_ENABLED}"
+        priority: 3
+
+# Quality Gates
+quality:
+  # Automated checks
+  pre_commit:
+    enabled: true
+    run_linting: true
+    run_formatting: true
+    run_tests: false # Too slow for pre-commit
+
+  pre_push:
+    enabled: true
+    run_tests: true
+    run_security_scan: true
+    check_coverage: true
+
+  pre_release:
+    enabled: true
+    compute_readiness_score: true
+    min_readiness: 0.85
+    require_documentation: true
+
+# Observability
+observability:
+  enabled: true
+  endpoint: "${OBSERVABILITY_URL}"
+  emit_events:
+    - code_generated
+    - test_executed
+    - workflow_started
+    - error_occurred
+    - quality_gate_checked
+
+  metrics:
+    - name: "development_velocity"
+      type: "gauge"
+      unit: "files_per_hour"
+
+    - name: "quality_score"
+      type: "gauge"
+      unit: "score"
+
+    - name: "self_healing_success_rate"
+      type: "percentage"
+      unit: "percent"
+
+# IDE Integration
+ide:
+  # VS Code specific
+  vscode:
+    enable_inline_suggestions: true
+    enable_hover_docs: true
+    enable_diagnostics: true
+
+  # File watching
+  watch:
+    enabled: true
+    patterns:
+      - ".ai/**/*.md"
+      - ".ai/**/*.yaml"
+      - ".claude/**/*"
+      - "**/*.schema.json"
+
+# Memory and Learning
+memory:
+  # Store learnings in .ai/memory/
+  enabled: true
+  directory: ".ai/memory"
+
+  # What to remember
+  remember:
+    - architectural_decisions
+    - bug_patterns
+    - performance_issues
+    - common_fixes
+
+  # Learning from iterations
+  learn_from_failures: true
+  max_memory_entries: 100
+
+# Multi-LLM Routing
+llm_routing:
+  # Primary planner
+  planner:
+    provider: "claude"
+    model: "claude-sonnet-4-5"
+    enabled: "${LLM_CLAUDE_ENABLED}"
+
+  # Validator
+  validator:
+    provider: "openai"
+    model: "gpt-4"
+    enabled: "${LLM_OPENAI_ENABLED}"
+
+  # Fast tasks
+  classifier:
+    provider: "gemini"
+    model: "gemini-pro"
+    enabled: "${LLM_GEMINI_ENABLED}"
+
+  # Fallback chain
+  fallback_order:
+    - "claude"
+    - "openai"
+    - "gemini"
+
+# Monorepo Configuration
+monorepo:
+  enabled: true
+  workspace_file: "pnpm-workspace.yaml"
+
+  # Package structure
+  packages:
+    - path: "apps/*"
+      type: "application"
+      build_required: true
+
+    - path: "services/*"
+      type: "service"
+      build_required: true
+
+    - path: "packages/*"
+      type: "library"
+      build_required: true
+
+  # Dependency management
+  dependencies:
+    validate_internal: true
+    prevent_circular: true
+    enforce_boundaries: true
+
+# Environment
+environment:
+  # Load from .env
+  load_dotenv: true
+
+  # Required variables
+  required_vars:
+    - "ANTHROPIC_API_KEY"
+    - "TEMPORAL_GATEWAY"
+    - "REDIS_URL"
+
+  # Optional variables
+  optional_vars:
+    - "OPENAI_API_KEY"
+    - "GEMINI_API_KEY"
+    - "MCP_SWIGGY_ENABLED"
+    - "MCP_ZOMATO_ENABLED"
+
+# Collaboration
+collaboration:
+  # Git integration
+  git:
+    auto_commit: false # Never auto-commit
+    require_message: true
+    message_format: "conventional" # conventional commits
+
+    # Branch naming
+    branch_prefix:
+      feature: "feat/"
+      bugfix: "fix/"
+      hotfix: "hotfix/"
+      release: "release/"
+
+  # Code review
+  code_review:
+    auto_request: false
+    require_approval: true
+    min_approvers: 1
+
+# Performance
+performance:
+  # Caching
+  cache:
+    enabled: true
+    ttl: 3600 # 1 hour
+    max_size_mb: 100
+
+  # Parallel execution
+  parallel:
+    enabled: true
+    max_workers: 4
+
+  # Batch operations
+  batch:
+    enabled: true
+    max_batch_size: 10
+
+# Debugging
+debug:
+  enabled: false
+  log_level: "info" # debug, info, warn, error
+  log_file: ".claude/debug.log"
+  verbose_mode: false
+
+# Extensions
+extensions:
+  # CodeRabbit integration
+  coderabbit:
+    enabled: false # Enable when configured
+    auto_review: true
+
+  # SonarQube integration
+  sonarqube:
+    enabled: false # Enable when configured
+    quality_gate: true
+
+  # Snyk security
+  snyk:
+    enabled: false # Enable when configured
+    severity_threshold: "high"
+
+# Notifications
+notifications:
+  enabled: true
+  channels:
+    - type: "console"
+      level: "info"
+
+    - type: "file"
+      level: "debug"
+      path: ".claude/notifications.log"
+
+# Experimental Features
+experimental:
+  # AI-driven refactoring
+  auto_refactor: false
+
+  # Predictive code completion
+  predictive_completion: false
+
+  # Smart conflict resolution
+  smart_merge: false
+
+# Metadata
+metadata:
+  created_at: "2024-02-17"
+  version: "1.0.0"
+  author: "FoodBot Team"
+  last_updated: "2024-02-17"

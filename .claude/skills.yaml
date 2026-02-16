@@ -1,0 +1,476 @@
+---
+# Claude Code Skills - Custom Commands for FoodBot
+# Quick shortcuts for common development tasks
+
+version: "1.0"
+
+# Custom Skills (Shortcuts)
+skills:
+  # Documentation Quick Access
+  - name: "spec"
+    aliases: ["s", "specification"]
+    description: "Open product specification"
+    type: "navigate"
+    action:
+      command: "open"
+      target: ".ai/context/product-spec.md"
+
+  - name: "arch"
+    aliases: ["architecture"]
+    description: "Open architecture documentation"
+    type: "navigate"
+    action:
+      command: "open"
+      target: ".ai/context/architecture.md"
+
+  - name: "rules"
+    aliases: ["r"]
+    description: "Open project coding rules"
+    type: "navigate"
+    action:
+      command: "open"
+      target: ".claude/rules.md"
+
+  - name: "decisions"
+    aliases: ["adr", "decision"]
+    description: "View architectural decisions"
+    type: "navigate"
+    action:
+      command: "open"
+      target: ".ai/memory/decision.md"
+
+  # Hook Management
+  - name: "hooks"
+    aliases: ["h"]
+    description: "List all available hooks"
+    type: "exec"
+    action:
+      command: "ls"
+      args: ["-lh", ".claude/hooks/"]
+
+  - name: "verify"
+    aliases: ["v", "check"]
+    description: "Verify Claude Code installation"
+    type: "exec"
+    action:
+      command: ".claude/verify-hooks.sh"
+
+  - name: "hook"
+    aliases: ["run-hook"]
+    description: "Run a specific hook (e.g., /hook code-generated)"
+    type: "template"
+    template: ".claude/hooks/on-{0}.sh"
+    params:
+      - name: "hook-name"
+        description: "Hook to run (spec-created, task-planned, code-generated, etc.)"
+        required: true
+
+  # Quality & Testing
+  - name: "lint"
+    aliases: ["l"]
+    description: "Run linting"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["lint"]
+
+  - name: "format"
+    aliases: ["f", "fmt"]
+    description: "Format code"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["format"]
+
+  - name: "test"
+    aliases: ["t"]
+    description: "Run tests"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["test"]
+
+  - name: "test-watch"
+    aliases: ["tw"]
+    description: "Run tests in watch mode"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["test", "--watch"]
+
+  - name: "coverage"
+    aliases: ["cov"]
+    description: "Generate test coverage report"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["test", "--coverage"]
+
+  # Build & Deploy
+  - name: "build"
+    aliases: ["b"]
+    description: "Build all packages"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["build"]
+
+  - name: "clean"
+    aliases: ["c"]
+    description: "Clean build artifacts"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["clean"]
+    confirm: "This will remove all build artifacts. Continue?"
+
+  - name: "release-check"
+    aliases: ["rc"]
+    description: "Run release candidate validation"
+    type: "exec"
+    action:
+      command: ".claude/hooks/on-release-candidate.sh"
+
+  # Development Servers
+  - name: "dev"
+    aliases: ["d", "start"]
+    description: "Start development servers"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["dev"]
+
+  - name: "dev-gateway"
+    aliases: ["dg"]
+    description: "Start gateway API in dev mode"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["--filter", "gateway-api", "dev"]
+
+  # Docker & Infrastructure
+  - name: "docker-up"
+    aliases: ["dup"]
+    description: "Start Docker services"
+    type: "exec"
+    action:
+      command: "docker-compose"
+      args: ["up", "-d"]
+
+  - name: "docker-down"
+    aliases: ["ddown"]
+    description: "Stop Docker services"
+    type: "exec"
+    action:
+      command: "docker-compose"
+      args: ["down"]
+
+  - name: "docker-logs"
+    aliases: ["dlogs"]
+    description: "View Docker logs"
+    type: "exec"
+    action:
+      command: "docker-compose"
+      args: ["logs", "-f"]
+
+  # Git Workflow
+  - name: "status"
+    aliases: ["st"]
+    description: "Git status"
+    type: "exec"
+    action:
+      command: "git"
+      args: ["status"]
+
+  - name: "diff"
+    aliases: ["df"]
+    description: "Git diff"
+    type: "exec"
+    action:
+      command: "git"
+      args: ["diff"]
+
+  - name: "branches"
+    aliases: ["br"]
+    description: "List branches"
+    type: "exec"
+    action:
+      command: "git"
+      args: ["branch", "-a"]
+
+  # Agent Skills (From .ai/skills/)
+  - name: "expand-requirements"
+    aliases: ["req"]
+    description: "Invoke RequirementExpander skill"
+    type: "agent"
+    skill: "RequirementExpander"
+    input_from: ".ai/context/product-spec.md"
+
+  - name: "design-architecture"
+    aliases: ["design"]
+    description: "Invoke ArchitectureDesigner skill"
+    type: "agent"
+    skill: "ArchitectureDesigner"
+    depends_on: ["expand-requirements"]
+
+  - name: "plan-tasks"
+    aliases: ["plan"]
+    description: "Invoke TaskPlanner skill"
+    type: "agent"
+    skill: "TaskPlanner"
+    depends_on: ["design-architecture"]
+
+  - name: "generate-code"
+    aliases: ["gen", "codegen"]
+    description: "Invoke CodeGenerator skill"
+    type: "agent"
+    skill: "CodeGenerator"
+    depends_on: ["plan-tasks"]
+
+  - name: "generate-tests"
+    aliases: ["testgen"]
+    description: "Invoke TestGenerator skill"
+    type: "agent"
+    skill: "TestGenerator"
+    depends_on: ["generate-code"]
+
+  - name: "review"
+    aliases: ["cr"]
+    description: "Invoke CodeReviewer skill"
+    type: "agent"
+    skill: "CodeReviewer"
+
+  - name: "analyze"
+    aliases: ["scan"]
+    description: "Invoke StaticAnalyzer skill"
+    type: "agent"
+    skill: "StaticAnalyzer"
+
+  - name: "security-audit"
+    aliases: ["sec"]
+    description: "Invoke SecurityAuditor skill"
+    type: "agent"
+    skill: "SecurityAuditor"
+
+  - name: "fix"
+    aliases: ["repair"]
+    description: "Invoke Fixer skill (auto-remediation)"
+    type: "agent"
+    skill: "Fixer"
+    params:
+      - name: "failure_report"
+        description: "Path to failure report"
+        required: true
+
+  - name: "validate-release"
+    aliases: ["vr"]
+    description: "Invoke ReleaseValidator skill"
+    type: "agent"
+    skill: "ReleaseValidator"
+
+  # Workflow Management
+  - name: "validate-workflow"
+    aliases: ["vw"]
+    description: "Validate workflow JSON against schema"
+    type: "exec"
+    action:
+      command: "node"
+      args: ["tools/utils/validateWorkflow.js"]
+
+  - name: "start-workflow"
+    aliases: ["sw"]
+    description: "Start Temporal workflow"
+    type: "exec"
+    action:
+      command: "node"
+      args: ["tools/temporal/startWorkflow.js"]
+
+  # Observability
+  - name: "emit-event"
+    aliases: ["event"]
+    description: "Emit telemetry event"
+    type: "exec"
+    action:
+      command: "node"
+      args: ["tools/observability/emitEvent.js"]
+
+  - name: "logs"
+    aliases: ["log"]
+    description: "View application logs"
+    type: "exec"
+    action:
+      command: "tail"
+      args: ["-f", "logs/app.log"]
+
+  # Database
+  - name: "db-migrate"
+    aliases: ["migrate"]
+    description: "Run database migrations"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["migrate"]
+    confirm: "This will modify the database. Continue?"
+
+  - name: "db-seed"
+    aliases: ["seed"]
+    description: "Seed database with test data"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["seed"]
+    confirm: "This will add test data. Continue?"
+
+  # Dependency Management
+  - name: "install"
+    aliases: ["i"]
+    description: "Install dependencies"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["install"]
+
+  - name: "update-deps"
+    aliases: ["update"]
+    description: "Update dependencies"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["update"]
+
+  - name: "audit"
+    aliases: ["sec-audit"]
+    description: "Security audit dependencies"
+    type: "exec"
+    action:
+      command: "pnpm"
+      args: ["audit"]
+
+  # Project Utilities
+  - name: "tree"
+    description: "Show project structure"
+    type: "exec"
+    action:
+      command: "tree"
+      args: ["-L", "3", "-I", "node_modules"]
+
+  - name: "size"
+    description: "Show directory sizes"
+    type: "exec"
+    action:
+      command: "du"
+      args: ["-sh", "*"]
+
+  - name: "env"
+    description: "Show environment variables"
+    type: "exec"
+    action:
+      command: "cat"
+      args: [".env.example"]
+
+# Skill Groups (Workflows)
+workflows:
+  - name: "full-pipeline"
+    description: "Run complete development pipeline"
+    steps:
+      - skill: "expand-requirements"
+      - skill: "design-architecture"
+      - skill: "plan-tasks"
+      - skill: "generate-code"
+      - skill: "generate-tests"
+      - skill: "review"
+      - skill: "analyze"
+      - skill: "security-audit"
+      - skill: "validate-release"
+
+  - name: "quick-check"
+    description: "Quick quality check"
+    steps:
+      - skill: "lint"
+      - skill: "format"
+      - skill: "test"
+
+  - name: "pre-commit-check"
+    description: "Pre-commit validation"
+    steps:
+      - skill: "hook"
+        args: ["code-generated"]
+
+  - name: "pre-push-check"
+    description: "Pre-push validation"
+    steps:
+      - skill: "test"
+      - skill: "coverage"
+      - skill: "security-audit"
+
+# Skill Configuration
+config:
+  # Default behavior
+  defaults:
+    confirm_destructive: true
+    verbose: false
+    timeout_seconds: 300
+
+  # Agent integration
+  agent_integration:
+    enabled: true
+    skills_directory: ".ai/skills"
+    auto_discover: true
+
+  # Execution
+  execution:
+    parallel: false
+    fail_fast: true
+    retry_on_failure: false
+
+  # Output
+  output:
+    format: "text" # text, json, yaml
+    verbose: false
+    color: true
+
+# Help System
+help:
+  examples:
+    - command: "/spec"
+      description: "Open product specification"
+
+    - command: "/hook code-generated"
+      description: "Run code generation validation hook"
+
+    - command: "/test"
+      description: "Run all tests"
+
+    - command: "/full-pipeline"
+      description: "Run complete development pipeline"
+
+  categories:
+    - name: "Documentation"
+      skills: ["spec", "arch", "rules", "decisions"]
+
+    - name: "Quality"
+      skills: ["lint", "format", "test", "coverage", "analyze"]
+
+    - name: "Hooks"
+      skills: ["hooks", "verify", "hook"]
+
+    - name: "Development"
+      skills: ["dev", "build", "clean"]
+
+    - name: "Git"
+      skills: ["status", "diff", "branches"]
+
+    - name: "Agent Skills"
+      skills:
+        - "expand-requirements"
+        - "design-architecture"
+        - "plan-tasks"
+        - "generate-code"
+        - "review"
+        - "fix"
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  created: "2024-02-17"
+  last_updated: "2024-02-17"

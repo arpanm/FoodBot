@@ -4,14 +4,14 @@
 
 This system follows LLM-Planned, Deterministically Executed Architecture.
 
-LLMs decide WHAT to do.
-Temporal + Services decide HOW it is done safely.
+LLMs decide WHAT to do. Temporal + Services decide HOW it is done safely.
 
 LLMs must never directly call infrastructure or mutate state.
 
 ---
 
 ### 2. Layered Architecture
+
 ```
 UI (Capacitor + React)
     ↓
@@ -31,9 +31,11 @@ Search + Index (Elasticsearch + Kafka)
     ↓
 Restaurant Service APIs
 ```
+
 ---
 
 ### 3. Responsibilities by Layer
+
 ```
 Layer| Responsibility
 Frontend| Conversational UI + structured actions
@@ -44,9 +46,11 @@ MCP Layer| Normalize providers (Mock/Swiggy/Zomato)
 Search Layer| Discoverability & filtering
 Restaurant Services| Domain ownership
 ```
+
 ---
 
 ### 4. State Ownership Rules
+
 ```
 Data| Owner
 Orders| Restaurant Service
@@ -55,6 +59,7 @@ Preferences| GraphDB
 Session State| Redis
 Workflow State| Temporal
 ```
+
 LLMs must not become state holders.
 
 ---
@@ -75,17 +80,21 @@ Temporal enforces these properties.
 ### 6. LLM Usage Philosophy
 
 LLMs are:
+
 ```
 ✔ Planners
 ✔ Interpreters
 ✔ Validators
 ```
+
 LLMs are NOT:
+
 ```
 ✘ Executors
 ✘ Databases
 ✘ Source of truth
 ```
+
 ---
 
 ### 7. Integration Strategy
@@ -111,7 +120,6 @@ No shared bottlenecks allowed.
 
 ### 9. Mandatory Contracts
 
-LLM Output Schema: packages/workflow-schema
-Temporal Entry: services/orchestration
-MCP Interface: services/mcp-adapter/contracts
-Search Write Path: Kafka Only (No Direct ES Writes)
+LLM Output Schema: packages/workflow-schema Temporal Entry:
+services/orchestration MCP Interface: services/mcp-adapter/contracts Search
+Write Path: Kafka Only (No Direct ES Writes)

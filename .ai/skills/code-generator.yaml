@@ -2,27 +2,22 @@ name: CodeGenerator
 description: Generate production-ready code for a defined task
 
 inputs:
-
-- task_definition
+  - task_definition
 
 outputs:
-
-- code_patch
+  - code_patch
 
 llm_role: builder
 
 tools_required:
-
-- repo_writer
-- formatter
+  - repo_writer
+  - formatter
 
 rules:
-
-- Must follow coding-standards.md
-- Must not overwrite protected folders
-- Must include observability hooks
+  - Must follow coding-standards.md
+  - Must not overwrite protected folders
+  - Must include observability hooks
 
 success_criteria:
-
-- Code compiles
-- Contracts satisfied
+  - Code compiles
+  - Contracts satisfied

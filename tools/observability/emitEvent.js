@@ -1,24 +1,23 @@
 #!/usr/bin/env node
 
-const axios = require("axios");
-const fs = require("fs");
+import fs from 'fs';
 
+import axios from 'axios';
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 async function main() {
-try {
-const event = JSON.parse(fs.readFileSync(0, "utf-8"));
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const event = JSON.parse(fs.readFileSync(0, 'utf-8'));
 
-await axios.post(
-  process.env.OBSERVABILITY_URL || "http://localhost:8090/events",
-  event
-);
+    await axios.post(process.env.OBSERVABILITY_URL || 'http://localhost:8090/events', event);
 
-console.log("Telemetry event sent");
-process.exit(0);
-
-} catch (err) {
-console.error("Telemetry failed:", err.message);
-process.exit(1);
-}
+    console.warn('Telemetry event sent');
+    process.exit(0);
+  } catch (err) {
+    console.error('Telemetry failed:', err.message);
+    process.exit(1);
+  }
 }
 
-main();
+void main();

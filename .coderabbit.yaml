@@ -1,0 +1,191 @@
+# CodeRabbit AI Code Review Configuration
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+
+# Language and tone
+language: en-US
+tone_instructions: |
+  - Be concise and actionable
+  - Focus on architectural and security concerns
+  - Highlight violations of project rules (.claude/rules.md)
+  - Reference coding standards when suggesting improvements
+
+# Review settings
+reviews:
+  # Request changes workflow
+  request_changes_workflow: true
+
+  # High level summary
+  high_level_summary: true
+
+  # Poem style (fun summary)
+  poem: false
+
+  # Review status check
+  review_status_check: true
+
+  # Collapse walkthrough
+  collapse_walkthrough: false
+
+  # Auto-review settings
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - master
+      - develop
+
+  # Path-based filtering
+  path_filters:
+    - path: "**/*.test.ts"
+      instructions: |
+        - Verify test coverage is comprehensive
+        - Check for proper mocking and test isolation
+        - Ensure tests follow AAA pattern (Arrange, Act, Assert)
+
+    - path: "**/*.workflow.ts"
+      instructions: |
+        - Verify workflow is deterministic
+        - Check for prohibited patterns (Date.now(), Math.random())
+        - Ensure proper error handling and compensation
+
+    - path: "**/contracts/**"
+      instructions: |
+        - Verify backward compatibility
+        - Check for breaking changes
+        - Ensure proper versioning
+
+    - path: "**/*.md"
+      instructions: |
+        - Check for clarity and completeness
+        - Verify code examples are correct
+        - Ensure links are valid
+
+  # Path exclusions
+  path_instructions:
+    - path: ".ai/**"
+      instructions: "This is AI configuration. Review carefully for spec consistency."
+
+    - path: ".claude/**"
+      instructions: "This is Claude Code configuration. Review for correctness."
+
+    - path: "packages/contracts/**"
+      instructions: "Breaking changes here affect consumers. Verify compatibility."
+
+# Chat settings
+chat:
+  auto_reply: true
+
+# Knowledge base
+knowledge_base:
+  # Project-specific knowledge
+  learnings:
+    - "Follow spec-driven development (SDD) principles"
+    - "LLMs plan, Temporal executes - never bypass workflows"
+    - "All code must have tests with 80%+ coverage"
+    - "Temporal workflows must be deterministic"
+    - "Use domain errors, not generic Error instances"
+    - "Follow layer boundaries: controllers → services → domain"
+    - "Protected paths require confirmation: .ai/, packages/contracts/"
+
+  # Reference documents
+  opt_in_knowledge_base:
+    - ".claude/rules.md"
+    - ".ai/context/architecture.md"
+    - ".ai/prompts/coding-standard.md"
+
+# Code quality checks
+checks:
+  # Security
+  security:
+    enabled: true
+    severity_threshold: medium
+
+  # Performance
+  performance:
+    enabled: true
+
+  # Best practices
+  best_practices:
+    enabled: true
+
+  # Code style
+  code_style:
+    enabled: true
+
+  # Documentation
+  documentation:
+    enabled: true
+    require_for_public_apis: true
+
+# Custom rules
+custom_rules:
+  - name: "No hardcoded secrets"
+    pattern: "(api[_-]?key|password|secret|token)\\s*=\\s*['\"][^'\"]+['\"]"
+    message: "Potential hardcoded secret detected. Use environment variables."
+    severity: high
+
+  - name: "No console.log in production"
+    pattern: "console\\.log\\("
+    paths:
+      - "apps/**/*.ts"
+      - "services/**/*.ts"
+    exclude_paths:
+      - "**/*.test.ts"
+      - "**/scripts/**"
+    message: "Use proper logging (logger.info/debug) instead of console.log"
+    severity: low
+
+  - name: "Temporal workflow determinism"
+    pattern: "(Date\\.now|Math\\.random|setTimeout)"
+    paths:
+      - "**/workflows/**/*.ts"
+      - "**/*.workflow.ts"
+    message: "Workflows must be deterministic. Use workflow.now() or activities."
+    severity: high
+
+  - name: "Test naming convention"
+    pattern: "^(describe|it|test)\\(['\"][^'\"]*[^.]['\"]"
+    paths:
+      - "**/*.test.ts"
+      - "**/*.spec.ts"
+    message: "Test descriptions should end with a period for consistency"
+    severity: info
+
+# Labels
+labels:
+  - "coderabbit:reviewed"
+  - "needs-tests:false" # Will be set based on test coverage
+
+# Notifications
+notifications:
+  enabled: true
+  slack: false
+  email: false
+
+# Integration settings
+integrations:
+  # GitHub
+  github:
+    enabled: true
+    auto_assign_reviewers: false
+
+  # Jira (if using)
+  jira:
+    enabled: false
+
+#Ignores
+ignore:
+  # Files to skip review
+  - "node_modules/**"
+  - "dist/**"
+  - "build/**"
+  - "coverage/**"
+  - "**/*.generated.ts"
+  - "**/*.min.js"
+  - "pnpm-lock.yaml"
+  - "package-lock.json"
+  - "yarn.lock"
+
+# Early access features
+early_access: false

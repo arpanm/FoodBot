@@ -1,7 +1,7 @@
 ## Architectural Decision Memory (ADM)
 
-This file records WHY decisions were made.
-Agents must consult this before suggesting alternatives.
+This file records WHY decisions were made. Agents must consult this before
+suggesting alternatives.
 
 ---
 
@@ -57,11 +57,6 @@ How to Add New Decisions
 
 Format:
 
-Decision ###
-Context:
-Decision:
-Reason:
-Alternatives Considered:
-Impact:
+Decision ### Context: Decision: Reason: Alternatives Considered: Impact:
 
 Agents must append — never rewrite history.

@@ -1,0 +1,551 @@
+---
+# Claude Code Guardrails
+# Safety constraints and validation rules for FoodBot
+
+version: "1.0"
+
+# File System Guardrails
+filesystem:
+  # Immutable paths - never modify
+  immutable:
+    - path: "/.git/**"
+      reason: "Git internal data"
+
+    - path: "/.ai/schema/**"
+      reason: "Schema definitions are contracts"
+
+    - path: "/packages/contracts/published/**"
+      reason: "Published contracts must not change"
+
+    - path: "/.claude/hooks/**"
+      reason: "Hooks require explicit review"
+      allow_with_confirmation: true
+
+    - path: "/node_modules/**"
+      reason: "Managed by package manager"
+
+  # Protected paths - require confirmation
+  protected:
+    - path: "/.ai/**"
+      reason: "AI control plane - changes affect behavior"
+      confirm_message: "Modifying AI configuration. Continue?"
+
+    - path: "/packages/contracts/**"
+      reason: "API contracts - changes affect consumers"
+      confirm_message: "Modifying API contracts. Are consumers compatible?"
+
+    - path: "/infra/**"
+      reason: "Infrastructure changes affect deployment"
+      confirm_message: "Modifying infrastructure. Have you tested locally?"
+
+    - path: "/docker-compose.yml"
+      reason: "Docker orchestration affects all services"
+      confirm_message: "Modifying docker-compose. Will services restart?"
+
+    - path: "/.env"
+      reason: "Environment configuration"
+      confirm_message: "Modifying environment. Is this for local only?"
+
+  # Restricted operations
+  operations:
+    delete:
+      require_explicit_instruction: true
+      confirm_for_patterns:
+        - "**/*.ts"
+        - "**/*.js"
+        - "**/package.json"
+        - "**/*.md"
+
+    move:
+      require_explicit_instruction: true
+      validate_imports: true
+
+    rename:
+      require_explicit_instruction: true
+      update_references: true
+
+  # Size limits
+  limits:
+    max_file_size_kb: 500
+    max_files_per_operation: 10
+    max_directory_depth: 10
+
+# Code Generation Guardrails
+code:
+  # Forbidden patterns
+  forbidden:
+    - pattern: "eval\\("
+      severity: critical
+      message: "eval() is forbidden for security reasons"
+      auto_fix: false
+
+    - pattern: "Function\\(.*\\)"
+      severity: critical
+      message: "Function constructor is forbidden"
+      auto_fix: false
+
+    - pattern: "dangerouslySetInnerHTML"
+      severity: high
+      message: "Avoid dangerouslySetInnerHTML - XSS risk"
+      auto_fix: false
+
+    - pattern: "process\\.env\\.[A-Z_]+\\s*=\\s*['\"]"
+      severity: critical
+      message: "Never hardcode environment variables"
+      auto_fix: false
+
+    - pattern: "password|secret|key.*=\\s*['\"](?!\\$\\{)"
+      severity: critical
+      message: "Potential hardcoded secret detected"
+      auto_fix: false
+
+    - pattern: "\\.only\\(|fdescribe\\(|fit\\("
+      severity: medium
+      message: "Remove test focus before committing"
+      auto_fix: true
+
+    - pattern: "console\\.log\\("
+      severity: low
+      message: "Use proper logging (logger.info/debug)"
+      auto_fix: false
+      allow_in_patterns:
+        - "**/scripts/**"
+        - "**/*.test.ts"
+
+    - pattern: "any\\s+as\\s+"
+      severity: medium
+      message: "Avoid type assertions - use proper typing"
+      auto_fix: false
+
+    - pattern: "TODO:|FIXME:"
+      severity: low
+      message: "Resolve TODOs before production"
+      auto_fix: false
+      allow_in_patterns:
+        - "**/*.md"
+
+  # Required patterns
+  required:
+    - file_pattern: "**/temporal/workflows/*.ts"
+      pattern: "@workflow"
+      message: "Temporal workflows must have @workflow decorator"
+
+    - file_pattern: "**/temporal/activities/*.ts"
+      pattern: "@activity"
+      message: "Temporal activities must have @activity decorator"
+
+    - file_pattern: "**/*.controller.ts"
+      pattern: "@Controller"
+      message: "NestJS controllers must have @Controller decorator"
+
+    - file_pattern: "**/*.service.ts"
+      pattern: "@Injectable"
+      message: "NestJS services must have @Injectable decorator"
+
+  # Code quality
+  quality:
+    max_function_length: 50
+    max_file_length: 500
+    max_complexity: 10
+    max_params: 4
+
+    enforce:
+      - rule: "function_length"
+        severity: warning
+
+      - rule: "file_length"
+        severity: warning
+
+      - rule: "complexity"
+        severity: warning
+
+      - rule: "params"
+        severity: info
+
+  # Testing requirements
+  testing:
+    require_tests_with_code: true
+    min_coverage: 80
+
+    patterns:
+      source: "**/*.ts"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+        - "**/index.ts"
+        - "**/*.d.ts"
+
+    test_naming:
+      - pattern: "*.test.ts"
+        description: "Unit tests"
+
+      - pattern: "*.spec.ts"
+        description: "Integration tests"
+
+      - pattern: "*.e2e.ts"
+        description: "End-to-end tests"
+
+# Security Guardrails
+security:
+  # Secret detection
+  secrets:
+    block_on_detection: true
+    patterns:
+      - name: "API Key"
+        pattern: "(?i)(api[_-]?key|apikey)\\s*=\\s*['\"][^'\"]{20,}['\"]"
+
+      - name: "AWS Key"
+        pattern: "(?i)(aws_access_key_id|aws_secret_access_key)\\s*=\\s*['\"][^'\"]+['\"]"
+
+      - name: "Private Key"
+        pattern: "-----BEGIN (RSA |)PRIVATE KEY-----"
+
+      - name: "JWT Token"
+        pattern: "eyJ[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+"
+        allow_in_patterns:
+          - "**/*.test.ts"
+          - "**/fixtures/**"
+
+      - name: "Database URL"
+        pattern: "(postgres|mysql|mongodb)://[^:]+:[^@]+@"
+
+    allow_in_files:
+      - ".env.example"
+      - ".env.template"
+      - "**/fixtures/**"
+      - "**/*.test.ts"
+
+  # Dependency validation
+  dependencies:
+    scan_on_add: true
+    block_deprecated: true
+    block_vulnerable: true
+    severity_threshold: "high"
+
+    allowed_registries:
+      - "https://registry.npmjs.org"
+      - "https://registry.yarnpkg.com"
+
+    forbidden_packages:
+      - name: "lodash"
+        reason: "Use lodash-es for tree shaking"
+        suggest: "lodash-es"
+
+      - name: "moment"
+        reason: "Use date-fns or dayjs (smaller)"
+        suggest: "date-fns"
+
+  # Input validation
+  validation:
+    sanitize_user_input: true
+    validate_file_uploads: true
+    max_upload_size_mb: 10
+
+    file_upload_whitelist:
+      - ".jpg"
+      - ".jpeg"
+      - ".png"
+      - ".gif"
+      - ".pdf"
+
+# Architecture Guardrails
+architecture:
+  # Layer boundaries
+  layers:
+    - name: "controller"
+      path: "**/controllers/**"
+      may_import:
+        - "**/services/**"
+        - "**/domain/**"
+        - "**/contracts/**"
+      must_not_import:
+        - "**/infrastructure/**"
+
+    - name: "service"
+      path: "**/services/**"
+      may_import:
+        - "**/domain/**"
+        - "**/infrastructure/**"
+        - "**/contracts/**"
+      must_not_import:
+        - "**/controllers/**"
+
+    - name: "domain"
+      path: "**/domain/**"
+      may_import: []
+      must_not_import:
+        - "**/services/**"
+        - "**/infrastructure/**"
+        - "**/controllers/**"
+
+    - name: "infrastructure"
+      path: "**/infrastructure/**"
+      may_import:
+        - "**/domain/**"
+        - "**/contracts/**"
+      must_not_import:
+        - "**/services/**"
+        - "**/controllers/**"
+
+  # Dependency rules
+  dependencies:
+    prevent_circular: true
+    enforce_boundaries: true
+
+    rules:
+      - from: "apps/**"
+        to: "packages/**"
+        allowed: true
+
+      - from: "apps/**"
+        to: "services/**"
+        allowed: false
+
+      - from: "services/**"
+        to: "packages/**"
+        allowed: true
+
+      - from: "packages/**"
+        to: "apps/**"
+        allowed: false
+
+      - from: "packages/**"
+        to: "services/**"
+        allowed: false
+
+  # Contracts
+  contracts:
+    immutable_when_published: true
+    require_versioning: true
+    validate_breaking_changes: true
+
+# LLM-Specific Guardrails
+llm:
+  # LLM behavior constraints
+  constraints:
+    # LLMs must not execute actions directly
+    direct_execution: false
+
+    # LLMs must not mutate state
+    mutate_state: false
+
+    # All LLM outputs must be validated
+    validate_output: true
+
+    # LLMs must not access infrastructure
+    access_infrastructure: false
+
+  # Output validation
+  output_validation:
+    # Workflow outputs must match schema
+    validate_workflow_schema: true
+    schema_path: ".ai/schema/workflow.schema.json"
+
+    # Maximum output size
+    max_tokens: 4000
+
+    # Require structured output
+    require_json: true
+
+  # Context limits
+  context:
+    max_files: 50
+    max_file_size_kb: 100
+    prioritize_relevant: true
+
+  # Prompt injection protection
+  prompt_security:
+    detect_injections: true
+    sanitize_user_input: true
+    block_suspicious_patterns: true
+
+# Workflow Guardrails
+workflow:
+  temporal:
+    # Workflow validation
+    validate_determinism: true
+    validate_idempotency: true
+
+    # Required properties
+    require_retry_policy: true
+    require_timeout: true
+    require_compensation: true
+
+    # Forbidden in workflows
+    forbidden_in_workflows:
+      - "Date.now()"
+      - "Math.random()"
+      - "fetch("
+      - "axios."
+      - "http."
+
+  mcp:
+    # MCP provider rules
+    validate_provider_enabled: true
+    require_fallback: true
+    enforce_circuit_breaker: true
+
+    # Provider access
+    direct_access: false
+    adapter_only: true
+
+# Quality Gate Guardrails
+quality_gates:
+  pre_commit:
+    enabled: true
+    can_skip: false
+    checks:
+      - linting
+      - formatting
+      - compilation
+
+  pre_push:
+    enabled: true
+    can_skip: false
+    checks:
+      - tests
+      - coverage
+      - security_scan
+
+  pre_release:
+    enabled: true
+    can_skip: false
+    checks:
+      - readiness_score
+      - documentation
+      - security_audit
+
+    thresholds:
+      min_readiness_score: 0.85
+      min_test_coverage: 80
+      max_high_vulnerabilities: 0
+
+# Observability Guardrails
+observability:
+  # Logging requirements
+  logging:
+    require_structured: true
+    require_correlation_id: true
+    require_context: true
+
+    forbidden_in_logs:
+      - "password"
+      - "secret"
+      - "token"
+      - "apiKey"
+
+  # Metrics
+  metrics:
+    require_for_apis: true
+    require_for_workflows: true
+
+    required_metrics:
+      - "duration"
+      - "count"
+      - "errors"
+
+# Git Guardrails
+git:
+  # Commit rules
+  commit:
+    require_conventional: true
+    max_message_length: 72
+    require_body_for_large_changes: true
+    large_change_threshold_files: 5
+
+  # Branch rules
+  branch:
+    protected_branches:
+      - "main"
+      - "master"
+      - "production"
+
+    require_prefix: true
+    allowed_prefixes:
+      - "feat/"
+      - "fix/"
+      - "hotfix/"
+      - "release/"
+      - "chore/"
+
+  # Operations
+  operations:
+    force_push:
+      allowed: false
+      allowed_on_branches:
+        - "feat/*"
+        - "fix/*"
+
+    delete_branch:
+      require_confirmation: true
+      protect_branches:
+        - "main"
+        - "master"
+
+# Performance Guardrails
+performance:
+  # Build times
+  build:
+    max_duration_seconds: 300
+    warn_at_seconds: 180
+
+  # Test times
+  test:
+    max_duration_seconds: 600
+    warn_at_seconds: 300
+
+  # Bundle sizes
+  bundle:
+    max_size_mb: 5
+    warn_at_mb: 3
+
+  # Database queries
+  database:
+    max_query_time_ms: 1000
+    warn_at_ms: 500
+    prevent_n_plus_one: true
+
+# Emergency Overrides
+emergency:
+  # In critical situations, some guardrails can be bypassed
+  # Requires explicit confirmation and justification
+
+  allow_override:
+    - "quality_gates.pre_release"
+    - "testing.min_coverage"
+
+  never_override:
+    - "security.secrets.block_on_detection"
+    - "filesystem.immutable"
+    - "llm.constraints.direct_execution"
+    - "git.operations.force_push" # on protected branches
+
+  override_requires:
+    - explicit_confirmation: true
+    - justification: true
+    - escalation: true
+
+# Notification Rules
+notifications:
+  alert_on:
+    - severity: "critical"
+      channels: ["console", "file"]
+
+    - severity: "high"
+      channels: ["console"]
+
+    - severity: "medium"
+      channels: ["file"]
+
+  alert_events:
+    - "guardrail_violation"
+    - "security_issue_detected"
+    - "quality_gate_failed"
+    - "emergency_override_used"
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  created: "2024-02-17"
+  last_updated: "2024-02-17"
+  enforcement: "strict"

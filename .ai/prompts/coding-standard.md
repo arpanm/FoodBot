@@ -16,6 +16,7 @@ Avoid cleverness. Prefer clarity.
 ### 2. Structure Rules
 
 Each service must follow:
+
 ```
 controller/
 service/
@@ -23,6 +24,7 @@ domain/
 infrastructure/
 contracts/
 ```
+
 No business logic allowed in controllers.
 
 ---
@@ -43,20 +45,24 @@ APIs must be:
 Never throw raw exceptions.
 
 Use:
+
 ```
 DomainError → ApplicationError → APIError
 ```
+
 ---
 
 ### 5. Logging Standard
 
 Every external call must log:
+
 ```
 correlationId
 provider
 latency
 result
 ```
+
 ---
 
 ### 6. Test Requirements
@@ -106,6 +112,7 @@ Generated code must pass:
 - Static analysis
 - Security scan
 - Architectural compliance check
+
 ```
 /generated → AI may overwrite
 /core → AI must patch via diff only

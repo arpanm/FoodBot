@@ -1,0 +1,156 @@
+---
+# Claude Code Hooks Configuration
+# Lifecycle automation for spec-driven development
+
+version: "1.0"
+
+hooks:
+  # Triggered after specifications are created/updated
+  on_spec_created:
+    script: .claude/hooks/on-spec-created.sh
+    enabled: true
+    description: Validates spec completeness and triggers architecture design
+    triggers:
+      - file_pattern: ".ai/context/*.md"
+        events: ["created", "modified"]
+
+  # Triggered after task planning is complete
+  on_task_planned:
+    script: .claude/hooks/on-task-planned.sh
+    enabled: true
+    description: Validates task breakdown and dependency graph
+    triggers:
+      - file_pattern: "task-graph.json"
+        events: ["created", "modified"]
+
+  # Triggered when code is generated (pre-commit)
+  on_code_generated:
+    script: .claude/hooks/on-code-generated.sh
+    enabled: true
+    description: Runs linting, compilation, and architecture validation
+    blocking: true
+    triggers:
+      - file_pattern: "apps/**/*.{ts,tsx,js,jsx}"
+        events: ["created", "modified"]
+      - file_pattern: "services/**/*.{ts,js,java}"
+        events: ["created", "modified"]
+      - file_pattern: "packages/**/*.{ts,js}"
+        events: ["created", "modified"]
+
+  # Triggered when tests fail
+  on_tests_failed:
+    script: .claude/hooks/on-tests-failed.sh
+    enabled: true
+    description: Initiates self-healing loop via Fixer agent
+    auto_remediate: true
+    max_iterations: 3
+    triggers:
+      - command_failure: "pnpm test"
+      - file_pattern: "test-results.json"
+        condition: "has_failures"
+
+  # Triggered when security scan detects issues
+  on_security_risk:
+    script: .claude/hooks/on-security-risk.sh
+    enabled: true
+    description: Blocks deployment on high-severity vulnerabilities
+    blocking: true
+    severity_levels:
+      critical: block
+      high: block
+      medium: warn
+      low: info
+    triggers:
+      - file_pattern: "security-report.json"
+        condition: "has_vulnerabilities"
+
+  # Triggered before creating a release
+  on_release_candidate:
+    script: .claude/hooks/on-release-candidate.sh
+    enabled: true
+    description: Final quality gate validation
+    blocking: true
+    quality_gates:
+      min_test_coverage: 80
+      min_readiness_score: 0.85
+    triggers:
+      - branch: ["main", "release/*"]
+        events: ["pre-merge", "pre-tag"]
+
+# Global hook settings
+settings:
+  # Emit telemetry for all hook executions
+  telemetry_enabled: true
+
+  # Continue pipeline on non-blocking failures
+  fail_fast: false
+
+  # Timeout for hook execution (seconds)
+  timeout: 300
+
+  # Retry policy for transient failures
+  retry:
+    enabled: true
+    max_attempts: 2
+    backoff: exponential
+
+  # Environment variables available to all hooks
+  environment:
+    PROJECT_ROOT: "."
+    AI_CONFIG_DIR: ".ai"
+    TOOLS_DIR: "tools"
+
+# Integration with Claude skills
+skill_integration:
+  # Map hooks to Claude agent skills
+  on_spec_created:
+    invoke_skills:
+      - RequirementExpander
+      - ArchitectureDesigner
+
+  on_task_planned:
+    invoke_skills:
+      - TaskPlanner
+
+  on_code_generated:
+    invoke_skills:
+      - CodeReviewer
+      - StaticAnalyzer
+
+  on_tests_failed:
+    invoke_skills:
+      - Fixer
+      - TestRunner
+
+  on_security_risk:
+    invoke_skills:
+      - SecurityAuditor
+      - Fixer
+
+  on_release_candidate:
+    invoke_skills:
+      - ReleaseValidator
+
+# Observability
+observability:
+  emit_events: true
+  event_endpoint: "http://localhost:8090/events"
+
+  metrics:
+    - hook_execution_duration
+    - hook_success_rate
+    - hook_failure_rate
+    - quality_gate_pass_rate
+
+  alerts:
+    - condition: "security_risk.severity == critical"
+      action: "block_and_notify"
+      channels: ["console", "telemetry"]
+
+    - condition: "tests_failed.iteration >= max_iterations"
+      action: "escalate"
+      channels: ["console", "telemetry"]
+
+    - condition: "release_candidate.readiness_score < threshold"
+      action: "block"
+      channels: ["console"]

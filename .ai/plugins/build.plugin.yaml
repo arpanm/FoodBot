@@ -8,5 +8,4 @@ command: pnpm build
 timeout: 300000
 
 failure_conditions:
-
-- non_zero_exit
+  - non_zero_exit

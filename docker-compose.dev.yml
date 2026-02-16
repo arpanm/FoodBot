@@ -1,0 +1,27 @@
+version: '3.8'
+
+# ============================================
+# Development Override for Docker Compose
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ============================================
+
+services:
+  # Development-specific overrides
+  temporal:
+    environment:
+      - LOG_LEVEL=debug
+    volumes:
+      - ./temporal-config:/etc/temporal/config/dynamicconfig
+      - ./temporal-logs:/var/log/temporal
+
+  redis:
+    command: redis-server --appendonly yes --requirepass foodbot-redis-password --loglevel debug
+
+  elasticsearch:
+    environment:
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g # Increase memory for development
+
+  kafka:
+    environment:
+      - KAFKA_LOG_RETENTION_HOURS=24 # Shorter retention for dev
+      - KAFKA_LOG_LEVEL=DEBUG

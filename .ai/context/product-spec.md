@@ -17,6 +17,7 @@ This system behaves like a goal-driven assistant, not a chatbot.
 ---
 
 ### 1. High-Level Architecture
+
 ```
 Mobile App (Capacitor + React)
         ↓
@@ -36,16 +37,20 @@ ElasticSearch + Kafka Index
         ↓
 Restaurant Agents (NestJS)
 ```
+
 ---
 
 ### 2. LLM Responsibilities (Configurable)
+
 ```
 Model| Responsibility
 Claude| Planning + Workflow Generation
 OpenAI| Validation + Structured Extraction
 Gemini| Fast Classification / Cache Lookup
 ```
+
 ".env" Configuration
+
 ```
 LLM_CLAUDE_ENABLED=true
 LLM_OPENAI_ENABLED=true
@@ -55,6 +60,7 @@ ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 ```
+
 ---
 
 ### 3. UI/UX Requirements (Chat + Rich Cards)
@@ -73,6 +79,7 @@ Chat Experience Must Support:
 - Progress timeline messages
 
 Example Response Payload
+
 ```
 {
   "type": "CARD_LIST",
@@ -86,11 +93,13 @@ Example Response Payload
   ]
 }
 ```
+
 ---
 
 ### 4. Async Job Model
 
 Request
+
 ```
 POST /agent/execute
 {
@@ -98,22 +107,28 @@ POST /agent/execute
   prompt
 }
 ```
+
 Response
+
 ```
 {
   jobId,
   status: "PROCESSING"
 }
 ```
+
 Frontend polls:
+
 ```
 GET /agent/status/{jobId}
 ```
+
 ---
 
 ### 5. Personalization Model (Graph Tree)
 
 Stored in GraphDB:
+
 ```
 User
  └── DayOfWeek
@@ -123,23 +138,29 @@ User
                      └── Restaurant
                           └── Dish
 ```
+
 Used to enrich LLM prompt before reasoning.
 
 ---
 
 ### 6. Vector Cache (Token Reduction)
+
 ```
 Prompt → Intent → Workflow stored in VectorDB.
 ```
+
 Before calling LLM:
+
 ```
 semanticSearch(prompt)
 IF similarity > threshold → reuse workflow
 ELSE → call LLM
 ```
+
 ---
 
 ### 7. Workflow JSON Contract (LLM Output)
+
 ```
 {
   intent: "ORDER_FOOD",
@@ -151,6 +172,7 @@ ELSE → call LLM
   ]
 }
 ```
+
 ---
 
 ### 8. Temporal Execution Requirements
@@ -171,14 +193,15 @@ Each step must update job status.
 ### 9. MCP Layer
 
 Supported Providers
+
 ```
 Provider| Toggle
 Mock| Enabled
 Swiggy MCP| Configurable
 Zomato MCP| Configurable
 ```
-MCP_SWIGGY_ENABLED=true
-MCP_ZOMATO_ENABLED=false
+
+MCP_SWIGGY_ENABLED=true MCP_ZOMATO_ENABLED=false
 
 ---
 
@@ -220,11 +243,13 @@ Indexed Entities:
 - Ratings
 
 Kafka events update index:
+
 ```
 MENU_UPDATED
 ITEM_AVAILABILITY_CHANGED
 PRICE_CHANGED
 ```
+
 ---
 
 ### 12. Restaurant Owner Agent (Capacitor + React)
@@ -266,6 +291,7 @@ Claude must:
 ---
 
 ### 15. Tech Stack Summary
+
 ```
 Layer| Tech
 Frontend| Capacitor + React
@@ -278,6 +304,7 @@ Cache| Redis
 Graph| Neo4j/Nemo
 Vector| Pinecone/Weaviate
 ```
+
 ---
 
 ### 16. Observability
@@ -306,12 +333,15 @@ Track:
 ### 18. Success Definition
 
 System behaves like:
+
 ```
 «A reasoning commerce operator that plans, executes, adapts, and learns — not a chatbot.»
 ```
+
 ---
 
 Contexts:
+
 - CustomerOrdering
 - RestaurantManagement
 - SearchDiscovery

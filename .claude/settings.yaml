@@ -1,0 +1,448 @@
+---
+# Claude Code IDE Integration Settings
+# Configuration for VS Code and other IDEs
+
+version: "1.0"
+
+# Editor Integration
+editor:
+  # VS Code specific
+  vscode:
+    # Inline suggestions
+    inline_suggestions:
+      enabled: true
+      trigger: "auto" # auto, manual
+      delay_ms: 500
+      max_suggestions: 3
+
+    # Hover documentation
+    hover:
+      enabled: true
+      show_examples: true
+      show_references: true
+
+    # Diagnostics
+    diagnostics:
+      enabled: true
+      severity_levels:
+        - "error"
+        - "warning"
+        - "info"
+      update_on_save: true
+
+    # Code actions
+    code_actions:
+      enabled: true
+      show_quick_fixes: true
+      show_refactorings: true
+
+    # Status bar
+    status_bar:
+      show_claude_status: true
+      show_token_usage: true
+      show_quality_score: false
+
+# File Watching
+file_watching:
+  enabled: true
+
+  # Watch patterns
+  watch:
+    - pattern: ".ai/**/*.md"
+      description: "AI documentation"
+      reload_on_change: true
+
+    - pattern: ".ai/**/*.yaml"
+      description: "AI configuration"
+      reload_on_change: true
+
+    - pattern: ".claude/**/*"
+      description: "Claude Code config"
+      reload_on_change: true
+
+    - pattern: "**/*.schema.json"
+      description: "Schema definitions"
+      reload_on_change: true
+
+    - pattern: ".env"
+      description: "Environment variables"
+      reload_on_change: false
+      notify_on_change: true
+
+  # Ignore patterns
+  ignore:
+    - "node_modules/**"
+    - ".git/**"
+    - "dist/**"
+    - "build/**"
+    - "coverage/**"
+    - "*.log"
+
+# Context Management
+context:
+  # Auto-include files
+  auto_include:
+    enabled: true
+    patterns:
+      - ".ai/context/**/*.md"
+      - ".claude/rules.md"
+      - "README.md"
+
+  # Smart context (relevance-based)
+  smart_context:
+    enabled: true
+    max_files: 50
+    relevance_threshold: 0.7
+    include_dependencies: true
+
+  # Context window management
+  window:
+    max_tokens: 100000
+    reserve_for_response: 4000
+    prioritize_recent: true
+
+# Keyboard Shortcuts
+keyboard_shortcuts:
+  # VS Code keybindings (can be customized in VS Code settings)
+  default:
+    - command: "claude.openSpec"
+      key: "cmd+shift+s"
+      when: "editorTextFocus"
+
+    - command: "claude.runHook"
+      key: "cmd+shift+h"
+      when: "editorTextFocus"
+
+    - command: "claude.formatCode"
+      key: "cmd+shift+f"
+      when: "editorTextFocus"
+
+    - command: "claude.runTests"
+      key: "cmd+shift+t"
+      when: "editorTextFocus"
+
+# Notifications
+notifications:
+  enabled: true
+
+  # Notification types
+  types:
+    - type: "quality_gate"
+      enabled: true
+      priority: "high"
+
+    - type: "hook_execution"
+      enabled: true
+      priority: "medium"
+
+    - type: "security_issue"
+      enabled: true
+      priority: "critical"
+
+    - type: "test_failure"
+      enabled: true
+      priority: "high"
+
+  # Display settings
+  display:
+    duration_ms: 5000
+    position: "bottom-right"
+    sound: false
+
+# Terminal Integration
+terminal:
+  enabled: true
+
+  # Auto-open terminal for certain commands
+  auto_open_for:
+    - "test"
+    - "build"
+    - "dev"
+
+  # Terminal settings
+  settings:
+    shell: "bash"
+    cwd: "${workspaceRoot}"
+    clear_before_run: false
+
+# Git Integration
+git:
+  enabled: true
+
+  # Auto-fetch
+  auto_fetch: true
+  fetch_interval_minutes: 5
+
+  # Show git status
+  show_status: true
+  show_branch: true
+
+  # Commit settings
+  commit:
+    template: ".claude/commit-template.txt"
+    validate_format: true
+    require_issue_reference: false
+
+# Diff View
+diff:
+  enabled: true
+  show_inline: true
+  show_side_by_side: false
+
+  # Diff settings
+  ignore_whitespace: false
+  word_diff: false
+
+# Markdown Preview
+markdown:
+  enabled: true
+  preview_on_hover: true
+  render_mermaid: true
+  render_latex: false
+
+# Code Lens
+code_lens:
+  enabled: true
+
+  # Show references
+  show_references: true
+  show_implementations: true
+
+  # Custom code lenses
+  custom:
+    - pattern: "**/*.test.ts"
+      text: "Run Test"
+      command: "claude.runTest"
+
+    - pattern: "**/*.workflow.ts"
+      text: "Validate Workflow"
+      command: "claude.validateWorkflow"
+
+# Workspace Trust
+workspace_trust:
+  enabled: true
+  trust_mode: "prompt" # prompt, always, never
+
+# Performance
+performance:
+  # Caching
+  cache:
+    enabled: true
+    ttl_seconds: 3600
+    max_size_mb: 100
+
+  # Debouncing
+  debounce:
+    typing_ms: 300
+    file_change_ms: 500
+
+  # Throttling
+  throttle:
+    api_calls_per_minute: 60
+    max_concurrent_requests: 5
+
+# Language-Specific Settings
+languages:
+  typescript:
+    format_on_save: true
+    organize_imports: true
+    fix_on_save: ["source.fixAll.eslint"]
+
+  javascript:
+    format_on_save: true
+    organize_imports: true
+    fix_on_save: ["source.fixAll.eslint"]
+
+  json:
+    format_on_save: true
+    validate: true
+
+  yaml:
+    format_on_save: true
+    validate: true
+
+  markdown:
+    format_on_save: false
+    lint: true
+
+# Formatting
+formatting:
+  # Default formatter
+  default_formatter: "prettier"
+
+  # Format on save
+  format_on_save: true
+
+  # Format on paste
+  format_on_paste: false
+
+  # Prettier configuration
+  prettier:
+    use_config: true
+    config_path: ".prettierrc"
+
+# Linting
+linting:
+  enabled: true
+
+  # Auto-fix on save
+  fix_on_save: true
+
+  # Lint on type
+  lint_on_type: false
+
+  # ESLint configuration
+  eslint:
+    use_config: true
+    config_path: ".eslintrc"
+
+# Testing
+testing:
+  # Test explorer
+  explorer:
+    enabled: true
+    auto_detect: true
+
+  # Run tests on save
+  run_on_save: false
+
+  # Coverage
+  coverage:
+    enabled: true
+    show_inline: true
+    highlight_uncovered: true
+
+# Debugging
+debugging:
+  enabled: true
+
+  # Debug settings
+  settings:
+    stop_on_entry: false
+    trace: false
+    source_maps: true
+
+# Snippets
+snippets:
+  enabled: true
+
+  # Custom snippets location
+  custom_snippets: ".claude/snippets/"
+
+# Tasks
+tasks:
+  enabled: true
+
+  # Auto-detect tasks
+  auto_detect: true
+
+  # Task configuration
+  config_file: ".vscode/tasks.json"
+
+# Problem Matcher
+problem_matcher:
+  enabled: true
+
+  # Built-in matchers
+  matchers:
+    - "typescript"
+    - "eslint-stylish"
+    - "jest"
+
+# Extension Recommendations
+extensions:
+  recommendations:
+    - "ms-vscode.vscode-typescript-next"
+    - "dbaeumer.vscode-eslint"
+    - "esbenp.prettier-vscode"
+    - "bradlc.vscode-tailwindcss"
+    - "prisma.prisma"
+    - "graphql.vscode-graphql"
+
+# Theme & Appearance
+appearance:
+  # Color theme
+  color_theme: "auto" # auto, light, dark
+
+  # Icon theme
+  icon_theme: "auto"
+
+  # Font settings
+  font:
+    family: "Monaco, 'Courier New', monospace"
+    size: 12
+    line_height: 1.5
+
+# Accessibility
+accessibility:
+  enabled: true
+  high_contrast: false
+  keyboard_navigation: true
+  screen_reader_support: true
+
+# Telemetry
+telemetry:
+  enabled: true
+  anonymize: true
+  endpoint: "${OBSERVABILITY_URL}"
+
+  # Tracked events
+  track:
+    - "command_executed"
+    - "file_saved"
+    - "test_run"
+    - "hook_triggered"
+
+# Auto-Save
+auto_save:
+  enabled: true
+  delay_ms: 1000
+  on_focus_change: true
+  on_window_change: true
+
+# Multi-Root Workspace
+multi_root:
+  enabled: true
+  workspace_file: "foodbot.code-workspace"
+
+# Remote Development
+remote:
+  # SSH
+  ssh:
+    enabled: false
+    config_file: "~/.ssh/config"
+
+  # Containers
+  containers:
+    enabled: true
+    dockerfile: "Dockerfile.dev"
+
+# Security
+security:
+  # Sensitive file detection
+  detect_sensitive_files: true
+  sensitive_patterns:
+    - "**/.env"
+    - "**/secrets/**"
+    - "**/*.pem"
+    - "**/*.key"
+
+  # Confirmation prompts
+  confirm_file_deletion: true
+  confirm_destructive_actions: true
+
+# Backup & Recovery
+backup:
+  enabled: true
+  auto_backup: true
+  backup_interval_minutes: 5
+  max_backups: 10
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  created: "2024-02-17"
+  last_updated: "2024-02-17"
+  compatible_with:
+    - "vscode: ^1.80.0"
+    - "claude-code: ^1.0.0"

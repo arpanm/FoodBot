@@ -1,13 +1,11 @@
 entry_context:
-
-- .ai/context/product-spec.md
-- .ai/orchestration/claude-multi-agent.md
+  - .ai/context/product-spec.md
+  - .ai/orchestration/claude-multi-agent.md
 
 execution_rules:
-
-- enforce_spec_driven: true
-- require_tests: true
-- allow_self_heal: true
+  - enforce_spec_driven: true
+  - require_tests: true
+  - allow_self_heal: true
 
 llm_routing:
 planner: claude

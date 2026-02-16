@@ -1,34 +1,39 @@
 #!/usr/bin/env node
 
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
-const { assertPathAllowed, assertDiffFormat } = require("../utils/guardrails");
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
-async function main() {
-try {
-const input = JSON.parse(fs.readFileSync(0, "utf-8"));
+import { assertPathAllowed, assertDiffFormat } from '../utils/guardrails.js';
 
-const { patch, target_paths } = input;
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function main() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const input = JSON.parse(fs.readFileSync(0, 'utf-8'));
 
-assertDiffFormat(patch);
-target_paths.forEach(assertPathAllowed);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { patch, target_paths } = input;
 
-const patchFile = path.join(process.cwd(), ".tmp_patch.diff");
-fs.writeFileSync(patchFile, patch);
+    assertDiffFormat(patch);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    target_paths.forEach(assertPathAllowed);
 
-console.log("Applying patch...");
-execSync(`git apply ${patchFile}`, { stdio: "inherit" });
+    const patchFile = path.join(process.cwd(), '.tmp_patch.diff');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    fs.writeFileSync(patchFile, patch);
 
-fs.unlinkSync(patchFile);
+    console.warn('Applying patch...');
+    execSync(`git apply ${patchFile}`, { stdio: 'inherit' });
 
-console.log("Patch applied successfully.");
-process.exit(0);
+    fs.unlinkSync(patchFile);
 
-} catch (err) {
-console.error("Patch failed:", err.message);
-process.exit(1);
+    console.warn('Patch applied successfully.');
+    process.exit(0);
+  } catch (err) {
+    console.error('Patch failed:', err.message);
+    process.exit(1);
+  }
 }
-}
 
-main();
+void main();
