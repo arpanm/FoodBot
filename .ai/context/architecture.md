@@ -12,7 +12,7 @@ LLMs must never directly call infrastructure or mutate state.
 ---
 
 2. Layered Architecture
-
+```
 UI (Capacitor + React)
     ↓
 Agent Gateway (NestJS)
@@ -30,11 +30,11 @@ MCP Aggregation Layer (Spring Boot)
 Search + Index (Elasticsearch + Kafka)
     ↓
 Restaurant Service APIs
-
+```
 ---
 
 3. Responsibilities by Layer
-
+```
 Layer| Responsibility
 Frontend| Conversational UI + structured actions
 Gateway| Async job management
@@ -43,18 +43,18 @@ Temporal| Reliable execution
 MCP Layer| Normalize providers (Mock/Swiggy/Zomato)
 Search Layer| Discoverability & filtering
 Restaurant Services| Domain ownership
-
+```
 ---
 
 4. State Ownership Rules
-
+```
 Data| Owner
 Orders| Restaurant Service
 Search Index| Elasticsearch
 Preferences| GraphDB
 Session State| Redis
 Workflow State| Temporal
-
+```
 LLMs must not become state holders.
 
 ---

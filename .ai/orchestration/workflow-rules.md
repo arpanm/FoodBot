@@ -9,9 +9,9 @@ No service may execute user intent directly.
 ---
 
 2. Workflow Lifecycle
-
+```
 Prompt → Plan → Validate → Execute → Observe → Adapt → Complete
-
+```
 ---
 
 3. Mandatory Workflow Properties
@@ -27,13 +27,13 @@ Every workflow must include:
 ---
 
 4. Execution Rules
-
+```
 Rule| Description
 No Direct Calls| Agents cannot call MCP APIs directly
 Temporal Only| Execution must go through Temporal
 Retry First| Failures retried before escalation
 Compensation Ready| Each action must support undo
-
+```
 ---
 
 5. Parallelization Policy
@@ -59,13 +59,13 @@ Claude may regenerate sub-workflow, not entire plan.
 7. Observability Requirement
 
 Each step must emit:
-
+```
 jobId
 stepName
 status
 duration
 provider
-
+```
 ---
 
 8. Provider Switching Rule

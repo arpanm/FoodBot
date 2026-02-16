@@ -32,7 +32,7 @@ Self-Healing SDLC| Agents generate → test → fix → validate
 ---
 
 🏗️ Architecture Overview
-
+```
 Capacitor + React Apps (Customer / Restaurant Owner)
             ↓
 NestJS Agent Gateway (Async Job API)
@@ -50,22 +50,22 @@ Java Spring MCP Aggregation Layer
 Elasticsearch + Kafka Index
             ↓
 Restaurant Services / External MCP Providers
-
+```
 ---
 
 🤖 Multi-LLM Strategy
-
+```
 Model| Role
 Claude| Planning + Workflow Generation
 OpenAI| Validation + Structured Reasoning
 Gemini| Fast Classification / Cache Routing
-
+```
 Configurable via ".env".
 
 ---
 
 🧩 Monorepo Structure
-
+```
 .ai/                  → AI control plane (rules, skills, orchestration)
 apps/
   ├── customer-app    → Capacitor + React user app
@@ -84,25 +84,25 @@ packages/
 
 tools/                → Safe execution layer (patch, workflow, telemetry)
 infra/                → Docker / Temporal / Elastic setup
-
+```
 ---
 
 📜 Spec-Driven Development (SDD)
 
 This repository is governed by machine-readable intent:
-
+```
 .ai/context/          → Product + architecture context
 .ai/skills/           → Engineering agents
 .ai/plugins/          → Execution bindings
 .ai/schema/           → Workflow contracts
 .ai/memory/           → Architectural decisions
-
+```
 Agents MUST read ".ai/config.yaml" before acting.
 
 ---
 
 🔄 Execution Flow
-
+```
 1️⃣ User Prompt
 
 Frontend sends:
@@ -128,7 +128,7 @@ Retries, compensation, fallback providers handled automatically.
 6️⃣ UI Polls Job Status
 
 User sees live progress updates.
-
+```
 ---
 
 🔐 Guardrails
@@ -156,7 +156,7 @@ pnpm start:dev
 ---
 
 🌐 Required Services
-
+```
 Service| Purpose
 Temporal| Durable orchestration
 Redis| Session + personalization
@@ -165,16 +165,16 @@ Elasticsearch| Discovery/search
 Kafka| Index updates
 NestJS| Agent gateway
 Spring Boot| MCP aggregator
-
+```
 ---
 
 🔌 MCP Provider Support
-
+```
 Provider| Status
 Mock| Enabled by default
 Swiggy MCP| Configurable
 Zomato MCP| Configurable
-
+```
 Toggle via environment config.
 
 ---
@@ -208,7 +208,7 @@ Requirement Expansion
 🔑 Environment Configuration
 
 Create ".env":
-
+```
 LLM_CLAUDE_ENABLED=true
 LLM_OPENAI_ENABLED=true
 LLM_GEMINI_ENABLED=true
@@ -216,7 +216,7 @@ LLM_GEMINI_ENABLED=true
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 GEMINI_API_KEY=
-
+```
 Never commit secrets.
 
 ---
