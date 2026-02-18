@@ -11,11 +11,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { PaymentService } from './payment.service';
-import { InitiatePaymentDto, ConfirmPaymentDto } from './dto/payment.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Public } from '../auth/decorators/public.decorator';
 import { Request } from 'express';
+
+import { Public } from '../auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { InitiatePaymentDto, ConfirmPaymentDto } from './dto/payment.dto';
+import { PaymentService } from './payment.service';
+
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string };

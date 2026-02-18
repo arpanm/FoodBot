@@ -13,9 +13,16 @@
  * - Compensation logic
  */
 
+import { WorkflowFailedError } from '@temporalio/client';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
-import { WorkflowFailedError } from '@temporalio/client';
+
+import {
+  createPlaceOrderInput,
+  createOrder,
+  createSuccessfulPaymentResult,
+  createFailedPaymentResult,
+} from '../test/factories/workflow-input.factory';
 import {
   mockValidateCart,
   mockCheckInventory,
@@ -30,12 +37,6 @@ import {
   resetAllMocks,
   getAllMockActivities,
 } from '../test/mocks/activity-mocks';
-import {
-  createPlaceOrderInput,
-  createOrder,
-  createSuccessfulPaymentResult,
-  createFailedPaymentResult,
-} from '../test/factories/workflow-input.factory';
 
 describe('PlaceOrderWorkflow', () => {
   let testEnv: TestWorkflowEnvironment;

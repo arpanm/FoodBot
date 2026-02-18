@@ -7,12 +7,13 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Restaurant } from './restaurant.entity';
-import { Order } from './order.entity';
-import { Cart } from './cart.entity';
-import { Payment } from './payment.entity';
-import { Feedback } from './feedback.entity';
+
 import { Address } from './address.entity';
+import { Cart } from './cart.entity';
+import { Feedback } from './feedback.entity';
+import { Order } from './order.entity';
+import { Payment } from './payment.entity';
+import { Restaurant } from './restaurant.entity';
 
 export enum UserRole {
   CUSTOMER = 'customer',

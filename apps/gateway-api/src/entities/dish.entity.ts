@@ -8,6 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+
 import { Restaurant } from './restaurant.entity';
 
 @Entity('dishes')

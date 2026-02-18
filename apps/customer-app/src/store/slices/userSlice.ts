@@ -1,6 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { userService } from '../../services/user.service';
-import { User, UserPreferences, Address } from '../../types/models';
+import type { User, UserPreferences, Address } from '../../types/models';
 
 interface UserState {
   currentUser: User | null;

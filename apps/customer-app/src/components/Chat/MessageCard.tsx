@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
+
+import type { Message } from '../../types/models';
 import { Card } from '../common/Card';
-import { Message } from '../../types/models';
 
 export interface MessageCardProps {
   message: Message;

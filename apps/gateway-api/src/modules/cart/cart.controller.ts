@@ -9,10 +9,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { CartService } from './cart.service';
 import { AddItemDto, UpdateItemDto } from './dto/add-item.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string };
@@ -53,14 +55,14 @@ export class CartController {
   }
 
   @Delete('items/:id')
-  removeItem(@Req() req: AuthenticatedRequest, @Param('id') itemId: string) {
-    this.cartService.removeItem(req.user.userId, itemId);
+  async removeItem(@Req() req: AuthenticatedRequest, @Param('id') itemId: string) {
+    await this.cartService.removeItem(req.user.userId, itemId);
     return { message: 'Item removed from cart' };
   }
 
   @Delete()
-  clearCart(@Req() req: AuthenticatedRequest) {
-    this.cartService.clearCart(req.user.userId);
+  async clearCart(@Req() req: AuthenticatedRequest) {
+    await this.cartService.clearCart(req.user.userId);
     return { message: 'Cart cleared successfully' };
   }
 }

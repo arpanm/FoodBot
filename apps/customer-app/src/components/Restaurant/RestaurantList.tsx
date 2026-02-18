@@ -1,9 +1,12 @@
 import React, { useMemo } from 'react';
+
 import { useAppSelector } from '../../hooks/useRedux';
-import { RestaurantCard } from './RestaurantCard';
-import { LoadingSpinner } from '../common/LoadingSpinner';
+import type { Restaurant } from '../../types/models';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { Restaurant } from '../../types/models';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+
+import { RestaurantCard } from './RestaurantCard';
+
 
 export interface RestaurantListProps {
   restaurants?: Restaurant[];

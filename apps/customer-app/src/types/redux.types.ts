@@ -3,7 +3,7 @@
  * Types for Redux store state and actions
  */
 
-import {
+import type {
   Message,
   Restaurant,
   Dish,

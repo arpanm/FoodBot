@@ -1,7 +1,8 @@
 import React from 'react';
-import { Card } from '../common/Card';
+
+import type { Order } from '../../types/models';
 import { Button } from '../common/Button';
-import { Order } from '../../types/models';
+import { Card } from '../common/Card';
 
 export interface OrderDetailProps {
   order: Order | null;

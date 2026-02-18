@@ -1,8 +1,9 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Order } from '../../entities/order.entity';
+
 import { OrderItem } from '../../entities/order-item.entity';
+import { Order } from '../../entities/order.entity';
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   pending: ['confirmed', 'preparing', 'cancelled'],

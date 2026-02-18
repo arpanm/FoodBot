@@ -1,14 +1,15 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { User } from '../entities/user.entity';
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+
 import { Address } from '../entities/address.entity';
-import { Restaurant } from '../entities/restaurant.entity';
-import { Dish } from '../entities/dish.entity';
-import { Order } from '../entities/order.entity';
-import { OrderItem } from '../entities/order-item.entity';
-import { Cart } from '../entities/cart.entity';
 import { CartItem } from '../entities/cart-item.entity';
-import { Payment } from '../entities/payment.entity';
+import { Cart } from '../entities/cart.entity';
+import { Dish } from '../entities/dish.entity';
 import { Feedback } from '../entities/feedback.entity';
+import { OrderItem } from '../entities/order-item.entity';
+import { Order } from '../entities/order.entity';
+import { Payment } from '../entities/payment.entity';
+import { Restaurant } from '../entities/restaurant.entity';
+import { User } from '../entities/user.entity';
 import { Workflow } from '../entities/workflow.entity';
 
 const entities = [

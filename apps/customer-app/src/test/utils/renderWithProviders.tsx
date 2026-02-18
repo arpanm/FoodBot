@@ -1,8 +1,12 @@
-import React, { ReactElement } from 'react';
-import { render, RenderOptions, RenderResult } from '@testing-library/react';
+import type { RenderOptions, RenderResult } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { mockStore, MockStoreState } from './mockStore';
+
+import type { MockStoreState } from './mockStore';
+import { mockStore } from './mockStore';
 
 /**
  * Custom render options extending RTL render options

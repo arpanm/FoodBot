@@ -1,6 +1,8 @@
-import { configureStore, EnhancedStore } from '@reduxjs/toolkit';
+import type { EnhancedStore } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
-import {
+
+import type {
   ChatState,
   RestaurantState,
   DishState,

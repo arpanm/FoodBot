@@ -1,8 +1,9 @@
-import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User, UserRole } from '../../entities/user.entity';
-import { Restaurant } from '../../entities/restaurant.entity';
+import { DataSource } from 'typeorm';
+
 import { Dish } from '../../entities/dish.entity';
+import { Restaurant } from '../../entities/restaurant.entity';
+import { User, UserRole } from '../../entities/user.entity';
 
 /**
  * Initial seed script for the FoodBot database.
@@ -23,7 +24,7 @@ const seed = async (): Promise<void> => {
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'foodbot',
-    entities: [__dirname + '/../../entities/*.entity{.ts,.js}'],
+    entities: [`${__dirname  }/../../entities/*.entity{.ts,.js}`],
     synchronize: true,
     logging: true,
   });

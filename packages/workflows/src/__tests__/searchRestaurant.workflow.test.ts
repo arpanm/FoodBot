@@ -14,9 +14,15 @@
  * - Result ranking
  */
 
+import { WorkflowFailedError } from '@temporalio/client';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
-import { WorkflowFailedError } from '@temporalio/client';
+
+import {
+  createUserContext,
+  createRestaurants,
+  createSearchRestaurantInput,
+} from '../test/factories/workflow-input.factory';
 import {
   mockLoadUserContext,
   mockCallMCPSearch,
@@ -28,11 +34,6 @@ import {
   resetAllMocks,
   getAllMockActivities,
 } from '../test/mocks/activity-mocks';
-import {
-  createUserContext,
-  createRestaurants,
-  createSearchRestaurantInput,
-} from '../test/factories/workflow-input.factory';
 
 describe('SearchRestaurantWorkflow', () => {
   let testEnv: TestWorkflowEnvironment;

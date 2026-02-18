@@ -72,7 +72,7 @@ export class RestaurantFactory {
     const defaultRestaurant: MockRestaurant = {
       id: faker.string.uuid(),
       ownerId: faker.string.uuid(),
-      name: faker.company.name() + ' Restaurant',
+      name: `${faker.company.name()  } Restaurant`,
       description: faker.lorem.paragraph(),
       cuisineTypes: faker.helpers.arrayElements(this.CUISINE_TYPES, 2),
       address: {

@@ -1,11 +1,12 @@
-import { apiClient } from './api/axios.config';
-import {
+import type {
   GetCartResponse,
   AddCartItemRequest,
   AddCartItemResponse,
   UpdateCartItemRequest,
   UpdateCartItemResponse
 } from '../types/api.types';
+
+import { apiClient } from './api/axios.config';
 
 class CartService {
   async getCart(): Promise<GetCartResponse> {

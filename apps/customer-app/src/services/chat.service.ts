@@ -1,5 +1,6 @@
+import type { SendMessageResponse, JobStatusResponse, ChatHistoryResponse } from '../types/api.types';
+
 import { apiClient } from './api/axios.config';
-import { SendMessageResponse, JobStatusResponse, ChatHistoryResponse } from '../types/api.types';
 
 class ChatService {
   async sendMessage(message: string): Promise<SendMessageResponse> {

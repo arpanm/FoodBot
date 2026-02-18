@@ -11,13 +11,16 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { DishService } from './dish.service';
-import { CreateDishDto, UpdateAvailabilityDto } from './dto/create-dish.dto';
+import { Request } from 'express';
+
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Public } from '../auth/decorators/public.decorator';
-import { Request } from 'express';
+
+import { DishService } from './dish.service';
+import { CreateDishDto, UpdateAvailabilityDto } from './dto/create-dish.dto';
+
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string; restaurantId?: string };
@@ -74,9 +77,9 @@ export class DishController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('restaurant_owner', 'admin')
   @Delete(':id')
-  delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  async delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const restaurantId = req.user.restaurantId || '';
-    this.dishService.delete(id, restaurantId);
+    await this.dishService.delete(id, restaurantId);
     return { message: 'Dish deleted successfully' };
   }
 

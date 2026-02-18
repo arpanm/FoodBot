@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import '@testing-library/jest-dom';
 import { renderWithProviders } from '../../../test/utils/renderWithProviders';
 import { ChatInterface } from '../ChatInterface';
@@ -236,7 +237,7 @@ describe('ChatInterface Component', () => {
     it('clears input after sending message', async () => {
       renderWithProviders(<ChatInterface />);
 
-      const input = screen.getByTestId('chat-input') as HTMLInputElement;
+      const input = screen.getByTestId('chat-input');
 
       await userEvent.type(input, 'Test message');
       expect(input).toHaveValue('Test message');

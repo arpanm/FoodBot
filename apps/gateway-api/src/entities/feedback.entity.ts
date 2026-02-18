@@ -8,9 +8,10 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
+
 import { Order } from './order.entity';
 import { Restaurant } from './restaurant.entity';
+import { User } from './user.entity';
 
 @Entity('feedbacks')
 export class Feedback {

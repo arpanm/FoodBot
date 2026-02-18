@@ -1,8 +1,11 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
+import * as crypto from 'node:crypto';
+
+import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrderService } from '../order/order.service';
+
 import { Payment } from '../../entities/payment.entity';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class PaymentService implements OnModuleInit {
@@ -148,7 +151,11 @@ export class PaymentService implements OnModuleInit {
       throw new BadRequestException('Missing webhook signature');
     }
 
-    if (webhookSignature !== 'valid-signature') {
+    // Verify webhook signature using crypto.timingSafeEqual to prevent timing attacks
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET || 'test-webhook-secret';
+    const expectedSignature = this.computeWebhookSignature(data, secret);
+
+    if (!this.verifySignature(webhookSignature, expectedSignature)) {
       throw new BadRequestException('Invalid signature');
     }
 
@@ -165,6 +172,24 @@ export class PaymentService implements OnModuleInit {
     return { received: true };
   }
 
+  private computeWebhookSignature(payload: any, secret: string): string {
+    return crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(payload))
+      .digest('hex');
+  }
+
+  private verifySignature(provided: string, expected: string): boolean {
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(provided),
+        Buffer.from(expected)
+      );
+    } catch {
+      return false;
+    }
+  }
+
   async getPaymentStatus(userId: string, paymentId: string): Promise<{
     paymentId: string;
     status: string;
@@ -179,7 +204,7 @@ export class PaymentService implements OnModuleInit {
     }
 
     if (payment.userId !== userId) {
-      throw new BadRequestException('Forbidden resource');
+      throw new ForbiddenException('Forbidden resource');
     }
 
     const result: {

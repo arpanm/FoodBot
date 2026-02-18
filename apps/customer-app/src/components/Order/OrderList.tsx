@@ -1,8 +1,10 @@
 import React from 'react';
-import { OrderCard } from './OrderCard';
-import { LoadingSpinner } from '../common/LoadingSpinner';
+
+import type { Order } from '../../types/models';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { Order } from '../../types/models';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+
+import { OrderCard } from './OrderCard';
 
 export interface OrderListProps {
   orders: Order[];

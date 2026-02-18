@@ -1,7 +1,9 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { orderService } from '../../services/order.service';
-import { Order } from '../../types/models';
-import { CreateOrderRequest } from '../../types/api.types';
+import type { CreateOrderRequest } from '../../types/api.types';
+import type { Order } from '../../types/models';
 
 interface OrderState {
   orders: Order[];

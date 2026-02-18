@@ -1,8 +1,9 @@
 import { screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
 import { renderWithProviders } from '../../../test/utils/renderWithProviders';
+import type { Restaurant } from '../../../types/models';
 import { RestaurantList } from '../RestaurantList';
-import { Restaurant } from '../../../types/models';
 
 /**
  * RestaurantList Component Tests

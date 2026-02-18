@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Dish } from '../../entities/dish.entity';
 
 @Injectable()
@@ -160,7 +161,7 @@ export class DishService implements OnModuleInit {
     limit?: number;
   }): Promise<{ dishes: Dish[]; total: number; page: number; limit: number }> {
     // Use in-memory filtering for complex queries to maintain test compatibility
-    let allDishes = await this.dishRepository.find();
+    const allDishes = await this.dishRepository.find();
     let filtered = allDishes.filter((d) => d.isAvailable);
 
     if (query.query) {

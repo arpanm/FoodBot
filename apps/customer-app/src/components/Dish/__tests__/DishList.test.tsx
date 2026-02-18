@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
+import type { Dish } from '../../../types/models';
 import { DishList } from '../DishList';
-import { Dish } from '../../../types/models';
 
 /**
  * DishList Component Tests

@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios from 'axios';
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000/api/v1';
 

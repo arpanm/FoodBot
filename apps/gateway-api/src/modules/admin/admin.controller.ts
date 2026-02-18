@@ -7,11 +7,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { AdminService } from './admin.service';
-import { ApproveRestaurantDto, RejectRestaurantDto, SuspendUserDto } from './dto/admin.dto';
+
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+
+import { AdminService } from './admin.service';
+import { ApproveRestaurantDto, RejectRestaurantDto, SuspendUserDto } from './dto/admin.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20,7 +22,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  getUsers(@Query() query: Record<string, unknown>) {
+  async getUsers(@Query() query: Record<string, unknown>) {
     return this.adminService.getUsers({
       role: query.role as string | undefined,
       search: query.search as string | undefined,
@@ -30,7 +32,7 @@ export class AdminController {
   }
 
   @Get('restaurants/pending')
-  getPendingRestaurants(@Query() query: Record<string, unknown>) {
+  async getPendingRestaurants(@Query() query: Record<string, unknown>) {
     return this.adminService.getPendingRestaurants({
       page: query.page ? Number(query.page) : undefined,
       limit: query.limit ? Number(query.limit) : undefined,
@@ -38,27 +40,27 @@ export class AdminController {
   }
 
   @Put('restaurants/:id/approve')
-  approveRestaurant(@Param('id') id: string, @Body() dto: ApproveRestaurantDto) {
+  async approveRestaurant(@Param('id') id: string, @Body() dto: ApproveRestaurantDto) {
     return this.adminService.approveRestaurant(id, dto.approvalNotes);
   }
 
   @Put('restaurants/:id/reject')
-  rejectRestaurant(@Param('id') id: string, @Body() dto: RejectRestaurantDto) {
+  async rejectRestaurant(@Param('id') id: string, @Body() dto: RejectRestaurantDto) {
     return this.adminService.rejectRestaurant(id, dto.rejectionReason);
   }
 
   @Get('dashboard/stats')
-  getDashboardStats() {
+  async getDashboardStats() {
     return this.adminService.getDashboardStats();
   }
 
   @Put('users/:id/suspend')
-  suspendUser(@Param('id') id: string, @Body() dto: SuspendUserDto) {
+  async suspendUser(@Param('id') id: string, @Body() dto: SuspendUserDto) {
     return this.adminService.suspendUser(id, dto.reason, dto.duration || 7);
   }
 
   @Put('users/:id/reactivate')
-  reactivateUser(@Param('id') id: string) {
+  async reactivateUser(@Param('id') id: string) {
     return this.adminService.reactivateUser(id);
   }
 }

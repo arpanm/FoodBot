@@ -5,12 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToOne,
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
+
 import { Order } from './order.entity';
+import { User } from './user.entity';
 
 export enum PaymentMethod {
   CARD = 'card',
@@ -35,7 +35,7 @@ export class Payment {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId!: string;
 
-  @OneToOne(() => Order, (order) => order.payment, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, (order) => order.payment, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 

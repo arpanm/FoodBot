@@ -1,30 +1,36 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
-import { RestaurantService } from '../restaurant/restaurant.service';
-import { OrderService } from '../order/order.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import { Order } from '../../entities/order.entity';
+import { Restaurant } from '../../entities/restaurant.entity';
+import { User } from '../../entities/user.entity';
 import { EmailService } from '../../services/email.service';
 
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
-  private suspendedUsers = new Map<string, { reason: string; duration: number; suspendedAt: Date }>();
 
   constructor(
-    private readonly authService: AuthService,
-    private readonly restaurantService: RestaurantService,
-    private readonly orderService: OrderService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Restaurant)
+    private readonly restaurantRepository: Repository<Restaurant>,
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
     private readonly emailService: EmailService,
   ) {}
 
-  getUsers(filters: { role?: string; search?: string; page?: number; limit?: number }): {
+  async getUsers(filters: { role?: string; search?: string; page?: number; limit?: number }): Promise<{
     users: unknown[];
     total: number;
     page: number;
     limit: number;
-  } {
-    let users = this.authService.getUsers().map((u) => {
+  }> {
+    const allUsers = await this.userRepository.find();
+    let users = allUsers.map((u) => {
       const { password: _pw, ...rest } = u;
-      return { ...rest, isSuspended: this.suspendedUsers.has(u.id) };
+      return rest;
     });
 
     if (filters.role) {
@@ -49,13 +55,13 @@ export class AdminService {
     return { users: paginated, total, page, limit };
   }
 
-  getPendingRestaurants(filters: { page?: number; limit?: number }): {
+  async getPendingRestaurants(filters: { page?: number; limit?: number }): Promise<{
     restaurants: unknown[];
     total: number;
     page: number;
     limit: number;
-  } {
-    const allRestaurants = this.restaurantService.getRestaurants();
+  }> {
+    const allRestaurants = await this.restaurantRepository.find();
     const pending = allRestaurants.filter((r) => !r.isApproved);
 
     const total = pending.length;
@@ -67,14 +73,13 @@ export class AdminService {
     return { restaurants: paginated, total, page, limit };
   }
 
-  approveRestaurant(restaurantId: string, approvalNotes?: string): {
+  async approveRestaurant(restaurantId: string, approvalNotes?: string): Promise<{
     id: string;
     isApproved: boolean;
     isActive: boolean;
     notificationSent: boolean;
-  } {
-    const restaurants = this.restaurantService.getRestaurants();
-    const restaurant = restaurants.find((r) => r.id === restaurantId);
+  }> {
+    const restaurant = await this.restaurantRepository.findOne({ where: { id: restaurantId } });
     if (!restaurant) {
       throw new NotFoundException('Restaurant not found');
     }
@@ -87,7 +92,7 @@ export class AdminService {
 
     restaurant.isApproved = true;
     restaurant.isActive = true;
-    restaurant.updatedAt = new Date();
+    await this.restaurantRepository.save(restaurant);
 
     // Send notification
     this.emailService.sendNotification(
@@ -104,21 +109,20 @@ export class AdminService {
     };
   }
 
-  rejectRestaurant(restaurantId: string, rejectionReason: string): {
+  async rejectRestaurant(restaurantId: string, rejectionReason: string): Promise<{
     id: string;
     isApproved: boolean;
     isActive: boolean;
     notificationSent: boolean;
-  } {
-    const restaurants = this.restaurantService.getRestaurants();
-    const restaurant = restaurants.find((r) => r.id === restaurantId);
+  }> {
+    const restaurant = await this.restaurantRepository.findOne({ where: { id: restaurantId } });
     if (!restaurant) {
       throw new NotFoundException('Restaurant not found');
     }
 
     restaurant.isApproved = false;
     restaurant.isActive = false;
-    restaurant.updatedAt = new Date();
+    await this.restaurantRepository.save(restaurant);
 
     // Send notification
     this.emailService.sendNotification(
@@ -135,20 +139,20 @@ export class AdminService {
     };
   }
 
-  getDashboardStats(): {
+  async getDashboardStats(): Promise<{
     totalUsers: number;
     totalRestaurants: number;
     totalOrders: number;
     pendingApprovals: number;
     revenue: number;
-  } {
-    const users = this.authService.getUsers();
-    const restaurants = this.restaurantService.getRestaurants();
-    const orders = this.orderService.getOrders();
+  }> {
+    const users = await this.userRepository.find();
+    const restaurants = await this.restaurantRepository.find();
+    const orders = await this.orderRepository.find();
     const pendingRestaurants = restaurants.filter((r) => !r.isApproved);
     const revenue = orders
       .filter((o) => o.paymentStatus === 'completed')
-      .reduce((sum, o) => sum + o.total, 0);
+      .reduce((sum, o) => sum + Number(o.total), 0);
 
     return {
       totalUsers: users.length,
@@ -159,15 +163,15 @@ export class AdminService {
     };
   }
 
-  suspendUser(userId: string, reason: string, duration: number): {
+  async suspendUser(userId: string, reason: string, duration: number): Promise<{
     id: string;
     isSuspended: boolean;
-  } {
-    this.suspendedUsers.set(userId, {
-      reason,
-      duration,
-      suspendedAt: new Date(),
-    });
+  }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      user.isSuspended = true;
+      await this.userRepository.save(user);
+    }
 
     return {
       id: userId,
@@ -175,11 +179,15 @@ export class AdminService {
     };
   }
 
-  reactivateUser(userId: string): {
+  async reactivateUser(userId: string): Promise<{
     id: string;
     isSuspended: boolean;
-  } {
-    this.suspendedUsers.delete(userId);
+  }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      user.isSuspended = false;
+      await this.userRepository.save(user);
+    }
 
     return {
       id: userId,

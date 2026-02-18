@@ -9,8 +9,9 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
+
 import { CartItem } from './cart-item.entity';
+import { User } from './user.entity';
 
 @Entity('carts')
 export class Cart {

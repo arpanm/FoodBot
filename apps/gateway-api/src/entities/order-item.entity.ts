@@ -6,6 +6,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+
 import { Order } from './order.entity';
 
 @Entity('order_items')

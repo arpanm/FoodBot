@@ -1,5 +1,5 @@
+import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 
 /**

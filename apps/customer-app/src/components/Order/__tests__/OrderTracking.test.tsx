@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
-import { OrderTracking, OrderTrackingProps } from '../OrderTracking';
+import type { OrderTrackingProps } from '../OrderTracking';
+import { OrderTracking } from '../OrderTracking';
 
 /**
  * OrderTracking Component Tests

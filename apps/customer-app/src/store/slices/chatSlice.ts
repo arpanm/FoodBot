@@ -1,6 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { chatService } from '../../services/chat.service';
-import { Message } from '../../types/models';
+import type { Message } from '../../types/models';
 
 interface ChatState {
   messages: Message[];

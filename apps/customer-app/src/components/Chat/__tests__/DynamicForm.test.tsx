@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
-import { DynamicForm, FormField } from '../DynamicForm';
+import type { FormField } from '../DynamicForm';
+import { DynamicForm } from '../DynamicForm';
 
 /**
  * DynamicForm Component Tests

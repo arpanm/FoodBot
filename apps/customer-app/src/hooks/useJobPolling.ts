@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+
 import { chatService } from '../services/chat.service';
-import { Message } from '../types/models';
+import type { Message } from '../types/models';
 
 export interface UseJobPollingOptions {
   interval?: number;

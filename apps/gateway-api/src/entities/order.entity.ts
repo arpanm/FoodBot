@@ -6,15 +6,15 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Restaurant } from './restaurant.entity';
+
+import { Feedback } from './feedback.entity';
 import { OrderItem } from './order-item.entity';
 import { Payment } from './payment.entity';
-import { Feedback } from './feedback.entity';
+import { Restaurant } from './restaurant.entity';
+import { User } from './user.entity';
 
 export enum OrderStatus {
   PENDING = 'pending',
@@ -112,8 +112,8 @@ export class Order {
     timestamp: Date;
   }>;
 
-  @OneToOne(() => Payment, (payment) => payment.order)
-  payment?: Payment;
+  @OneToMany(() => Payment, (payment) => payment.order)
+  payments?: Payment[];
 
   @OneToMany(() => Feedback, (feedback) => feedback.order)
   feedbacks!: Feedback[];

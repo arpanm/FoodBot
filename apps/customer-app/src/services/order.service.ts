@@ -1,11 +1,12 @@
-import { apiClient } from './api/axios.config';
-import { Order } from '../types/models';
-import {
+import type {
   CreateOrderRequest,
   CreateOrderResponse,
   TrackOrderResponse,
   CancelOrderResponse
 } from '../types/api.types';
+import type { Order } from '../types/models';
+
+import { apiClient } from './api/axios.config';
 
 class OrderService {
   async getAll(): Promise<Order[]> {

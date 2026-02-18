@@ -4,9 +4,10 @@
  * Utility functions for setting up and managing Temporal test environments
  */
 
-import { TestWorkflowEnvironment } from '@temporalio/testing';
-import { Worker, DefaultLogger, LogEntry } from '@temporalio/worker';
 import { WorkflowFailedError } from '@temporalio/client';
+import { TestWorkflowEnvironment } from '@temporalio/testing';
+import type { LogEntry } from '@temporalio/worker';
+import { Worker, DefaultLogger } from '@temporalio/worker';
 
 export interface TestEnvConfig {
   workflowsPath?: string;

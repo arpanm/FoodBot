@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
+import { useDebounce } from '../../hooks/useDebounce';
 import { useAppDispatch } from '../../hooks/useRedux';
 import { searchRestaurants } from '../../store/slices/restaurantSlice';
-import { Input } from '../common/Input';
 import { Button } from '../common/Button';
-import { useDebounce } from '../../hooks/useDebounce';
+import { Input } from '../common/Input';
 
 export interface RestaurantSearchProps {
   'data-testid'?: string;

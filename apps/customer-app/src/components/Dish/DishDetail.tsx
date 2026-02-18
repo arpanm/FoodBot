@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Card } from '../common/Card';
+
+import type { Dish } from '../../types/models';
 import { Button } from '../common/Button';
-import { Dish } from '../../types/models';
+import { Card } from '../common/Card';
 
 export interface DishDetailCustomizations {
   customizations: Record<string, string[]>;

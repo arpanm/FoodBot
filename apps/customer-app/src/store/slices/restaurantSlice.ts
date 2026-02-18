@@ -1,6 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { restaurantService } from '../../services/restaurant.service';
-import { Restaurant, RestaurantFilters } from '../../types/models';
+import type { Restaurant, RestaurantFilters } from '../../types/models';
 
 interface RestaurantState {
   restaurants: Restaurant[];

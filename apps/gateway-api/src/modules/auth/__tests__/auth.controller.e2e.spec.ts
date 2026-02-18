@@ -1,9 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import type { INestApplication} from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
+import { AppModule } from '../../../app.module';
 import { UserFactory } from '../../../test/factories/user.factory';
 import { AuthTestHelper } from '../../../test/utils/auth-helper';
-import { AppModule } from '../../../app.module';
 
 describe('AuthController (E2E)', () => {
   let app: INestApplication;

@@ -1,7 +1,9 @@
 import React from 'react';
+
+import type { Order } from '../../types/models';
 import { Card } from '../common/Card';
-import { ProgressStepper, Stage } from '../Status/ProgressStepper';
-import { Order } from '../../types/models';
+import type { Stage } from '../Status/ProgressStepper';
+import { ProgressStepper } from '../Status/ProgressStepper';
 
 /** Extended tracking info as used by the tracking component */
 interface TrackingDisplayInfo {

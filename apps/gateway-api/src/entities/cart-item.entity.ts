@@ -6,6 +6,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+
 import { Cart } from './cart.entity';
 
 @Entity('cart_items')

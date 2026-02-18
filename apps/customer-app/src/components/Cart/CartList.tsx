@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
-import { CartItem } from './CartItem';
+
+import type { CartItem as CartItemType } from '../../types/models';
 import { Button } from '../common/Button';
-import { CartItem as CartItemType } from '../../types/models';
+
+import { CartItem } from './CartItem';
 
 export interface CartListProps {
   items: CartItemType[];

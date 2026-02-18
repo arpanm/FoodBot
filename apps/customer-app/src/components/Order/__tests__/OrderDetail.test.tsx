@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
+import type { Order } from '../../../types/models';
 import { OrderDetail } from '../OrderDetail';
-import { Order } from '../../../types/models';
 
 /**
  * OrderDetail Component Tests

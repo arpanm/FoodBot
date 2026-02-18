@@ -217,6 +217,9 @@ elasticsearch:
   bulk:
     size: 100
     flush-interval: 5s
+  pool:
+    max-connections: ${ES_MAX_CONNECTIONS:20}
+    max-connections-per-route: ${ES_MAX_CONNECTIONS_PER_ROUTE:10}
 
 # Kafka Topics
 kafka:

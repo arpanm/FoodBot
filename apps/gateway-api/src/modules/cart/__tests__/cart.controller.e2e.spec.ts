@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import type { INestApplication} from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { AuthTestHelper } from '../../../test/utils/auth-helper';
-import { TestCartItem } from '../../../test-helpers/types';
+import type { TestCartItem } from '../../../test-helpers/types';
 
 describe('CartController (E2E)', () => {
   let app: INestApplication;

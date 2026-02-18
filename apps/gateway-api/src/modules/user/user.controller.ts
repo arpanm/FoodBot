@@ -12,13 +12,16 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AuthService } from '../auth/auth.service';
+import { Request } from 'express';
+
 import { RedisService } from '../../services/redis.service';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthService } from '../auth/auth.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
-import { Request } from 'express';
+import { UpdateUserDto } from './dto/update-user.dto';
+
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string };

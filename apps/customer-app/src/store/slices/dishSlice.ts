@@ -1,6 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { dishService } from '../../services/dish.service';
-import { Dish } from '../../types/models';
+import type { Dish } from '../../types/models';
 
 interface DishState {
   dishes: Dish[];

@@ -1,18 +1,26 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
-import { Restaurant } from '../../entities/restaurant.entity';
+
 import { Dish } from '../../entities/dish.entity';
+import { Restaurant } from '../../entities/restaurant.entity';
+import { RedisService } from '../../services/redis.service';
 
 @Injectable()
 export class RestaurantService implements OnModuleInit {
   private readonly logger = new Logger(RestaurantService.name);
+
+  // Cache TTLs (in seconds)
+  private readonly RESTAURANT_CACHE_TTL = 900; // 15 minutes
+  private readonly SEARCH_CACHE_TTL = 600; // 10 minutes
+  private readonly MENU_CACHE_TTL = 600; // 10 minutes
 
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurantRepository: Repository<Restaurant>,
     @InjectRepository(Dish)
     private readonly dishRepository: Repository<Dish>,
+    private readonly redisService: RedisService,
   ) {}
 
   async onModuleInit() {
@@ -132,8 +140,17 @@ export class RestaurantService implements OnModuleInit {
       throw new BadRequestException('Invalid coordinates');
     }
 
+    // Generate cache key from query parameters
+    const cacheKey = `restaurant:search:${JSON.stringify(query)}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.debug(`Cache hit for restaurant search: ${cacheKey}`);
+      return JSON.parse(cached);
+    }
+
     // Use in-memory filtering for complex queries to maintain test compatibility
-    let allRestaurants = await this.restaurantRepository.find();
+    const allRestaurants = await this.restaurantRepository.find();
     let filtered = allRestaurants.filter((r) => r.isActive && r.isApproved);
 
     if (query.query) {
@@ -167,7 +184,13 @@ export class RestaurantService implements OnModuleInit {
     const start = (page - 1) * limit;
     const paginated = filtered.slice(start, start + limit);
 
-    return { restaurants: paginated, total, page, limit };
+    const result = { restaurants: paginated, total, page, limit };
+
+    // Cache the result
+    await this.redisService.set(cacheKey, JSON.stringify(result), this.SEARCH_CACHE_TTL);
+    this.logger.debug(`Cached restaurant search: ${cacheKey}`);
+
+    return result;
   }
 
   async findById(id: string): Promise<Restaurant> {
@@ -176,14 +199,37 @@ export class RestaurantService implements OnModuleInit {
       throw new BadRequestException('Invalid ID format');
     }
 
+    // Check cache first
+    const cacheKey = `restaurant:${id}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.debug(`Cache hit for restaurant: ${id}`);
+      return JSON.parse(cached);
+    }
+
     const restaurant = await this.restaurantRepository.findOne({ where: { id } });
     if (!restaurant) {
       throw new NotFoundException('Restaurant not found');
     }
+
+    // Cache the restaurant
+    await this.redisService.set(cacheKey, JSON.stringify(restaurant), this.RESTAURANT_CACHE_TTL);
+    this.logger.debug(`Cached restaurant: ${id}`);
+
     return restaurant;
   }
 
   async getMenu(restaurantId: string, filters?: { category?: string; isVegetarian?: boolean }) {
+    // Generate cache key including filters
+    const cacheKey = `restaurant:menu:${restaurantId}:${JSON.stringify(filters || {})}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.debug(`Cache hit for restaurant menu: ${restaurantId}`);
+      return JSON.parse(cached);
+    }
+
     const restaurant = await this.findById(restaurantId);
 
     // Return mock menu data
@@ -220,11 +266,17 @@ export class RestaurantService implements OnModuleInit {
       filteredDishes = filteredDishes.filter((d) => d.isVegetarian === filters.isVegetarian);
     }
 
-    return {
+    const result = {
       restaurantId,
       categories: [...new Set(filteredDishes.map((d) => d.category))],
       dishes: filteredDishes,
     };
+
+    // Cache the menu
+    await this.redisService.set(cacheKey, JSON.stringify(result), this.MENU_CACHE_TTL);
+    this.logger.debug(`Cached restaurant menu: ${restaurantId}`);
+
+    return result;
   }
 
   async create(data: Partial<Restaurant>): Promise<Restaurant> {
@@ -260,13 +312,21 @@ export class RestaurantService implements OnModuleInit {
       throw new ForbiddenException('Forbidden resource');
     }
     Object.assign(restaurant, data);
-    return this.restaurantRepository.save(restaurant);
+    const updated = await this.restaurantRepository.save(restaurant);
+
+    // Invalidate cache
+    await this.invalidateRestaurantCache(id);
+
+    return updated;
   }
 
   async delete(id: string): Promise<void> {
     const restaurant = await this.findById(id);
     restaurant.isActive = false;
     await this.restaurantRepository.save(restaurant);
+
+    // Invalidate cache
+    await this.invalidateRestaurantCache(id);
   }
 
   async findByIdWithAuth(id: string, token?: string): Promise<Restaurant> {
@@ -276,5 +336,31 @@ export class RestaurantService implements OnModuleInit {
       throw new NotFoundException('Restaurant not found');
     }
     return restaurant;
+  }
+
+  /**
+   * Invalidate all cache entries related to a restaurant
+   */
+  private async invalidateRestaurantCache(restaurantId: string): Promise<void> {
+    try {
+      // Delete restaurant detail cache
+      await this.redisService.delete(`restaurant:${restaurantId}`);
+
+      // Delete menu cache for this restaurant
+      const menuKeys = await this.redisService.keys(`restaurant:menu:${restaurantId}:*`);
+      for (const key of menuKeys) {
+        await this.redisService.delete(key);
+      }
+
+      // Delete all search caches (since results may include this restaurant)
+      const searchKeys = await this.redisService.keys('restaurant:search:*');
+      for (const key of searchKeys) {
+        await this.redisService.delete(key);
+      }
+
+      this.logger.debug(`Invalidated cache for restaurant: ${restaurantId}`);
+    } catch (error) {
+      this.logger.error(`Failed to invalidate cache for restaurant ${restaurantId}:`, error);
+    }
   }
 }

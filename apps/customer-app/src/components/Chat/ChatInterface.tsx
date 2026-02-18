@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useCallback } from 'react';
+
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { sendMessage } from '../../store/slices/chatSlice';
-import { InputField } from './InputField';
-import { MessageCard } from './MessageCard';
-import { LoadingIndicator } from './LoadingIndicator';
 import { ErrorMessage } from '../common/ErrorMessage';
+
+import { InputField } from './InputField';
+import { LoadingIndicator } from './LoadingIndicator';
+import { MessageCard } from './MessageCard';
 
 export interface ChatInterfaceProps {
   'data-testid'?: string;

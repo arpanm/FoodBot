@@ -1,6 +1,7 @@
 import React from 'react';
+
+import type { Restaurant } from '../../types/models';
 import { Card } from '../common/Card';
-import { Restaurant } from '../../types/models';
 
 export interface RestaurantDetailProps {
   restaurant: Restaurant | null;

@@ -1,8 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
-import { RestaurantCard } from '../RestaurantCard';
 import { mockRestaurant, mockClosedRestaurant, mockHighlyRatedRestaurant } from '../../../test/factories/restaurant.factory';
-import { Restaurant } from '../../../types/models';
+import type { Restaurant } from '../../../types/models';
+import { RestaurantCard } from '../RestaurantCard';
 
 /**
  * RestaurantCard Component Tests
@@ -48,7 +49,7 @@ describe('RestaurantCard Component', () => {
     it('displays restaurant logo', () => {
       const restaurant = createRestaurant({ logo: 'https://example.com/logo.jpg' });
       render(<RestaurantCard restaurant={restaurant} />);
-      const logo = screen.getByTestId('restaurant-logo') as HTMLImageElement;
+      const logo = screen.getByTestId('restaurant-logo');
       expect(logo.src).toBe('https://example.com/logo.jpg');
     });
 

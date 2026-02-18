@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
-import { ProgressStepper, Stage } from '../ProgressStepper';
+import type { Stage } from '../ProgressStepper';
+import { ProgressStepper } from '../ProgressStepper';
 
 /**
  * ProgressStepper Component Tests

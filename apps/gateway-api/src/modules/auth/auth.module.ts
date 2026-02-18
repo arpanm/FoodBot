@@ -2,15 +2,17 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { Address } from '../../entities/address.entity';
+import { User } from '../../entities/user.entity';
+import { EmailService } from '../../services/email.service';
+import { RedisService } from '../../services/redis.service';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { RedisService } from '../../services/redis.service';
-import { EmailService } from '../../services/email.service';
-import { User } from '../../entities/user.entity';
-import { Address } from '../../entities/address.entity';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [

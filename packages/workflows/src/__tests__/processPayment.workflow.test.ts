@@ -14,9 +14,15 @@
  * - Partial authorization
  */
 
+import { WorkflowFailedError } from '@temporalio/client';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
-import { WorkflowFailedError } from '@temporalio/client';
+
+import {
+  createPaymentDetails,
+  createSuccessfulPaymentResult,
+  createFailedPaymentResult,
+} from '../test/factories/workflow-input.factory';
 import {
   mockCallPaymentGateway,
   mockSaveToDatabase,
@@ -27,11 +33,6 @@ import {
   resetAllMocks,
   getAllMockActivities,
 } from '../test/mocks/activity-mocks';
-import {
-  createPaymentDetails,
-  createSuccessfulPaymentResult,
-  createFailedPaymentResult,
-} from '../test/factories/workflow-input.factory';
 
 describe('ProcessPaymentWorkflow', () => {
   let testEnv: TestWorkflowEnvironment;

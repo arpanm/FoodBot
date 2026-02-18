@@ -1,0 +1,17 @@
+[Unit]
+Description=FoodBot MCP Orchestrator (Spring Boot)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/foodbot/current/mcp
+Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+ExecStart=/usr/bin/java -jar -Xmx512m -Xms256m *.jar
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

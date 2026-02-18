@@ -7,11 +7,11 @@ export class ResetPasswordDto {
 
   @IsString({ message: 'password must be a string' })
   @IsNotEmpty({ message: 'password should not be empty' })
-  @MinLength(12, { message: 'Password must be at least 12 characters long' })
+  @MinLength(12, { message: 'password must be at least 12 characters long' })
   @MaxLength(128)
   @Matches(
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    { message: 'Password must contain uppercase, lowercase, number and special character' }
+    { message: 'password must contain uppercase, lowercase, number and special character' }
   )
   newPassword!: string;
 }

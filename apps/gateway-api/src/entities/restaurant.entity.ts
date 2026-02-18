@@ -9,10 +9,11 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
+
 import { Dish } from './dish.entity';
-import { Order } from './order.entity';
 import { Feedback } from './feedback.entity';
+import { Order } from './order.entity';
+import { User } from './user.entity';
 
 @Entity('restaurants')
 export class Restaurant {

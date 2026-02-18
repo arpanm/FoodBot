@@ -3,20 +3,21 @@
  * Types for API communication with the backend
  */
 
-import {
+import type {
   Message,
   JobStatus,
   Restaurant,
   Dish,
   Order,
-  OrderItem,
   CartItem,
   User,
   Address,
   UserPreferences,
   Review,
   PaymentMethod,
-  PaginatedResponse,
+  PaginatedResponse} from './models';
+import {
+  OrderItem
 } from './models';
 
 // ==================== Common API Types ====================

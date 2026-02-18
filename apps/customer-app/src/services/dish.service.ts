@@ -1,5 +1,6 @@
+import type { Dish } from '../types/models';
+
 import { apiClient } from './api/axios.config';
-import { Dish } from '../types/models';
 
 class DishService {
   async getByRestaurant(restaurantId: string): Promise<Dish[]> {

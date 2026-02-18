@@ -8,10 +8,12 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
+import { Request } from 'express';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { ChatService } from './chat.service';
 import { ChatMessageDto } from './dto/chat-message.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string };

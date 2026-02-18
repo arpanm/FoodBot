@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
+
+import type { Dish } from '../../types/models';
 import { Card } from '../common/Card';
-import { Dish } from '../../types/models';
 
 export interface DishCardProps {
   dish: Dish;

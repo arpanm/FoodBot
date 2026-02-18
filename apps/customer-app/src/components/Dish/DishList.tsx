@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
-import { DishCard } from './DishCard';
+
+import type { Dish } from '../../types/models';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { Dish } from '../../types/models';
+
+import { DishCard } from './DishCard';
 
 export interface DishListProps {
   dishes: Dish[];

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
+
+import type { Order } from '../../types/models';
 import { Card } from '../common/Card';
-import { Order } from '../../types/models';
 
 export interface OrderCardProps {
   order: Order;

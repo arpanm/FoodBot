@@ -10,13 +10,16 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { RestaurantService } from './restaurant.service';
-import { CreateRestaurantDto } from './dto/create-restaurant.dto';
+import { Request } from 'express';
+
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Public } from '../auth/decorators/public.decorator';
-import { Request } from 'express';
+
+import { CreateRestaurantDto } from './dto/create-restaurant.dto';
+import { RestaurantService } from './restaurant.service';
+
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string; restaurantId?: string };
@@ -84,8 +87,8 @@ export class RestaurantController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    this.restaurantService.delete(id);
+  async delete(@Param('id') id: string) {
+    await this.restaurantService.delete(id);
     return { message: 'Restaurant deleted successfully' };
   }
 }

@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
+import type { CartItem as CartItemType } from '../../../types/models';
 import { CartItem } from '../CartItem';
-import { CartItem as CartItemType } from '../../../types/models';
 
 /**
  * CartItem Component Tests

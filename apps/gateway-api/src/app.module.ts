@@ -1,21 +1,32 @@
-import { Module, OnApplicationBootstrap } from '@nestjs/common';
+import { Module, OnApplicationBootstrap, Injectable, ExecutionContext } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, HttpAdapterHost } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+
+@Injectable()
+class AppThrottlerGuard extends ThrottlerGuard {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (process.env.NODE_ENV === 'test') {
+      return true;
+    }
+    return super.canActivate(context);
+  }
+}
 import { getDatabaseConfig } from './config/database.config';
+import { ValidationExceptionFilter } from './filters/validation-exception.filter';
+import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { ChatModule } from './modules/chat/chat.module';
-import { RestaurantModule } from './modules/restaurant/restaurant.module';
-import { DishModule } from './modules/dish/dish.module';
 import { CartModule } from './modules/cart/cart.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { DishModule } from './modules/dish/dish.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { HealthModule } from './modules/health/health.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
-import { FeedbackModule } from './modules/feedback/feedback.module';
+import { RestaurantModule } from './modules/restaurant/restaurant.module';
 import { UserModule } from './modules/user/user.module';
-import { AdminModule } from './modules/admin/admin.module';
-import { HealthModule } from './modules/health/health.module';
-import { ValidationExceptionFilter } from './filters/validation-exception.filter';
 
 @Module({
   imports: [
@@ -23,7 +34,24 @@ import { ValidationExceptionFilter } from './filters/validation-exception.filter
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(getDatabaseConfig()),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => getDatabaseConfig(),
+      dataSourceFactory: async (options) => {
+        if (!options) {
+          throw new Error('DataSource options are required');
+        }
+        const dataSource = new DataSource(options);
+        await dataSource.initialize();
+
+        // Disable foreign key constraints for SQLite in test mode
+        // This allows seed data with hardcoded IDs to be inserted without FK order issues
+        if (options.type === 'sqlite' && process.env.NODE_ENV === 'test') {
+          await dataSource.query('PRAGMA foreign_keys = OFF');
+        }
+
+        return dataSource;
+      },
+    }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 100,
@@ -47,7 +75,7 @@ import { ValidationExceptionFilter } from './filters/validation-exception.filter
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
   ],
 })

@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
+import type { Order } from '../../../types/models';
 import { OrderCard } from '../OrderCard';
-import { Order } from '../../../types/models';
 
 /**
  * OrderCard Component Tests

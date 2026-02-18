@@ -39,7 +39,7 @@ export class TemporalTestEnv {
   ): Promise<Worker> {
     const { workflowsPath, activities = {}, taskQueue = 'test-queue' } = options;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+     
     return await Worker.create({
       connection: testEnv.nativeConnection,
       taskQueue,
@@ -55,9 +55,9 @@ export class TemporalTestEnv {
   static initializeCoverage(): void {
     if (!this.coverage) {
       this.coverage = new WorkflowCoverage();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+       
       Runtime.install({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+         
         logger: new DefaultLogger('WARN'),
         telemetryOptions: {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

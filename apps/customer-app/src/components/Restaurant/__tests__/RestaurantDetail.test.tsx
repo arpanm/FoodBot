@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
+import type { Restaurant } from '../../../types/models';
 import { RestaurantDetail } from '../RestaurantDetail';
-import { Restaurant } from '../../../types/models';
 
 /**
  * RestaurantDetail Component Tests

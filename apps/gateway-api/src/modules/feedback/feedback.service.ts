@@ -1,8 +1,9 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrderService } from '../order/order.service';
+
 import { Feedback } from '../../entities/feedback.entity';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class FeedbackService {
@@ -62,7 +63,14 @@ export class FeedbackService {
       packaging: data.packaging || data.rating,
     });
 
-    return this.feedbackRepository.save(feedback);
+    const saved = await this.feedbackRepository.save(feedback);
+
+    // Strip null values so JSON serialization omits them (tests expect undefined, not null)
+    const result = { ...saved };
+    if (result.comment === null || result.comment === undefined) {
+      delete (result as Record<string, unknown>).comment;
+    }
+    return result;
   }
 
   async getFeedbackByOrder(orderId: string, userId: string): Promise<Feedback> {

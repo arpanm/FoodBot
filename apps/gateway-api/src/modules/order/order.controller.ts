@@ -11,12 +11,15 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { OrderService } from './order.service';
-import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto/create-order.dto';
+import { Request } from 'express';
+
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Request } from 'express';
+
+import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto/create-order.dto';
+import { OrderService } from './order.service';
+
 
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: string; restaurantId?: string };

@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
-import { RestaurantSearch } from '../RestaurantSearch';
 import { renderWithProviders } from '../../../test/utils/renderWithProviders';
+import { RestaurantSearch } from '../RestaurantSearch';
 
 /**
  * RestaurantSearch Component Tests

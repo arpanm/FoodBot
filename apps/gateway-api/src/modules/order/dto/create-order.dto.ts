@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsArray, IsObject, IsOptional, ValidateNested, IsNumber, Min, ArrayMinSize } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsArray, IsObject, IsOptional, ValidateNested, IsNumber, Min, ArrayMinSize } from 'class-validator';
 
 class OrderItemDto {
   @IsOptional()

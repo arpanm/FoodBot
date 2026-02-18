@@ -1,10 +1,11 @@
-import { apiClient } from './api/axios.config';
-import { User, UserPreferences, Address } from '../types/models';
-import {
+import type {
   UpdateProfileRequest,
   UpdatePreferencesRequest,
   CreateAddressRequest
 } from '../types/api.types';
+import type { User, UserPreferences, Address } from '../types/models';
+
+import { apiClient } from './api/axios.config';
 
 class UserService {
   async getCurrentUser(): Promise<User> {

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
+
 import '@testing-library/jest-dom';
+import type { Message } from '../../../types/models';
 import { MessageCard } from '../MessageCard';
-import { Message } from '../../../types/models';
 
 /**
  * MessageCard Component Tests

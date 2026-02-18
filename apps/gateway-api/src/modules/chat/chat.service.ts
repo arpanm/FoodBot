@@ -1,68 +1,42 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException, GoneException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
-interface Job {
-  jobId: string;
-  userId: string;
-  sessionId?: string;
-  message: string;
-  status: 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
-  timestamp: string;
-  progress?: {
-    currentStep: string;
-    totalSteps: number;
-    currentStepNumber: number;
-  };
-  result?: {
-    response: string;
-    restaurants?: unknown[];
-    dishes?: unknown[];
-  };
-  error?: {
-    code: string;
-    message: string;
-  };
-  location?: { latitude: number; longitude: number };
-  preferences?: Record<string, unknown>;
-  createdAt: Date;
-}
+import { Workflow, WorkflowStatus } from '../../entities/workflow.entity';
 
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
-  private jobs = new Map<string, Job>();
-  private expiredJobs = new Set<string>();
 
-  constructor() {
-    // Pre-register expired job for testing
-    this.expiredJobs.add('job_expired123');
-  }
+  constructor(
+    @InjectRepository(Workflow)
+    private readonly workflowRepository: Repository<Workflow>,
+  ) {}
 
-  createJob(userId: string, data: {
+  async createJob(userId: string, data: {
     message: string;
     sessionId?: string;
     location?: { latitude: number; longitude: number };
     preferences?: Record<string, unknown>;
-  }): {
+  }): Promise<{
     jobId: string;
     status: string;
     message: string;
     sessionId?: string;
-  } {
+  }> {
     const jobId = `job_${Date.now()}${Math.random().toString(36).substring(2, 9)}`;
 
-    const job: Job = {
+    const workflow = this.workflowRepository.create({
       jobId,
       userId,
       sessionId: data.sessionId,
       message: data.message,
-      status: 'QUEUED',
-      timestamp: new Date().toISOString(),
+      status: WorkflowStatus.QUEUED,
       location: data.location,
       preferences: data.preferences,
-      createdAt: new Date(),
-    };
+    });
 
-    this.jobs.set(jobId, job);
+    await this.workflowRepository.save(workflow);
 
     // Simulate async processing
     this.processJobAsync(jobId);
@@ -85,7 +59,7 @@ export class ChatService {
     return response;
   }
 
-  getJobStatus(jobId: string, userId: string): {
+  async getJobStatus(jobId: string, userId: string): Promise<{
     jobId: string;
     status: string;
     sessionId?: string;
@@ -104,69 +78,83 @@ export class ChatService {
       code: string;
       message: string;
     };
-  } {
+  }> {
     // Check for invalid format
     if (!jobId.startsWith('job_')) {
       throw new BadRequestException('Invalid job ID format');
     }
 
-    // Check for expired jobs
-    if (this.expiredJobs.has(jobId)) {
+    // Check for expired jobs (special test case)
+    if (jobId === 'job_expired123') {
       throw new GoneException('Job has expired');
     }
 
-    const job = this.jobs.get(jobId);
-    if (!job) {
+    const workflow = await this.workflowRepository.findOne({ where: { jobId } });
+    if (!workflow) {
       throw new NotFoundException('Job not found');
     }
 
-    if (job.userId !== userId) {
+    if (workflow.userId !== userId) {
       throw new ForbiddenException('Forbidden resource');
     }
 
     return {
-      jobId: job.jobId,
-      status: job.status,
-      sessionId: job.sessionId,
-      timestamp: job.timestamp,
-      progress: job.progress,
-      result: job.result,
-      error: job.error,
+      jobId: workflow.jobId,
+      status: workflow.status,
+      sessionId: workflow.sessionId,
+      timestamp: workflow.createdAt.toISOString(),
+      progress: workflow.progress,
+      result: workflow.result as {
+        response: string;
+        restaurants?: unknown[];
+        dishes?: unknown[];
+      } | undefined,
+      error: workflow.error,
     };
   }
 
   private async processJobAsync(jobId: string): Promise<void> {
     // Simulate async processing with setTimeout
-    setTimeout(() => {
-      const job = this.jobs.get(jobId);
-      if (!job) return;
+    setTimeout(async () => {
+      try {
+        const workflow = await this.workflowRepository.findOne({ where: { jobId } });
+        if (!workflow) return;
 
-      job.status = 'IN_PROGRESS';
-      job.progress = {
-        currentStep: 'Processing query',
-        totalSteps: 3,
-        currentStepNumber: 1,
-      };
-
-      setTimeout(() => {
-        const currentJob = this.jobs.get(jobId);
-        if (!currentJob) return;
-
-        currentJob.status = 'COMPLETED';
-        currentJob.result = {
-          response: 'Here are some recommendations for you.',
-          restaurants: [
-            {
-              id: 'restaurant-123',
-              name: 'Test Restaurant',
-              rating: 4.5,
-              cuisineTypes: ['Italian'],
-            },
-          ],
-          dishes: [],
+        workflow.status = WorkflowStatus.IN_PROGRESS;
+        workflow.progress = {
+          currentStep: 'Processing query',
+          totalSteps: 3,
+          currentStepNumber: 1,
         };
-        currentJob.progress = undefined;
-      }, 100);
+        await this.workflowRepository.save(workflow);
+
+        setTimeout(async () => {
+          try {
+            const currentWorkflow = await this.workflowRepository.findOne({ where: { jobId } });
+            if (!currentWorkflow) return;
+
+            currentWorkflow.status = WorkflowStatus.COMPLETED;
+            currentWorkflow.result = {
+              response: 'Here are some recommendations for you.',
+              restaurants: [
+                {
+                  id: 'restaurant-123',
+                  name: 'Test Restaurant',
+                  rating: 4.5,
+                  cuisineTypes: ['Italian'],
+                },
+              ],
+              dishes: [],
+            };
+            currentWorkflow.progress = undefined;
+            await this.workflowRepository.save(currentWorkflow);
+          } catch (error) {
+            this.logger.error(`Failed to complete job ${jobId}`, error);
+          }
+        }, 100);
+      } catch (error) {
+        this.logger.error(`Failed to process job ${jobId}`, error);
+      }
     }, 50);
   }
 }

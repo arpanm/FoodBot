@@ -1,9 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import chatReducer from './slices/chatSlice';
-import restaurantReducer from './slices/restaurantSlice';
-import dishReducer from './slices/dishSlice';
+
 import cartReducer from './slices/cartSlice';
+import chatReducer from './slices/chatSlice';
+import dishReducer from './slices/dishSlice';
 import orderReducer from './slices/orderSlice';
+import restaurantReducer from './slices/restaurantSlice';
 import userReducer from './slices/userSlice';
 
 export const store = configureStore({

@@ -1,9 +1,10 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DishService } from '../dish/dish.service';
-import { Cart } from '../../entities/cart.entity';
+
 import { CartItem } from '../../entities/cart-item.entity';
+import { Cart } from '../../entities/cart.entity';
+import { DishService } from '../dish/dish.service';
 
 @Injectable()
 export class CartService {
@@ -63,8 +64,11 @@ export class CartService {
     // Check if item already exists in cart
     const existingItem = cart.items.find((item) => item.dishId === dishId);
     if (existingItem) {
+      // Normalize null/undefined for comparison
+      const newInstructions = specialInstructions || null;
+      const existingInstructions = existingItem.specialInstructions || null;
       // If specialInstructions changed, reset quantity; otherwise accumulate
-      if (specialInstructions !== existingItem.specialInstructions) {
+      if (newInstructions !== existingInstructions) {
         existingItem.quantity = quantity;
         existingItem.specialInstructions = specialInstructions;
       } else {
