@@ -1,0 +1,31 @@
+{
+  "name": "@foodbot/customer-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FoodBot Customer Agent Frontend",
+  "scripts": {
+    "test": "jest --config jest.config.cjs",
+    "test:watch": "jest --config jest.config.cjs --watch",
+    "test:coverage": "jest --config jest.config.cjs --coverage"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.0.0",
+    "axios": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^9.0.0",
+    "react-router-dom": "^6.20.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.0",
+    "@testing-library/react": "^14.1.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/jest": "^29.5.14",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  }
+}

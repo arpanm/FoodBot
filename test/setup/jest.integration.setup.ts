@@ -3,7 +3,7 @@
  * Runs before all integration tests
  */
 
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
 process.env.NODE_ENV = 'test';

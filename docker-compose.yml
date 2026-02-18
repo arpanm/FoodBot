@@ -74,6 +74,28 @@ services:
       - foodbot-network
 
   # ============================================
+  # PostgreSQL - FoodBot Application Database
+  # ============================================
+  foodbot-db:
+    image: postgres:16-alpine
+    container_name: foodbot-app-db
+    environment:
+      POSTGRES_DB: foodbot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5433:5432'
+    volumes:
+      - foodbot-db-data:/var/lib/postgresql/data
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d foodbot']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
   # Redis - Caching & Session Storage
   # ============================================
   redis:
@@ -274,6 +296,8 @@ networks:
 volumes:
   postgres-data:
     name: foodbot-postgres-data
+  foodbot-db-data:
+    name: foodbot-app-db-data
   redis-data:
     name: foodbot-redis-data
   elasticsearch-data:

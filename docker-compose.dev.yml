@@ -7,6 +7,11 @@ version: '3.8'
 
 services:
   # Development-specific overrides
+  foodbot-db:
+    environment:
+      - POSTGRES_LOG_STATEMENT=all  # Log all SQL in dev
+    command: postgres -c log_statement=all -c log_min_duration_statement=0
+
   temporal:
     environment:
       - LOG_LEVEL=debug

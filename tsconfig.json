@@ -20,7 +20,16 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
@@ -35,7 +44,7 @@
       "@services/*": ["./services/*"],
       "@packages/*": ["./packages/*"]
     },
-    "types": ["node", "jest", "@types/jest"],
+    "types": ["node"],
     "typeRoots": ["./node_modules/@types"]
   },
   "include": [

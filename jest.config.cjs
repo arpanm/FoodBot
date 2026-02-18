@@ -66,10 +66,7 @@ module.exports = {
         '^.+\\.tsx?$': [
           'ts-jest',
           {
-            tsconfig: {
-              esModuleInterop: true,
-              allowSyntheticDefaultImports: true,
-            },
+            tsconfig: 'tsconfig.integration.json',
           },
         ],
       },
