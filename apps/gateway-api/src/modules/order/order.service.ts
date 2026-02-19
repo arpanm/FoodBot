@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { OrderItem } from '../../entities/order-item.entity';
 import { Order } from '../../entities/order.entity';
+import { OrderEventProducer } from '../../events/producers/order-event.producer';
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   pending: ['confirmed', 'preparing', 'cancelled'],
@@ -27,6 +28,7 @@ export class OrderService implements OnModuleInit {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
+    private readonly orderEventProducer: OrderEventProducer,
   ) {}
 
   async onModuleInit() {
@@ -176,6 +178,12 @@ export class OrderService implements OnModuleInit {
     }
 
     savedOrder.items = items;
+
+    // Publish order.created event
+    await this.orderEventProducer.publishOrderCreated(savedOrder).catch((err: unknown) => {
+      this.logger.error('Failed to publish order.created event', err);
+    });
+
     return savedOrder;
   }
 
@@ -250,13 +258,28 @@ export class OrderService implements OnModuleInit {
     if (order.status === 'delivered') {
       throw new BadRequestException('Cannot cancel delivered order');
     }
+    const oldStatus = order.status;
     order.status = 'cancelled';
     order.trackingUpdates.push({
       status: 'cancelled',
       message: reason || 'Order cancelled by user',
       timestamp: new Date(),
     });
-    return this.orderRepository.save(order);
+    const saved = await this.orderRepository.save(order);
+
+    // Publish order.status.changed event for cancellation
+    await this.orderEventProducer.publishOrderStatusChanged({
+      orderId: id,
+      userId: order.userId,
+      restaurantId: order.restaurantId,
+      oldStatus,
+      newStatus: 'cancelled',
+      reason,
+    }).catch((err: unknown) => {
+      this.logger.error('Failed to publish order.status.changed event for cancellation', err);
+    });
+
+    return saved;
   }
 
   async updateStatus(id: string, newStatus: string): Promise<Order> {
@@ -273,6 +296,8 @@ export class OrderService implements OnModuleInit {
       throw new BadRequestException(`Invalid status transition from ${order.status} to ${newStatus}`);
     }
 
+    const oldStatus = order.status;
+
     order.status = newStatus;
     order.trackingUpdates.push({
       status: newStatus,
@@ -284,7 +309,20 @@ export class OrderService implements OnModuleInit {
       order.actualDeliveryTime = new Date();
     }
 
-    return this.orderRepository.save(order);
+    const saved = await this.orderRepository.save(order);
+
+    // Publish order.status.changed event
+    await this.orderEventProducer.publishOrderStatusChanged({
+      orderId: id,
+      userId: order.userId,
+      restaurantId: order.restaurantId,
+      oldStatus,
+      newStatus,
+    }).catch((err: unknown) => {
+      this.logger.error('Failed to publish order.status.changed event', err);
+    });
+
+    return saved;
   }
 
   async findByRestaurant(restaurantId: string, filters: { status?: string; page?: number; limit?: number }): Promise<{

@@ -2,14 +2,18 @@ package com.foodbot.mcp.search;
 
 import com.foodbot.mcp.exception.SearchException;
 import com.foodbot.mcp.model.*;
+import com.foodbot.mcp.repository.DishSearchRepository;
+import com.foodbot.mcp.repository.RestaurantSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Elasticsearch service for full-text search, geo-spatial queries, and faceted search.
+ * Delegates to specialized repositories for restaurant, dish, and menu operations.
  * Handles restaurant and dish indexing and searching with sub-500ms target response time.
  */
 @Slf4j
@@ -17,7 +21,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ElasticsearchService {
 
-    private final SearchQueryBuilder queryBuilder;
+    private final RestaurantSearchRepository restaurantSearchRepository;
+    private final DishSearchRepository dishSearchRepository;
     private final FacetedSearchService facetedSearchService;
     private final GeoSearchService geoSearchService;
 
@@ -35,10 +40,7 @@ public class ElasticsearchService {
             log.debug("Searching restaurants in Elasticsearch: query='{}', cuisine='{}', minRating={}",
                     request.getQuery(), request.getCuisine(), request.getMinRating());
 
-            // Build and execute search query
-            // Note: When Elasticsearch is running, this delegates to the ES client.
-            // Currently returns empty response as ES may not be available.
-            SearchResponse response = queryBuilder.buildAndExecuteRestaurantSearch(request);
+            SearchResponse response = restaurantSearchRepository.search(request);
 
             long queryTimeMs = System.currentTimeMillis() - startTime;
             response.setQueryTimeMs(queryTimeMs);
@@ -64,7 +66,7 @@ public class ElasticsearchService {
         long startTime = System.currentTimeMillis();
 
         try {
-            SearchResponse response = queryBuilder.buildAndExecuteDishSearch(request);
+            SearchResponse response = dishSearchRepository.search(request);
 
             long queryTimeMs = System.currentTimeMillis() - startTime;
             response.setQueryTimeMs(queryTimeMs);
@@ -90,7 +92,13 @@ public class ElasticsearchService {
      * @return search response with nearby restaurants
      */
     public SearchResponse searchNearby(GeoLocation location, double radiusKm, int page, int pageSize) {
-        return geoSearchService.searchNearby(location, radiusKm, page, pageSize);
+        try {
+            return restaurantSearchRepository.searchByLocation(
+                    location.getLat(), location.getLon(), radiusKm, page, pageSize);
+        } catch (SearchException e) {
+            log.warn("Elasticsearch geo search failed, falling back: {}", e.getMessage());
+            return geoSearchService.searchNearby(location, radiusKm, page, pageSize);
+        }
     }
 
     /**
@@ -110,9 +118,9 @@ public class ElasticsearchService {
      */
     public void indexRestaurant(Restaurant restaurant) {
         try {
-            log.info("Indexing restaurant: {} ({})", restaurant.getName(), restaurant.getId());
-            // Elasticsearch indexing will be performed when ES is available
-        } catch (Exception e) {
+            restaurantSearchRepository.index(restaurant);
+            log.info("Indexed restaurant: {} ({})", restaurant.getName(), restaurant.getId());
+        } catch (IOException e) {
             log.error("Failed to index restaurant: {}", restaurant.getId(), e);
         }
     }
@@ -124,9 +132,9 @@ public class ElasticsearchService {
      */
     public void indexDish(Dish dish) {
         try {
-            log.info("Indexing dish: {} ({})", dish.getName(), dish.getId());
-            // Elasticsearch indexing will be performed when ES is available
-        } catch (Exception e) {
+            dishSearchRepository.index(dish);
+            log.info("Indexed dish: {} ({})", dish.getName(), dish.getId());
+        } catch (IOException e) {
             log.error("Failed to index dish: {}", dish.getId(), e);
         }
     }
@@ -138,7 +146,9 @@ public class ElasticsearchService {
      */
     public void bulkIndexRestaurants(List<Restaurant> restaurants) {
         log.info("Bulk indexing {} restaurants", restaurants.size());
-        restaurants.forEach(this::indexRestaurant);
+        for (Restaurant restaurant : restaurants) {
+            indexRestaurant(restaurant);
+        }
     }
 
     /**
@@ -148,7 +158,9 @@ public class ElasticsearchService {
      */
     public void bulkIndexDishes(List<Dish> dishes) {
         log.info("Bulk indexing {} dishes", dishes.size());
-        dishes.forEach(this::indexDish);
+        for (Dish dish : dishes) {
+            indexDish(dish);
+        }
     }
 
     /**
@@ -157,7 +169,12 @@ public class ElasticsearchService {
      * @param restaurantId the restaurant ID to delete
      */
     public void deleteRestaurant(String restaurantId) {
-        log.info("Deleting restaurant from index: {}", restaurantId);
+        try {
+            restaurantSearchRepository.delete(restaurantId);
+            log.info("Deleted restaurant from index: {}", restaurantId);
+        } catch (IOException e) {
+            log.error("Failed to delete restaurant from index: {}", restaurantId, e);
+        }
     }
 
     /**
@@ -166,7 +183,12 @@ public class ElasticsearchService {
      * @param dishId the dish ID to delete
      */
     public void deleteDish(String dishId) {
-        log.info("Deleting dish from index: {}", dishId);
+        try {
+            dishSearchRepository.delete(dishId);
+            log.info("Deleted dish from index: {}", dishId);
+        } catch (IOException e) {
+            log.error("Failed to delete dish from index: {}", dishId, e);
+        }
     }
 
     /**
@@ -176,6 +198,11 @@ public class ElasticsearchService {
      * @param available the new availability status
      */
     public void updateDishAvailability(String dishId, boolean available) {
-        log.info("Updating dish availability: {} -> {}", dishId, available);
+        try {
+            dishSearchRepository.updateAvailability(dishId, available);
+            log.info("Updated dish availability: {} -> {}", dishId, available);
+        } catch (IOException e) {
+            log.error("Failed to update dish availability: {}", dishId, e);
+        }
     }
 }

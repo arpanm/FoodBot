@@ -1,6 +1,5 @@
 import type { EnhancedStore } from '@reduxjs/toolkit';
 import { configureStore } from '@reduxjs/toolkit';
-import { Provider } from 'react-redux';
 
 import type {
   ChatState,
@@ -9,6 +8,7 @@ import type {
   CartState,
   OrderState,
   UserState,
+  AccountLinkingState,
 } from '../../types/redux.types';
 
 /**
@@ -21,6 +21,7 @@ export interface MockStoreState {
   cart?: Partial<CartState>;
   order?: Partial<OrderState>;
   user?: Partial<UserState>;
+  accountLinking?: Partial<AccountLinkingState>;
 }
 
 /**
@@ -78,6 +79,17 @@ export function mockStore(initialState: MockStoreState = {}): EnhancedStore {
       error: null,
       ...initialState.user,
     },
+    accountLinking: {
+      accounts: [],
+      loading: false,
+      error: null,
+      oauthInProgress: null,
+      oauthUrl: null,
+      oauthState: null,
+      unlinkingPlatform: null,
+      lastFetchedAt: null,
+      ...initialState.accountLinking,
+    },
   };
 
   return configureStore({
@@ -88,6 +100,7 @@ export function mockStore(initialState: MockStoreState = {}): EnhancedStore {
       cart: (state = defaultState.cart) => state,
       order: (state = defaultState.order) => state,
       user: (state = defaultState.user) => state,
+      accountLinking: (state = defaultState.accountLinking) => state,
     },
     preloadedState: defaultState,
   });

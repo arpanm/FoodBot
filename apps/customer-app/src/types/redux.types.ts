@@ -15,6 +15,9 @@ import type {
   RestaurantFilters,
 } from './models';
 
+import type { AccountLinkingState } from '../store/slices/accountLinkingSlice';
+export type { AccountLinkingState } from '../store/slices/accountLinkingSlice';
+
 // ==================== Root State ====================
 
 export interface RootState {
@@ -24,6 +27,7 @@ export interface RootState {
   order: OrderState;
   cart: CartState;
   user: UserState;
+  accountLinking: AccountLinkingState;
 }
 
 // ==================== Chat State ====================

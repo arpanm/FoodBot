@@ -1,0 +1,98 @@
+MCP Integration Flow
+====================
+
+                    +-------------------+
+                    |   Gateway API     |
+                    |   (NestJS)        |
+                    +---------+---------+
+                              |
+                              | HTTP REST
+                              v
+                    +-------------------+
+                    |  MCP Orchestrator |
+                    |  (Spring Boot)    |
+                    +---------+---------+
+                              |
+              +---------------+---------------+
+              |               |               |
+              v               v               v
+     +--------+------+ +-----+-------+ +-----+-------+
+     | Provider      | | Provider    | | Provider    |
+     | Router        | | Health      | | Rate        |
+     |               | | Monitor     | | Limiter     |
+     +--------+------+ +-----+-------+ +-----+-------+
+              |               |               |
+              v               v               v
+     +--------+-------------------------------+-------+
+     |           Circuit Breaker (per provider)       |
+     +-------+----------------+----------------+------+
+             |                |                |
+             v                v                v
+     +-------+------+ +------+-------+ +------+-------+
+     | Mock MCP     | | Swiggy MCP   | | Zomato MCP   |
+     | Client       | | Client       | | Client       |
+     |              | |              | |              |
+     | In-memory    | | WebClient    | | WebClient    |
+     | data store   | | + API Key    | | + API Key    |
+     |              | |              | |              |
+     | Status: UP   | | Status: var  | | Status: var  |
+     +--------------+ +--------------+ +--------------+
+             |                |                |
+             v                v                v
+     +-------+----------------+----------------+------+
+     |           Result Aggregator                     |
+     |                                                 |
+     |  1. ResultNormalizer   - Normalize field names  |
+     |  2. DuplicationRemover - Remove duplicates      |
+     |  3. ResultRanker       - Score and rank         |
+     +-------+-----------------------------------------+
+             |
+             v
+     +-------+-----------+
+     | Cache Service      |
+     | (Redis)            |
+     |                    |
+     | TTL:               |
+     | - Search: 10 min   |
+     | - Details: 15 min  |
+     | - Avail: 5 min     |
+     +--------------------+
+
+
+FAILOVER SEQUENCE:
+==================
+
+1. Request arrives at Provider Router
+2. Router checks health of all enabled providers
+3. Router checks circuit breaker state
+4. Request sent to healthy providers (parallel)
+5. If provider fails:
+   a. Circuit breaker records failure
+   b. After 5 failures (50% rate): circuit OPENS
+   c. All requests skip this provider for 60 seconds
+   d. After 60s: circuit goes HALF-OPEN
+   e. 3 test requests sent
+   f. If tests pass: circuit CLOSES
+   g. If tests fail: circuit stays OPEN for another 60s
+
+RATE LIMITING:
+==============
+
+Provider     | Limit/sec | Burst | Timeout
+-------------|-----------|-------|--------
+Mock         | 100       | --    | 0s
+Swiggy       | 50        | 10    | 0s
+Zomato       | 50        | 10    | 0s
+
+
+BULKHEAD ISOLATION:
+===================
+
+Each provider is isolated with max 10 concurrent calls.
+If a provider is slow, it cannot consume all threads.
+
+Provider     | Max Concurrent | Wait Duration
+-------------|----------------|-------------
+Mock         | 10             | 1s
+Swiggy       | 10             | 1s
+Zomato       | 10             | 1s

@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 
+import accountLinkingReducer from './slices/accountLinkingSlice';
 import cartReducer from './slices/cartSlice';
 import chatReducer from './slices/chatSlice';
 import dishReducer from './slices/dishSlice';
@@ -15,6 +16,7 @@ export const store = configureStore({
     cart: cartReducer,
     order: orderReducer,
     user: userReducer,
+    accountLinking: accountLinkingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

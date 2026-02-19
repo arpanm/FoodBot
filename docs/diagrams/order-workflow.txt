@@ -1,0 +1,137 @@
+Order Workflow (Saga Pattern)
+==============================
+
+START: placeOrderWorkflow(input)
+     |
+     v
++----+------------------+
+| Step 1: Validate Cart |
+| - Check items exist   |
+| - Check quantities    |
+| - Validate prices     |
++----+------------------+
+     | OK
+     v
++----+-------------------+
+| Step 2: Check Inventory|
+| - Verify stock levels  |
+| - Check availability   |
++----+-------------------+
+     | OK                     FAIL: Items unavailable
+     v                              |
++----+-------------------+          v
+| Step 3: Reserve Items  |    +-----+------+
+| - Lock inventory       |    | ERROR:     |
+| - Set expiry (10 min)  |    | Throw      |
++----+-------------------+    +------------+
+     | OK
+     | [Compensation: releaseItems()]
+     v
++----+-------------------+
+| Step 4: Process Payment|
+| - Charge card/UPI/etc  |
+| - Handle 3DS if needed |
++----+-------------------+
+     | OK                     FAIL: Payment declined
+     | [Compensation:              |
+     |  refundPayment()]           v
+     v                       +-----+------+
++----+-------------------+   | COMPENSATE |
+| Step 5: Create Order   |   | 1. Release |
+| - Save to PostgreSQL   |   |    items   |
+| - Generate order ID    |   | 2. Notify  |
++----+-------------------+   |    customer|
+     | OK                    +------------+
+     v
++----+-------------------+
+| Step 6: Confirm Order  |
+| - Status: confirmed    |
++----+-------------------+
+     | OK
+     v
++----+-------------------+     +----+-------------------+
+| Step 7a: Notify        |     | Step 7b: Notify       |
+|   Restaurant           |     |   Customer            |
+| - New order alert      |     | - Confirmation email  |
+| (non-critical)         |     | - Push notification   |
++----+-------------------+     | (non-critical)        |
+     |                         +----+-------------------+
+     v                              |
++----+-------------------+          |
+| COMPLETE               |<---------+
+| Return:                |
+| - orderId              |
+| - status: confirmed    |
+| - paymentId            |
++------------------------+
+
+
+COMPENSATION FLOW (on failure):
+================================
+
+If any step fails, compensations execute in REVERSE order:
+
+Step 5 fails -> Execute compensations: [refundPayment, releaseItems]
+Step 4 fails -> Execute compensations: [releaseItems]
+Step 3 fails -> No compensations needed
+Step 2 fails -> No compensations needed
+Step 1 fails -> No compensations needed
+
+Each compensation is wrapped in try/catch:
+- If a compensation fails, log error and continue with next
+- Always attempt to notify customer of failure
+
+
+ORDER FULFILLMENT WORKFLOW (Signal-Based):
+==========================================
+
+START: orderFulfillmentWorkflow(input)
+     |
+     v
++----+-------------------+
+| Wait for Order Ready   |<---- orderReadySignal
+| (from restaurant)      |      (sent by restaurant app)
++----+-------------------+
+     |
+     v
++----+-------------------+
+| Assign Delivery Partner|
+| - Find nearest partner |
+| - Estimate delivery    |
++----+-------------------+
+     |
+     v
++----+-------------------+
+| Wait for Pickup        |<---- orderPickedUpSignal
+| (from delivery partner)|      (sent by delivery app)
++----+-------------------+
+     |
+     v
++----+-------------------+
+| Track Delivery         |
+| - Update ETA           |
+| - Notify customer      |
++----+-------------------+
+     |
+     v
++----+-------------------+
+| Wait for Delivery      |<---- orderDeliveredSignal
+| (from delivery partner)|      (sent by delivery app)
++----+-------------------+
+     |
+     v
++----+-------------------+
+| Complete               |
+| - Update order status  |
+| - Trigger feedback     |
+|   request              |
++------------------------+
+
+
+ORDER STATUS TRANSITIONS:
+=========================
+
+pending --> confirmed --> preparing --> ready --> out_for_delivery --> delivered
+     |          |            |          |              |
+     +--------->+----------->+--------->+------------->+-----> cancelled
+     (any state can transition to cancelled with compensation)

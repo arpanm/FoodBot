@@ -1,0 +1,151 @@
+Search Orchestration Flow
+=========================
+
+1. SEARCH REQUEST PIPELINE
+===========================
+
+User Query: "pizza near me"
+     |
+     v
++----+-------------------+
+| Gateway API            |
+| POST /search           |
+| - Validate query       |
+| - Authenticate user    |
++-----------+------------+
+            |
+            v
++----+-------------------+
+| Temporal Workflow      |
+| searchRestaurantWF     |
++-----------+------------+
+            |
+   +--------+--------+
+   |                  |
+   v                  v
++--+--------+   +----+--------+
+| Load User |   | Build       |
+| Context   |   | Search      |
+| (Redis)   |   | Query       |
+|           |   |             |
+| - prefs   |   | - keywords  |
+| - location|   | - filters   |
+| - history |   | - geo       |
++-----------+   +----+--------+
+                     |
+                     v
++----+-------------------------------+
+| MCP Orchestrator                   |
+| GET /mcp/v1/search                 |
++----+-------------------------------+
+     |
+     +---> Check Cache (Redis)
+     |     Key: search:{hash(query+filters)}
+     |
+     |     CACHE HIT: Return cached results
+     |     CACHE MISS: Continue to search
+     |
+     +---> Provider Router
+     |     Select healthy providers
+     |
+     +---> Parallel Search
+     |     |
+     |     +---> Mock Provider
+     |     |     (in-memory data)
+     |     |
+     |     +---> Swiggy Provider
+     |     |     (external API)
+     |     |
+     |     +---> Zomato Provider
+     |           (external API)
+     |
+     +---> Elasticsearch Search
+     |     |
+     |     +---> Full-text on name, description
+     |     +---> Keyword filter on cuisine
+     |     +---> geo_distance on location
+     |     +---> Range on price, rating
+     |     +---> Boolean on availability
+     |
+     +---> Result Aggregation
+     |     |
+     |     +---> Normalize (field mapping)
+     |     +---> Deduplicate (name+location)
+     |     +---> Rank (composite score)
+     |
+     +---> Cache Results (Redis, TTL: 10 min)
+     |
+     v
++----+------+
+| Response  |
+| Ranked    |
+| Results   |
++-----------+
+
+
+2. ELASTICSEARCH QUERY STRUCTURE
+=================================
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "multi_match": {
+            "query": "pizza",
+            "fields": ["name^3", "description^2", "cuisine"]
+          }
+        }
+      ],
+      "filter": [
+        { "term": { "availability": true } },
+        { "range": { "rating": { "gte": 3.5 } } },
+        { "geo_distance": {
+            "distance": "5km",
+            "location": { "lat": 12.97, "lon": 77.59 }
+        }}
+      ]
+    }
+  },
+  "aggs": {
+    "cuisines": { "terms": { "field": "cuisine" } },
+    "price_ranges": { "histogram": { "field": "priceRange", "interval": 1 } },
+    "avg_rating": { "avg": { "field": "rating" } }
+  },
+  "sort": [
+    { "_score": "desc" },
+    { "rating": "desc" }
+  ],
+  "size": 20
+}
+
+
+3. RANKING ALGORITHM
+=====================
+
+score = (relevance * 0.30)     // Elasticsearch BM25 normalized
+      + (rating    * 0.25)     // restaurant_rating / 5.0
+      + (distance  * 0.20)     // 1 - (dist_km / max_radius_km)
+      + (available * 0.15)     // 1.0 if open, 0.0 if closed
+      + (price_fit * 0.10)     // 1.0 if in user's range, 0.5 otherwise
+
+
+4. INDEXING PIPELINE (Kafka -> Elasticsearch)
+=============================================
+
+Gateway API             Kafka                MCP Orchestrator     Elasticsearch
+     |                    |                       |                    |
+     |--restaurant.    -->|                       |                    |
+     |  created           |--consume (batch)----->|                    |
+     |                    |  mcp-indexer group     |                    |
+     |                    |                       |--bulkIndex-------->|
+     |                    |                       |  (batch: 100 docs) |
+     |                    |                       |  (flush: 5s)       |
+     |                    |                       |                    |
+     |--dish.          -->|                       |                    |
+     |  availability.     |--consume------------>|                    |
+     |  changed           |                       |--updateDoc-------->|
+     |                    |                       |  (partial update)  |
+     |                    |                       |                    |
+     |                    |                       |--invalidateCache-->|
+     |                    |                       |  (Redis)           | [Redis]

@@ -1,0 +1,110 @@
+version: '3.8'
+
+# ============================================
+# Temporal-Only Docker Compose
+# Use: docker-compose -f docker-compose.temporal.yml up
+# For development with only Temporal and its dependencies
+# ============================================
+
+services:
+  # ============================================
+  # PostgreSQL - Database for Temporal Server
+  # ============================================
+  postgresql:
+    image: postgres:15-alpine
+    container_name: foodbot-temporal-postgresql
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - '5432:5432'
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+    networks:
+      - temporal-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U temporal']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Temporal Server - Workflow Orchestration
+  # ============================================
+  temporal:
+    image: temporalio/auto-setup:1.22.4
+    container_name: foodbot-temporal-server
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=false
+    ports:
+      - '7233:7233'
+      - '7234:7234'
+      - '7235:7235'
+    volumes:
+      - ./temporal-config:/etc/temporal/config/dynamicconfig
+    networks:
+      - temporal-network
+    healthcheck:
+      test: ['CMD', 'tctl', '--address', 'temporal:7233', 'cluster', 'health']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ============================================
+  # Temporal UI - Web Interface
+  # ============================================
+  temporal-ui:
+    image: temporalio/ui:2.21.3
+    container_name: foodbot-temporal-ui
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+    ports:
+      - '8088:8080'
+    networks:
+      - temporal-network
+
+  # ============================================
+  # Temporal Admin Tools
+  # ============================================
+  temporal-admin-tools:
+    image: temporalio/admin-tools:1.22.4
+    container_name: foodbot-temporal-admin
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    networks:
+      - temporal-network
+    stdin_open: true
+    tty: true
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  temporal-network:
+    driver: bridge
+    name: foodbot-temporal-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  temporal-postgres-data:
+    name: foodbot-temporal-postgres-data

@@ -1,0 +1,153 @@
+Authentication Flow
+===================
+
+
+1. REGISTRATION FLOW
+=====================
+
+Client                Gateway API             PostgreSQL           Redis
+  |                       |                       |                   |
+  |--POST /auth/register->|                       |                   |
+  |  {name, email,        |                       |                   |
+  |   password, phone}    |                       |                   |
+  |                       |--findByEmail--------->|                   |
+  |                       |<--null (not found)----|                   |
+  |                       |                       |                   |
+  |                       |--hashPassword-------->|                   |
+  |                       |  (bcrypt, 10 rounds)  |                   |
+  |                       |                       |                   |
+  |                       |--createUser---------->|                   |
+  |                       |<--user----------------|                   |
+  |                       |                       |                   |
+  |                       |--generateTokens------>|                   |
+  |                       |  accessToken (15min)  |                   |
+  |                       |  refreshToken (7d)    |                   |
+  |                       |                       |                   |
+  |<--{user, tokens}------|                       |                   |
+  |                       |                       |                   |
+  |                       |--OPTIONAL: Send------>|                   |
+  |                       |  verification email   |                   |
+
+
+2. LOGIN FLOW
+==============
+
+Client                Gateway API             PostgreSQL           Redis
+  |                       |                       |                   |
+  |--POST /auth/login---->|                       |                   |
+  |  {email, password}    |                       |                   |
+  |  Rate: 5 req/min      |                       |                   |
+  |                       |--findByEmail--------->|                   |
+  |                       |<--user----------------|                   |
+  |                       |                       |                   |
+  |                       |--bcrypt.compare------>|                   |
+  |                       |  (password, hash)     |                   |
+  |                       |                       |                   |
+  |                       |--signAccessToken----->|                   |
+  |                       |  {userId, email,      |                   |
+  |                       |   role} exp: 15min    |                   |
+  |                       |                       |                   |
+  |                       |--signRefreshToken---->|                   |
+  |                       |  {userId} exp: 7d     |                   |
+  |                       |                       |                   |
+  |<--{accessToken,-------|                       |                   |
+  |    refreshToken}      |                       |                   |
+
+
+3. AUTHENTICATED REQUEST FLOW
+==============================
+
+Client                Gateway API             Redis               PostgreSQL
+  |                       |                       |                   |
+  |--GET /orders--------->|                       |                   |
+  |  Authorization:       |                       |                   |
+  |  Bearer {accessToken} |                       |                   |
+  |                       |                       |                   |
+  |                JwtAuthGuard:                  |                   |
+  |                       |--verifyJWT----------->|                   |
+  |                       |  (check signature)    |                   |
+  |                       |                       |                   |
+  |                       |--checkBlacklist------>|                   |
+  |                       |  GET blacklist:{token}|                   |
+  |                       |<--null (not blocked)--|                   |
+  |                       |                       |                   |
+  |                RolesGuard (if required):       |                   |
+  |                       |--checkRole----------->|                   |
+  |                       |  user.role matches    |                   |
+  |                       |  @Roles('customer')   |                   |
+  |                       |                       |                   |
+  |                       |--queryOrders----------|------------------>|
+  |                       |<--orders--------------|-------------------|
+  |<--{orders}------------|                       |                   |
+
+
+4. TOKEN REFRESH FLOW
+======================
+
+Client                Gateway API             Redis
+  |                       |                       |
+  |--POST /auth/refresh-->|                       |
+  |  {refreshToken}       |                       |
+  |                       |--verifyRefreshToken-->|
+  |                       |  (check signature)    |
+  |                       |  (check expiry)       |
+  |                       |                       |
+  |                       |--signNewTokens------->|
+  |                       |  accessToken (15min)  |
+  |                       |  refreshToken (7d)    |
+  |                       |                       |
+  |<--{accessToken,-------|                       |
+  |    refreshToken}      |                       |
+
+
+5. LOGOUT FLOW
+===============
+
+Client                Gateway API             Redis
+  |                       |                       |
+  |--POST /auth/logout--->|                       |
+  |  Authorization:       |                       |
+  |  Bearer {accessToken} |                       |
+  |                       |--blacklistToken------>|
+  |                       |  SET blacklist:{token}|
+  |                       |  TTL: token remaining |
+  |                       |       expiry          |
+  |                       |                       |
+  |<--{message: ok}-------|                       |
+
+
+6. ROLE-BASED ACCESS CONTROL
+==============================
+
+Role: customer
+  - Browse restaurants and dishes
+  - Manage cart
+  - Place and track orders
+  - Submit feedback
+  - Manage profile and addresses
+
+Role: restaurant_owner
+  - All customer permissions
+  - Create and manage restaurants
+  - CRUD dishes
+  - Update order status (accept, prepare, ready)
+
+Role: admin
+  - All permissions
+  - User management (view, suspend, reactivate)
+  - Restaurant approval (approve/reject)
+  - Dashboard statistics
+  - System monitoring
+
+
+RATE LIMITING:
+==============
+
+Endpoint              | Limit    | Window
+----------------------|----------|-------
+POST /auth/register   | 10 req   | 60s
+POST /auth/login      | 5 req    | 60s
+POST /auth/forgot-pw  | 3 req    | 300s
+POST /auth/reset-pw   | 3 req    | 300s
+POST /auth/verify     | 10 req   | 60s
+All other endpoints   | 100 req  | 900s (default)

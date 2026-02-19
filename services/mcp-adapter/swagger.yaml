@@ -1,0 +1,342 @@
+openapi: 3.0.3
+info:
+  title: FoodBot MCP Adapter API
+  description: |
+    Multi-provider food delivery integration service.
+    Aggregates restaurant data from Swiggy, Zomato, Internal, and Mock providers
+    into a unified API with resilience patterns.
+  version: 1.0.0
+  contact:
+    name: FoodBot Platform Team
+    email: support@foodbot.com
+
+servers:
+  - url: http://localhost:3100
+    description: Development server
+
+components:
+  schemas:
+    SearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Search text
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+            radius:
+              type: number
+              description: Radius in meters
+        filters:
+          type: object
+          properties:
+            cuisineTypes:
+              type: array
+              items:
+                type: string
+            priceRange:
+              type: string
+              enum: ['$', '$$', '$$$', '$$$$']
+            minRating:
+              type: number
+              minimum: 0
+              maximum: 5
+            isVegetarian:
+              type: boolean
+            isVegan:
+              type: boolean
+        providers:
+          type: array
+          items:
+            type: string
+            enum: [mock, swiggy, zomato, internal]
+          description: Specific providers to query (defaults to all enabled)
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              default: 1
+            pageSize:
+              type: integer
+              default: 20
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Restaurant'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        providers:
+          type: array
+          items:
+            type: string
+          description: Providers that contributed results
+        responseTime:
+          type: integer
+          description: Response time in milliseconds
+
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        cuisineTypes:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        priceRange:
+          type: string
+        address:
+          type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+        isOpen:
+          type: boolean
+        estimatedDeliveryTime:
+          type: integer
+          description: Minutes
+        provider:
+          type: string
+          description: Source provider
+        score:
+          type: number
+          description: Aggregated relevance score
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        isVegetarian:
+          type: boolean
+        isVegan:
+          type: boolean
+        isAvailable:
+          type: boolean
+        imageUrl:
+          type: string
+        provider:
+          type: string
+
+    OrderRequest:
+      type: object
+      required: [restaurantId, items, provider]
+      properties:
+        restaurantId:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              dishId:
+                type: string
+              quantity:
+                type: integer
+        provider:
+          type: string
+          description: Provider to place order with
+        deliveryAddress:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            latitude:
+              type: number
+            longitude:
+              type: number
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        providers:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [up, down, degraded]
+              circuitBreaker:
+                type: string
+                enum: [CLOSED, OPEN, HALF_OPEN]
+              latency:
+                type: integer
+              lastChecked:
+                type: string
+                format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+  /search:
+    post:
+      summary: Search restaurants across providers
+      description: |
+        Queries all enabled providers in parallel, deduplicates results,
+        and returns aggregated, ranked results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Aggregated search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '408':
+          description: Search timeout
+        '503':
+          description: All providers unavailable
+
+  /restaurant/{id}:
+    get:
+      summary: Get restaurant details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: provider
+          in: query
+          schema:
+            type: string
+          description: Source provider (auto-detected if not specified)
+      responses:
+        '200':
+          description: Restaurant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '404':
+          description: Restaurant not found
+
+  /restaurant/{id}/menu:
+    get:
+      summary: Get restaurant menu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: provider
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Menu items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  restaurantId:
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dish'
+                  provider:
+                    type: string
+
+  /order:
+    post:
+      summary: Place an order
+      description: Routes order to the appropriate provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: Order placed
+        '400':
+          description: Invalid order
+        '503':
+          description: Provider unavailable
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns health status of all providers and infrastructure
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unhealthy
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Returns Prometheus-formatted metrics
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string

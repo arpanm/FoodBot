@@ -224,10 +224,26 @@ elasticsearch:
 # Kafka Topics
 kafka:
   topics:
+    # Restaurant domain
     restaurant-created: restaurant.created
     restaurant-updated: restaurant.updated
+    restaurant-deleted: restaurant.deleted
+    # Dish domain
+    dish-created: dish.created
+    dish-updated: dish.updated
     menu-updated: menu.updated
     dish-availability-changed: dish.availability.changed
+    # Order domain
+    order-created: order.created
+    order-status-changed: order.status.changed
+    # Payment domain
+    payment-completed: payment.completed
+    payment-failed: payment.failed
+    payment-refunded: payment.refunded
+    # User domain
+    user-registered: user.registered
+    # Dead Letter Queue
+    dlq: foodbot.dlq
 
 # Management & Monitoring
 management:

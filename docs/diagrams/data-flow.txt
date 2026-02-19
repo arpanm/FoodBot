@@ -1,0 +1,142 @@
+FoodBot Data Flow Diagrams
+==========================
+
+
+1. RESTAURANT SEARCH FLOW
+=========================
+
+Customer App         Gateway API          Temporal           MCP Orchestrator
+     |                   |                   |                   |
+     |--POST /chat------>|                   |                   |
+     |  {message:        |                   |                   |
+     |   "pizza near me"}|                   |                   |
+     |                   |--startWorkflow--->|                   |
+     |                   |  searchRestaurant |                   |
+     |<--{jobId}---------|                   |                   |
+     |                   |                   |--loadUserCtx----->|
+     |                   |                   |  (activity)       | [Redis]
+     |                   |                   |<-{preferences}----|
+     |                   |                   |                   |
+     |                   |                   |--searchMCP------->|
+     |                   |                   |  (activity)       | [Elasticsearch]
+     |                   |                   |<-{results}--------|
+     |                   |                   |                   |
+     |--GET /chat/job--->|                   |                   |
+     |  {jobId}          |--queryWorkflow--->|                   |
+     |                   |<-{results}--------|                   |
+     |<--{restaurants}---|                   |                   |
+
+
+2. ORDER PLACEMENT FLOW (SAGA PATTERN)
+=======================================
+
+Customer      Gateway      Temporal Workflow      DB       Payment    Notification
+   |             |                |                |          |            |
+   |--POST------>|                |                |          |            |
+   |  /orders    |                |                |          |            |
+   |             |--start-------->|                |          |            |
+   |             |  placeOrder    |                |          |            |
+   |<--orderId---|                |                |          |            |
+   |             |                |--validateCart-->|          |            |
+   |             |                |<--ok-----------|          |            |
+   |             |                |                |          |            |
+   |             |                |--checkStock--->|          |            |
+   |             |                |<--available----|          |            |
+   |             |                |                |          |            |
+   |             |                |--reserveItems->|          |            |
+   |             |                |<--reserved-----|          |            |
+   |             |                |  [compensation: release]  |            |
+   |             |                |                |          |            |
+   |             |                |--processPayment--------->|            |
+   |             |                |<--{paymentId}------------|            |
+   |             |                |  [compensation: refund]   |            |
+   |             |                |                |          |            |
+   |             |                |--createOrder-->|          |            |
+   |             |                |<--order--------|          |            |
+   |             |                |                |          |            |
+   |             |                |--notify--------|----------|----------->|
+   |             |                |  restaurant    |          |   [email]  |
+   |             |                |--notify--------|----------|----------->|
+   |             |                |  customer      |          |   [push]   |
+
+
+3. EVENT-DRIVEN INDEXING FLOW
+=============================
+
+Gateway API           Kafka              MCP Orchestrator      Elasticsearch
+     |                  |                      |                     |
+     |--produce-------->|                      |                     |
+     |  restaurant.     |                      |                     |
+     |  created         |--consume------------>|                     |
+     |                  |  (mcp-indexer group)  |--bulkIndex-------->|
+     |                  |                      |                     |
+     |--produce-------->|                      |                     |
+     |  dish.updated    |--consume------------>|                     |
+     |                  |                      |--updateDoc--------->|
+     |                  |                      |                     |
+     |--produce-------->|                      |                     |
+     |  dish.availab-   |--consume------------>|                     |
+     |  ility.changed   |                      |--updateField------>|
+     |                  |                      |                     |
+     |                  |  Notification Svc    |                     |
+     |--produce-------->|                      |                     |
+     |  order.created   |--consume------------>|                     |
+     |                  |  (notif-svc group)   |                     |
+     |                  |  [Email + SMS + Push]|                     |
+
+
+4. AUTHENTICATION FLOW
+======================
+
+Client                Gateway API             Redis              PostgreSQL
+  |                       |                     |                     |
+  |--POST /auth/login---->|                     |                     |
+  |  {email, password}    |--findUser-----------|-------------------->|
+  |                       |<--user--------------|---------------------|
+  |                       |                     |                     |
+  |                       |--verifyPassword---->|                     |
+  |                       |  (bcrypt compare)   |                     |
+  |                       |                     |                     |
+  |                       |--signJWT----------->|                     |
+  |                       |  (15min access,     |                     |
+  |                       |   7d refresh)       |                     |
+  |<--{accessToken,-------|                     |                     |
+  |    refreshToken}      |                     |                     |
+  |                       |                     |                     |
+  |--GET /orders--------->|                     |                     |
+  |  Auth: Bearer {jwt}   |--validateJWT------->|                     |
+  |                       |  (check blacklist)  |                     |
+  |                       |<--valid-------------|                     |
+  |                       |--queryOrders--------|-------------------->|
+  |<--{orders}------------|                     |                     |
+  |                       |                     |                     |
+  |--POST /auth/logout--->|                     |                     |
+  |  Auth: Bearer {jwt}   |--blacklistToken---->|                     |
+  |                       |  (add to Redis set) |                     |
+  |<--{message: ok}-------|                     |                     |
+
+
+5. MCP PROVIDER ROUTING FLOW
+=============================
+
+Request              Provider Router        Health Monitor       Providers
+   |                      |                      |                  |
+   |--searchRestaurants-->|                      |                  |
+   |                      |--getHealthStatus---->|                  |
+   |                      |<--{mock:UP,          |                  |
+   |                      |    swiggy:DOWN,      |                  |
+   |                      |    zomato:UP}        |                  |
+   |                      |                      |                  |
+   |                      |--checkCircuitBreaker>|                  |
+   |                      |<--{mock:CLOSED,      |                  |
+   |                      |    zomato:CLOSED}    |                  |
+   |                      |                      |                  |
+   |                      |--search (parallel)---|----------------->|
+   |                      |                      |     [mock]       |
+   |                      |                      |     [zomato]     |
+   |                      |<--results------------|------------------|
+   |                      |                      |                  |
+   |                      |--normalize---------->|                  |
+   |                      |--deduplicate-------->|                  |
+   |                      |--rank--------------->|                  |
+   |<--{ranked results}---|                      |                  |

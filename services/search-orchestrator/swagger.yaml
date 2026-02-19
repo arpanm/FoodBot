@@ -1,0 +1,380 @@
+openapi: 3.0.3
+info:
+  title: FoodBot Search Orchestrator API
+  description: |
+    Multi-source search coordination service.
+    Orchestrates parallel searches across Elasticsearch, MCP Adapter,
+    and PostgreSQL with result aggregation, ranking, and caching.
+  version: 1.0.0
+  contact:
+    name: FoodBot Platform Team
+    email: support@foodbot.com
+
+servers:
+  - url: http://localhost:3002
+    description: Development server
+
+components:
+  schemas:
+    SearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          description: Search text
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+            radius:
+              type: number
+              description: Search radius in meters
+        filters:
+          type: object
+          properties:
+            cuisineTypes:
+              type: array
+              items:
+                type: string
+            priceRange:
+              type: string
+            minRating:
+              type: number
+            isOpen:
+              type: boolean
+            maxDeliveryTime:
+              type: integer
+              description: Maximum delivery time in minutes
+        strategy:
+          type: string
+          enum: [fast, comprehensive, fallback]
+          default: comprehensive
+          description: |
+            Search strategy:
+            - fast: Elasticsearch only (<100ms)
+            - comprehensive: All sources (<500ms)
+            - fallback: Database only (when other sources unavailable)
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              default: 1
+            pageSize:
+              type: integer
+              default: 20
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        strategy:
+          type: string
+          description: Strategy that was used
+        sources:
+          type: array
+          items:
+            type: string
+          description: Data sources that contributed results
+        responseTime:
+          type: integer
+          description: Total response time in milliseconds
+        cached:
+          type: boolean
+          description: Whether results were served from cache
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [restaurant, dish]
+        name:
+          type: string
+        description:
+          type: string
+        score:
+          type: number
+          description: Composite relevance score (0-1)
+        restaurant:
+          $ref: '#/components/schemas/RestaurantResult'
+        dish:
+          $ref: '#/components/schemas/DishResult'
+        source:
+          type: string
+          description: Data source (elasticsearch, mcp, database)
+
+    RestaurantResult:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        cuisineTypes:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        priceRange:
+          type: string
+        isOpen:
+          type: boolean
+        estimatedDeliveryTime:
+          type: integer
+        distance:
+          type: number
+          description: Distance in meters (when location provided)
+
+    DishResult:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        restaurantId:
+          type: string
+        restaurantName:
+          type: string
+        isVegetarian:
+          type: boolean
+        isAvailable:
+          type: boolean
+
+    AutocompleteResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              type:
+                type: string
+                enum: [restaurant, dish, cuisine]
+              score:
+                type: number
+        responseTime:
+          type: integer
+
+    PopularSearchesResponse:
+      type: object
+      properties:
+        searches:
+          type: array
+          items:
+            type: object
+            properties:
+              query:
+                type: string
+              count:
+                type: integer
+              trend:
+                type: string
+                enum: [up, down, stable]
+
+    CacheInvalidateRequest:
+      type: object
+      properties:
+        pattern:
+          type: string
+          description: Cache key pattern to invalidate (glob syntax)
+        entityType:
+          type: string
+          enum: [restaurant, dish, all]
+        entityId:
+          type: string
+          description: Specific entity ID to invalidate
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        sources:
+          type: object
+          properties:
+            elasticsearch:
+              type: object
+              properties:
+                status:
+                  type: string
+                latency:
+                  type: integer
+            mcp:
+              type: object
+              properties:
+                status:
+                  type: string
+                latency:
+                  type: integer
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                latency:
+                  type: integer
+            cache:
+              type: object
+              properties:
+                status:
+                  type: string
+                hitRate:
+                  type: number
+
+paths:
+  /search:
+    post:
+      summary: Search restaurants and dishes
+      description: |
+        Executes a multi-source search with the specified strategy.
+        Results are deduplicated, scored, and ranked using a composite
+        scoring algorithm.
+
+        Scoring weights:
+        - Relevance: 35%
+        - Rating: 20%
+        - Proximity: 15%
+        - Availability: 10%
+        - Delivery Time: 8%
+        - User Preference: 7%
+        - Popularity: 5%
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid search request
+        '408':
+          description: Search timeout (exceeded MAX_TOTAL_TIMEOUT_MS)
+        '503':
+          description: All sources unavailable
+
+  /search/autocomplete:
+    get:
+      summary: Autocomplete suggestions
+      description: Returns fast (<50ms) autocomplete suggestions from Elasticsearch
+      parameters:
+        - name: prefix
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutocompleteResponse'
+
+  /search/popular:
+    get:
+      summary: Popular search terms
+      description: Returns trending and popular search terms
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Popular searches
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopularSearchesResponse'
+
+  /cache/invalidate:
+    post:
+      summary: Invalidate cache
+      description: |
+        Webhook endpoint for cache invalidation.
+        Called by the Gateway API when data changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CacheInvalidateRequest'
+      responses:
+        '200':
+          description: Cache invalidated
+        '400':
+          description: Invalid invalidation request
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns health status of all data sources and cache
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unhealthy
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: |
+        Returns Prometheus-formatted metrics including:
+        - search_request_duration_seconds
+        - search_source_duration_seconds (per source)
+        - search_cache_hit_total / search_cache_miss_total
+        - search_source_errors_total (per source)
+        - search_results_total
+      responses:
+        '200':
+          description: Metrics
+          content:
+            text/plain:
+              schema:
+                type: string

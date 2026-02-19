@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Payment } from '../../entities/payment.entity';
+import { PaymentEventProducer } from '../../events/producers/payment-event.producer';
 import { OrderService } from '../order/order.service';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class PaymentService implements OnModuleInit {
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
     private readonly orderService: OrderService,
+    private readonly paymentEventProducer: PaymentEventProducer,
   ) {}
 
   async onModuleInit() {
@@ -131,6 +133,17 @@ export class PaymentService implements OnModuleInit {
 
     payment.status = 'completed';
     await this.paymentRepository.save(payment);
+
+    // Publish payment.completed event
+    await this.paymentEventProducer.publishPaymentCompleted({
+      paymentId: payment.id,
+      orderId: payment.orderId,
+      userId: payment.userId,
+      amount: payment.amount,
+      paymentMethod: payment.paymentMethod,
+    }).catch((err: unknown) => {
+      this.logger.error('Failed to publish payment.completed event', err);
+    });
 
     return {
       paymentId: payment.id,

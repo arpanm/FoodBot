@@ -4,6 +4,7 @@ import { Repository, Like, In } from 'typeorm';
 
 import { Dish } from '../../entities/dish.entity';
 import { Restaurant } from '../../entities/restaurant.entity';
+import { RestaurantEventProducer } from '../../events/producers/restaurant-event.producer';
 import { RedisService } from '../../services/redis.service';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class RestaurantService implements OnModuleInit {
     @InjectRepository(Dish)
     private readonly dishRepository: Repository<Dish>,
     private readonly redisService: RedisService,
+    private readonly restaurantEventProducer: RestaurantEventProducer,
   ) {}
 
   async onModuleInit() {
@@ -303,7 +305,14 @@ export class RestaurantService implements OnModuleInit {
       preparationTime: data.preparationTime || 30,
     });
 
-    return this.restaurantRepository.save(restaurant);
+    const saved = await this.restaurantRepository.save(restaurant);
+
+    // Publish restaurant.created event
+    await this.restaurantEventProducer.publishRestaurantCreated(saved).catch((err: unknown) => {
+      this.logger.error('Failed to publish restaurant.created event', err);
+    });
+
+    return saved;
   }
 
   async update(id: string, ownerId: string, data: Partial<Restaurant>): Promise<Restaurant> {
@@ -317,6 +326,11 @@ export class RestaurantService implements OnModuleInit {
     // Invalidate cache
     await this.invalidateRestaurantCache(id);
 
+    // Publish restaurant.updated event
+    await this.restaurantEventProducer.publishRestaurantUpdated(id, data as Record<string, unknown>, ownerId).catch((err: unknown) => {
+      this.logger.error('Failed to publish restaurant.updated event', err);
+    });
+
     return updated;
   }
 
@@ -327,6 +341,11 @@ export class RestaurantService implements OnModuleInit {
 
     // Invalidate cache
     await this.invalidateRestaurantCache(id);
+
+    // Publish restaurant.deleted event
+    await this.restaurantEventProducer.publishRestaurantDeleted(id, restaurant.ownerId).catch((err: unknown) => {
+      this.logger.error('Failed to publish restaurant.deleted event', err);
+    });
   }
 
   async findByIdWithAuth(id: string, token?: string): Promise<Restaurant> {

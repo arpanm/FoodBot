@@ -1,0 +1,69 @@
+# ============================================
+# Kafka-specific Spring configuration profile
+# Activate with: --spring.profiles.active=kafka
+# ============================================
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    consumer:
+      group-id: mcp-indexer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.foodbot.mcp.model,com.foodbot.mcp.consumers"
+        max.poll.records: 50
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 3000
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        linger.ms: 5
+        batch.size: 16384
+        buffer.memory: 33554432
+
+    listener:
+      auto-startup: true
+      ack-mode: manual
+      concurrency: 3
+
+# ============================================
+# Kafka Topic Definitions
+# ============================================
+kafka:
+  topics:
+    # Restaurant domain
+    restaurant-created: restaurant.created
+    restaurant-updated: restaurant.updated
+    restaurant-deleted: restaurant.deleted
+
+    # Dish domain
+    dish-created: dish.created
+    dish-updated: dish.updated
+    menu-updated: menu.updated
+    dish-availability-changed: dish.availability.changed
+
+    # Order domain
+    order-created: order.created
+    order-status-changed: order.status.changed
+
+    # Payment domain
+    payment-completed: payment.completed
+    payment-failed: payment.failed
+    payment-refunded: payment.refunded
+
+    # User domain
+    user-registered: user.registered
+
+    # Dead Letter Queue
+    dlq: foodbot.dlq

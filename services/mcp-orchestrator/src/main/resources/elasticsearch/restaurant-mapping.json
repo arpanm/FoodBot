@@ -1,0 +1,116 @@
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1,
+    "analysis": {
+      "analyzer": {
+        "autocomplete_analyzer": {
+          "type": "custom",
+          "tokenizer": "autocomplete_tokenizer",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "search_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "keyword_lowercase": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": ["lowercase"]
+        }
+      },
+      "tokenizer": {
+        "autocomplete_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "autocomplete_analyzer",
+            "search_analyzer": "search_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "cuisine": {
+        "type": "keyword"
+      },
+      "rating": {
+        "type": "float"
+      },
+      "reviewCount": {
+        "type": "integer"
+      },
+      "priceRange": {
+        "type": "integer"
+      },
+      "location": {
+        "type": "geo_point"
+      },
+      "deliveryTime": {
+        "type": "integer"
+      },
+      "minimumOrder": {
+        "type": "float"
+      },
+      "deliveryFee": {
+        "type": "float"
+      },
+      "available": {
+        "type": "boolean"
+      },
+      "imageUrl": {
+        "type": "keyword",
+        "index": false
+      },
+      "address": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "phone": {
+        "type": "keyword",
+        "index": false
+      },
+      "provider": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "features": {
+        "type": "keyword"
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "updatedAt": {
+        "type": "date"
+      }
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1,
+    "analysis": {
+      "analyzer": {
+        "autocomplete_analyzer": {
+          "type": "custom",
+          "tokenizer": "autocomplete_tokenizer",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "search_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "ingredient_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding", "ingredient_synonym"]
+        }
+      },
+      "tokenizer": {
+        "autocomplete_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      },
+      "filter": {
+        "ingredient_synonym": {
+          "type": "synonym",
+          "synonyms": [
+            "paneer,cottage cheese",
+            "capsicum,bell pepper",
+            "coriander,cilantro",
+            "aubergine,eggplant,brinjal"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "restaurantId": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "autocomplete_analyzer",
+            "search_analyzer": "search_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "subcategory": {
+        "type": "keyword"
+      },
+      "price": {
+        "type": "float"
+      },
+      "portionSize": {
+        "type": "keyword"
+      },
+      "ingredients": {
+        "type": "text",
+        "analyzer": "ingredient_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "dietaryTags": {
+        "type": "keyword"
+      },
+      "preparationTime": {
+        "type": "integer"
+      },
+      "available": {
+        "type": "boolean"
+      },
+      "rating": {
+        "type": "float"
+      },
+      "reviewCount": {
+        "type": "integer"
+      },
+      "imageUrl": {
+        "type": "keyword",
+        "index": false
+      },
+      "spicy": {
+        "type": "boolean"
+      },
+      "spiceLevel": {
+        "type": "integer"
+      },
+      "bestSeller": {
+        "type": "boolean"
+      },
+      "newItem": {
+        "type": "boolean"
+      },
+      "nutritionalInfo": {
+        "type": "object",
+        "properties": {
+          "calories": { "type": "integer" },
+          "protein": { "type": "float" },
+          "carbohydrates": { "type": "float" },
+          "fat": { "type": "float" },
+          "fiber": { "type": "float" }
+        }
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "updatedAt": {
+        "type": "date"
+      }
+    }
+  }
+}

@@ -254,8 +254,40 @@ services:
       KAFKA_CLUSTERS_0_NAME: foodbot-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8083
     ports:
       - '8082:8080'
+    networks:
+      - foodbot-network
+
+  # ============================================
+  # Kafka Topic Initialization
+  # ============================================
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: foodbot-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ['/bin/bash', '-c']
+    command:
+      - |
+        echo "Creating Kafka topics..."
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic restaurant.created --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic restaurant.updated --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic restaurant.deleted --partitions 3 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dish.created --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dish.updated --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dish.availability.changed --partitions 12 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic order.created --partitions 12 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic order.status.changed --partitions 12 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payment.completed --partitions 12 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payment.failed --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payment.refunded --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic user.registered --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic foodbot.dlq --partitions 3 --replication-factor 1
+        echo "All Kafka topics created successfully."
+        kafka-topics --bootstrap-server kafka:9092 --list
     networks:
       - foodbot-network
 
@@ -281,6 +313,48 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  # ============================================
+  # Search Orchestrator - Multi-source Search
+  # ============================================
+  search-orchestrator:
+    build:
+      context: .
+      dockerfile: services/search-orchestrator/Dockerfile
+    container_name: foodbot-search-orchestrator
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: 3002
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_NODE: http://elasticsearch:9200
+      ELASTICSEARCH_INDEX: foodbot_restaurants
+      MCP_ADAPTER_URL: http://mcp-adapter:8082/api/v1
+      DB_HOST: foodbot-db
+      DB_PORT: 5432
+      DB_NAME: foodbot
+      DB_USERNAME: foodbot
+      DB_PASSWORD: foodbot_password
+      ES_TIMEOUT_MS: 200
+      MCP_TIMEOUT_MS: 2000
+      DB_TIMEOUT_MS: 500
+      MAX_TOTAL_TIMEOUT_MS: 3000
+      DEFAULT_SEARCH_STRATEGY: comprehensive
+      CACHE_TTL_SECONDS: 300
+      LOG_LEVEL: info
+    ports:
+      - '3002:3002'
+    networks:
+      - foodbot-network
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3002/health']
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
 
 # ============================================
 # Networks

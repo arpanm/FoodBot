@@ -1,0 +1,23 @@
+{
+  "name": "@foodbot/notification-service",
+  "version": "1.0.0",
+  "description": "FoodBot notification service - consumes Kafka events and dispatches notifications",
+  "main": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "uuid": "^9.0.1",
+    "pino": "^9.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2",
+    "@types/uuid": "^9.0.7"
+  }
+}

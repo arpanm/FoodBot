@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Dish } from '../../entities/dish.entity';
+import { DishEventProducer } from '../../events/producers/dish-event.producer';
 
 @Injectable()
 export class DishService implements OnModuleInit {
@@ -11,6 +12,7 @@ export class DishService implements OnModuleInit {
   constructor(
     @InjectRepository(Dish)
     private readonly dishRepository: Repository<Dish>,
+    private readonly dishEventProducer: DishEventProducer,
   ) {}
 
   async onModuleInit() {
@@ -236,7 +238,14 @@ export class DishService implements OnModuleInit {
       totalReviews: 0,
     });
 
-    return this.dishRepository.save(dish);
+    const saved = await this.dishRepository.save(dish);
+
+    // Publish dish.created event
+    await this.dishEventProducer.publishDishCreated(saved).catch((err: unknown) => {
+      this.logger.error('Failed to publish dish.created event', err);
+    });
+
+    return saved;
   }
 
   async update(id: string, ownerRestaurantId: string, data: Partial<Dish>): Promise<Dish> {
@@ -245,7 +254,16 @@ export class DishService implements OnModuleInit {
       throw new ForbiddenException('Forbidden resource');
     }
     Object.assign(dish, data);
-    return this.dishRepository.save(dish);
+    const saved = await this.dishRepository.save(dish);
+
+    // Publish dish.updated event
+    await this.dishEventProducer.publishDishUpdated(
+      id, ownerRestaurantId, data as Record<string, unknown>, ownerRestaurantId,
+    ).catch((err: unknown) => {
+      this.logger.error('Failed to publish dish.updated event', err);
+    });
+
+    return saved;
   }
 
   async delete(id: string, ownerRestaurantId: string): Promise<void> {
@@ -264,6 +282,15 @@ export class DishService implements OnModuleInit {
       throw new ForbiddenException('Forbidden resource');
     }
     dish.isAvailable = isAvailable;
-    return this.dishRepository.save(dish);
+    const saved = await this.dishRepository.save(dish);
+
+    // Publish dish.availability.changed event
+    await this.dishEventProducer.publishDishAvailabilityChanged(
+      id, ownerRestaurantId, isAvailable, ownerRestaurantId,
+    ).catch((err: unknown) => {
+      this.logger.error('Failed to publish dish.availability.changed event', err);
+    });
+
+    return saved;
   }
 }
