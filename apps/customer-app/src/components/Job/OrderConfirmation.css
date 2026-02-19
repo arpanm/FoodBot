@@ -1,0 +1,223 @@
+/**
+ * OrderConfirmation Styles
+ */
+
+.order-confirmation {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon */
+.order-confirmation__icon-wrapper {
+  margin-bottom: 24px;
+}
+
+.order-confirmation__icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: bold;
+  color: white;
+  animation: scale-in 0.4s ease-out;
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Title & Message */
+.order-confirmation__title {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  animation: fade-in 0.5s ease-out 0.2s backwards;
+}
+
+.order-confirmation__message {
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  color: #666;
+  animation: fade-in 0.5s ease-out 0.3s backwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Details */
+.order-confirmation__details {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+  animation: fade-in 0.5s ease-out 0.4s backwards;
+}
+
+.order-confirmation__detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.order-confirmation__detail-item:first-child {
+  padding-top: 0;
+}
+
+.order-confirmation__detail-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.order-confirmation__detail-item--total {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.order-confirmation__detail-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.order-confirmation__detail-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.order-confirmation__detail-value--highlight {
+  color: #4CAF50;
+  font-family: monospace;
+  font-size: 16px;
+}
+
+.order-confirmation__detail-value--total {
+  font-size: 20px;
+  color: #1a1a1a;
+}
+
+/* Payment Status */
+.order-confirmation__payment-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.order-confirmation__payment-status--completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.order-confirmation__payment-status--pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.order-confirmation__payment-status--processing {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.order-confirmation__payment-status--failed {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+/* Actions */
+.order-confirmation__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  animation: fade-in 0.5s ease-out 0.5s backwards;
+}
+
+.order-confirmation__action-button {
+  width: 100%;
+}
+
+/* Info Box */
+.order-confirmation__info-box {
+  background-color: #e8f5e9;
+  border-left: 4px solid #4CAF50;
+  border-radius: 4px;
+  padding: 16px;
+  text-align: left;
+  animation: fade-in 0.5s ease-out 0.6s backwards;
+}
+
+.order-confirmation__info-text {
+  margin: 0;
+  font-size: 13px;
+  color: #2e7d32;
+  line-height: 1.6;
+}
+
+.order-confirmation__info-text:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .order-confirmation {
+    padding: 24px 16px;
+  }
+
+  .order-confirmation__title {
+    font-size: 20px;
+  }
+
+  .order-confirmation__message {
+    font-size: 14px;
+  }
+
+  .order-confirmation__icon {
+    width: 56px;
+    height: 56px;
+    font-size: 32px;
+  }
+
+  .order-confirmation__details {
+    padding: 16px;
+  }
+
+  .order-confirmation__detail-item {
+    padding: 10px 0;
+  }
+}

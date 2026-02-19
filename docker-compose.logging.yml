@@ -1,0 +1,156 @@
+# Docker Compose for ELK Stack (Elasticsearch, Logstash, Kibana)
+# Centralized logging infrastructure for FoodBot
+#
+# Usage:
+#   docker-compose -f docker-compose.logging.yml up -d
+#   docker-compose -f docker-compose.logging.yml logs -f
+#   docker-compose -f docker-compose.logging.yml down
+
+version: '3.8'
+
+services:
+  # Elasticsearch - stores and indexes logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: foodbot-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - foodbot-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Logstash - processes and forwards logs to Elasticsearch
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: foodbot-logstash
+    volumes:
+      - ./logging/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logging/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logs:/var/log/foodbot:ro
+    ports:
+      - "5000:5000/tcp"  # TCP input
+      - "5000:5000/udp"  # UDP input
+      - "5044:5044"      # Beats input
+      - "9600:9600"      # Logstash monitoring API
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+    networks:
+      - foodbot-logging
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Kibana - visualizes logs and creates dashboards
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: foodbot-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=changeme
+      - xpack.security.enabled=false
+    networks:
+      - foodbot-logging
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Filebeat - ships logs from files to Logstash
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: foodbot-filebeat
+    user: root
+    volumes:
+      - ./logging/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/var/log/foodbot:ro
+      - filebeat-data:/usr/share/filebeat/data
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - foodbot-logging
+    depends_on:
+      logstash:
+        condition: service_healthy
+    command: filebeat -e -strict.perms=false
+    restart: unless-stopped
+
+  # Metricbeat - ships system and application metrics
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:8.11.0
+    container_name: foodbot-metricbeat
+    user: root
+    volumes:
+      - ./logging/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+    networks:
+      - foodbot-logging
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    command: metricbeat -e -strict.perms=false -system.hostfs=/hostfs
+    restart: unless-stopped
+
+  # APM Server - Application Performance Monitoring
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.11.0
+    container_name: foodbot-apm-server
+    ports:
+      - "8200:8200"
+    environment:
+      - output.elasticsearch.hosts=["http://elasticsearch:9200"]
+      - apm-server.rum.enabled=true
+      - apm-server.rum.allow_origins=['*']
+      - apm-server.kibana.enabled=true
+      - apm-server.kibana.host=http://kibana:5601
+    networks:
+      - foodbot-logging
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8200/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  filebeat-data:
+    driver: local
+
+networks:
+  foodbot-logging:
+    driver: bridge
+    name: foodbot-logging

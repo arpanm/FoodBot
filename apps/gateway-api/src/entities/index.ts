@@ -9,3 +9,4 @@ export { CartItem } from './cart-item.entity';
 export { Payment, PaymentMethod, PaymentEntityStatus } from './payment.entity';
 export { Feedback } from './feedback.entity';
 export { Workflow, WorkflowStatus } from './workflow.entity';
+export { AgentJob, JobStatus, JobAction } from './agent-job.entity';

@@ -137,6 +137,18 @@ COMMANDS:
 
     doctor              Check system requirements and project health
 
+    # Production Commands
+    health              Run production health checks
+    monitor             Start real-time monitoring dashboard
+    monitor:once        Show metrics once and exit
+    deploy              Deploy to production
+    deploy:rollback     Rollback to previous deployment
+    benchmark           Run performance benchmarks
+    benchmark:quick     Run quick benchmarks only
+    logging:up          Start ELK logging stack
+    logging:down        Stop ELK logging stack
+    logging:logs        Show logging stack logs
+
 PROJECTS:
     gateway-api         NestJS Gateway API
     customer-app        React Customer App
@@ -687,6 +699,71 @@ do_doctor() {
     fi
 }
 
+# Production health check
+do_health() {
+    print_header "Running Production Health Check"
+    ./scripts/health-check.sh
+}
+
+# Real-time monitoring
+do_monitor() {
+    print_header "Starting Real-time Monitoring"
+    ./scripts/monitor.sh
+}
+
+# Show metrics once
+do_monitor_once() {
+    print_header "Production Metrics"
+    ./scripts/monitor.sh once
+}
+
+# Production deployment
+do_deploy() {
+    print_header "Deploying to Production"
+    ./scripts/production-deploy.sh
+}
+
+# Rollback deployment
+do_deploy_rollback() {
+    print_header "Rolling Back Deployment"
+    ./scripts/production-deploy.sh rollback
+}
+
+# Performance benchmarks
+do_benchmark() {
+    print_header "Running Performance Benchmarks"
+    cd performance
+    ./benchmark.sh --full
+}
+
+# Quick benchmarks
+do_benchmark_quick() {
+    print_header "Running Quick Benchmarks"
+    cd performance
+    ./benchmark.sh --quick
+}
+
+# Start logging stack
+do_logging_up() {
+    print_header "Starting ELK Logging Stack"
+    docker-compose -f docker-compose.logging.yml up -d
+    print_success "Logging stack started"
+    print_info "Access Kibana at: http://localhost:5601"
+    print_info "Access Elasticsearch at: http://localhost:9200"
+}
+
+# Stop logging stack
+do_logging_down() {
+    print_header "Stopping ELK Logging Stack"
+    docker-compose -f docker-compose.logging.yml down
+    print_success "Logging stack stopped"
+}
+
+# Show logging stack logs
+do_logging_logs() {
+    docker-compose -f docker-compose.logging.yml logs -f
+}
+
 # Main command router
 main() {
     local command=$1
@@ -791,6 +868,36 @@ main() {
             ;;
         doctor)
             do_doctor
+            ;;
+        health)
+            do_health
+            ;;
+        monitor)
+            do_monitor
+            ;;
+        monitor:once)
+            do_monitor_once
+            ;;
+        deploy)
+            do_deploy
+            ;;
+        deploy:rollback)
+            do_deploy_rollback
+            ;;
+        benchmark)
+            do_benchmark
+            ;;
+        benchmark:quick)
+            do_benchmark_quick
+            ;;
+        logging:up)
+            do_logging_up
+            ;;
+        logging:down)
+            do_logging_down
+            ;;
+        logging:logs)
+            do_logging_logs
             ;;
         help|--help|-h|"")
             show_help

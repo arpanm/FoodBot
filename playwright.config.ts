@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Playwright E2E Testing Configuration
+ * Tests the full FoodBot system including Chrome Extension, API Gateway, and Frontend
  * See https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
@@ -31,7 +32,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3001',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -47,39 +48,65 @@ export default defineConfig({
 
     // Navigation timeout
     navigationTimeout: 30000,
+
+    // Ignore HTTPS errors for local development
+    ignoreHTTPSErrors: true,
   },
 
   // Configure projects for major browsers
   projects: [
+    // Main desktop browser testing
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+      },
+      testIgnore: '**/extension-*.spec.ts',
+    },
+
+    // Chrome extension testing - uses real Chrome with extension loaded
+    {
+      name: 'chromium-extension',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        contextOptions: {
+          permissions: ['notifications', 'storage'],
+        },
+      },
+      testMatch: '**/extension-*.spec.ts',
     },
 
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: '**/extension-*.spec.ts', // Extensions not supported in Firefox tests
     },
 
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: '**/extension-*.spec.ts', // Extensions not supported in Safari tests
     },
 
     // Mobile viewports
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: '**/extension-*.spec.ts',
     },
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
+      testIgnore: '**/extension-*.spec.ts',
     },
 
     // Tablet viewports
     {
       name: 'iPad',
       use: { ...devices['iPad Pro'] },
+      testIgnore: '**/extension-*.spec.ts',
     },
   ],
 
@@ -121,4 +148,8 @@ export default defineConfig({
 
   // Preserve output between test runs
   preserveOutput: 'always',
+
+  // Global setup and teardown
+  globalSetup: require.resolve('./e2e/setup/global-setup.ts'),
+  globalTeardown: require.resolve('./e2e/setup/global-teardown.ts'),
 });

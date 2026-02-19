@@ -1,0 +1,507 @@
+# =============================================================================
+# FoodBot - Continuous Deployment to Production
+# =============================================================================
+# Deploys to production on semantic version tags (v*.*.*)
+# Blue/green deployment with automatic rollback on failure
+# Comprehensive health checks and E2E tests
+# =============================================================================
+
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.2.3)'
+        required: true
+        type: string
+      skip_e2e:
+        description: 'Skip E2E tests'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Pre-flight Checks
+  # ---------------------------------------------------------------------------
+  preflight:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      should_deploy: ${{ steps.checks.outputs.should_deploy }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "value=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Deploying version: ${VERSION}"
+
+      - name: Validate semantic version
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid semantic version: $VERSION"
+            exit 1
+          fi
+          echo "Version is valid"
+
+      - name: Check if tag exists
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION does not exist"
+            exit 1
+          fi
+
+      - name: Verify required secrets
+        id: checks
+        run: |
+          missing=""
+          if [ -z "${{ secrets.KUBE_CONFIG_PRODUCTION }}" ]; then missing="$missing KUBE_CONFIG_PRODUCTION"; fi
+          if [ -z "${{ secrets.PROD_DATABASE_URL }}" ]; then missing="$missing PROD_DATABASE_URL"; fi
+          if [ -z "${{ secrets.DATADOG_API_KEY }}" ]; then missing="$missing DATADOG_API_KEY"; fi
+
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets:$missing"
+            exit 1
+          fi
+
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "All pre-flight checks passed"
+
+  # ---------------------------------------------------------------------------
+  # Build and Security Scan Images
+  # ---------------------------------------------------------------------------
+  build-and-scan:
+    name: Build & Security Scan
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    strategy:
+      matrix:
+        service:
+          - name: backend
+            context: .
+            dockerfile: ./apps/gateway-api/Dockerfile
+          - name: frontend
+            context: .
+            dockerfile: ./apps/customer-app/Dockerfile
+          - name: mcp
+            context: ./services/mcp-orchestrator
+            dockerfile: ./services/mcp-orchestrator/Dockerfile
+          - name: search
+            context: ./services/search-orchestrator
+            dockerfile: ./services/search-orchestrator/Dockerfile
+          - name: adapter
+            context: ./services/mcp-adapter
+            dockerfile: ./services/mcp-adapter/Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:${{ needs.preflight.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:cache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:cache,mode=max
+          labels: |
+            org.opencontainers.image.version=${{ needs.preflight.outputs.version }}
+            org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:${{ needs.preflight.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service.name }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service.name }}.sarif'
+          category: 'trivy-${{ matrix.service.name }}'
+
+      - name: Check for critical vulnerabilities
+        run: |
+          if grep -q "CRITICAL" trivy-results-${{ matrix.service.name }}.sarif; then
+            echo "::error::Critical vulnerabilities found in ${{ matrix.service.name }} image"
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Blue/Green Deployment to Production
+  # ---------------------------------------------------------------------------
+  deploy-production:
+    name: Blue/Green Deploy
+    runs-on: ubuntu-latest
+    needs: [preflight, build-and-scan]
+    environment:
+      name: production
+      url: https://foodbot.app
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Create green environment
+        run: |
+          VERSION="${{ needs.preflight.outputs.version }}"
+
+          # Create green namespace if not exists
+          kubectl create namespace foodbot-green --dry-run=client -o yaml | kubectl apply -f -
+
+          # Deploy to green environment
+          kubectl apply -f k8s/production/green/ -n foodbot-green
+
+          # Update image versions
+          kubectl set image deployment/foodbot-backend \
+            backend=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${VERSION} \
+            -n foodbot-green
+
+          kubectl set image deployment/foodbot-frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${VERSION} \
+            -n foodbot-green
+
+          kubectl set image deployment/foodbot-mcp \
+            mcp=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/mcp:${VERSION} \
+            -n foodbot-green
+
+          kubectl set image deployment/foodbot-search \
+            search=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/search:${VERSION} \
+            -n foodbot-green
+
+          kubectl set image deployment/foodbot-adapter \
+            adapter=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/adapter:${VERSION} \
+            -n foodbot-green
+
+      - name: Wait for green deployment
+        run: |
+          kubectl rollout status deployment/foodbot-backend -n foodbot-green --timeout=10m
+          kubectl rollout status deployment/foodbot-frontend -n foodbot-green --timeout=10m
+          kubectl rollout status deployment/foodbot-mcp -n foodbot-green --timeout=10m
+          kubectl rollout status deployment/foodbot-search -n foodbot-green --timeout=10m
+          kubectl rollout status deployment/foodbot-adapter -n foodbot-green --timeout=10m
+
+      - name: Run database migrations (dry-run)
+        run: |
+          kubectl exec -n foodbot-green deployment/foodbot-backend -- \
+            npm run migration:dry-run
+
+      - name: Verify green environment health
+        run: |
+          # Port-forward to green environment
+          kubectl port-forward -n foodbot-green service/foodbot-backend 8080:3000 &
+          PF_PID=$!
+          sleep 10
+
+          # Health checks
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/v1/health)
+          kill $PF_PID
+
+          if [ "$response" != "200" ]; then
+            echo "Green environment health check failed"
+            exit 1
+          fi
+          echo "Green environment is healthy"
+
+      - name: Run smoke tests on green
+        run: |
+          kubectl port-forward -n foodbot-green service/foodbot-backend 8080:3000 &
+          PF_PID=$!
+          sleep 5
+
+          # Basic API tests
+          curl -f http://localhost:8080/api/v1/health
+          curl -f http://localhost:8080/api/v1/menu
+
+          kill $PF_PID
+          echo "Green environment smoke tests passed"
+
+      - name: Switch traffic to green (blue/green swap)
+        run: |
+          # Update production service selectors to point to green
+          kubectl patch service foodbot-backend -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"green"}}}'
+
+          kubectl patch service foodbot-frontend -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"green"}}}'
+
+          kubectl patch service foodbot-mcp -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"green"}}}'
+
+          kubectl patch service foodbot-search -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"green"}}}'
+
+          kubectl patch service foodbot-adapter -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"green"}}}'
+
+          echo "Traffic switched to green environment"
+
+      - name: Monitor metrics for 2 minutes
+        run: |
+          echo "Monitoring production traffic on green environment..."
+          sleep 120
+
+      - name: Verify production health post-switch
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://api.foodbot.app/api/v1/health)
+          if [ "$response" != "200" ]; then
+            echo "Production health check failed after switch"
+            exit 1
+          fi
+          echo "Production is healthy on green environment"
+
+      - name: Run database migrations (production)
+        run: |
+          kubectl exec -n foodbot-green deployment/foodbot-backend -- \
+            npm run migration:run
+
+      - name: Scale down blue environment
+        run: |
+          kubectl scale deployment --all --replicas=0 -n foodbot-blue
+          echo "Blue environment scaled down"
+
+      - name: Label green as new blue
+        run: |
+          # Mark current green as the new blue for next deployment
+          kubectl label namespace foodbot-green environment=blue --overwrite
+          kubectl label namespace foodbot-blue environment=green --overwrite
+
+  # ---------------------------------------------------------------------------
+  # Run E2E Tests on Production
+  # ---------------------------------------------------------------------------
+  e2e-tests:
+    name: Production E2E Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: ${{ !inputs.skip_e2e }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests against production
+        env:
+          PLAYWRIGHT_BASE_URL: https://foodbot.app
+          PLAYWRIGHT_API_URL: https://api.foodbot.app
+        run: pnpm run test:e2e
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-production-results
+          path: playwright-report/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Rollback on Failure
+  # ---------------------------------------------------------------------------
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-production, e2e-tests]
+    if: failure()
+    timeout-minutes: 10
+
+    steps:
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Rollback to blue environment
+        run: |
+          echo "::warning::Deployment failed. Rolling back to blue environment..."
+
+          # Switch traffic back to blue
+          kubectl patch service foodbot-backend -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"blue"}}}'
+
+          kubectl patch service foodbot-frontend -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"blue"}}}'
+
+          kubectl patch service foodbot-mcp -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"blue"}}}'
+
+          kubectl patch service foodbot-search -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"blue"}}}'
+
+          kubectl patch service foodbot-adapter -n foodbot-production \
+            -p '{"spec":{"selector":{"environment":"blue"}}}'
+
+          # Scale up blue environment
+          kubectl scale deployment --all --replicas=3 -n foodbot-blue
+
+          echo "Rollback completed"
+
+      - name: Verify rollback health
+        run: |
+          sleep 30
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://api.foodbot.app/api/v1/health)
+          if [ "$response" == "200" ]; then
+            echo "Rollback successful. Production is healthy."
+          else
+            echo "::error::Rollback may have failed. Health check returned: $response"
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Post-deployment Tasks
+  # ---------------------------------------------------------------------------
+  post-deploy:
+    name: Post-deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [deploy-production, e2e-tests]
+    if: success()
+
+    steps:
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.preflight.outputs.version }}
+          release_name: Release ${{ needs.preflight.outputs.version }}
+          body: |
+            ## Changes in this Release
+            See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+            ## Deployment Information
+            - Environment: Production
+            - Deployed at: ${{ github.event.head_commit.timestamp }}
+            - Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Send Datadog deployment event
+        run: |
+          curl -X POST "https://api.datadoghq.com/api/v1/events" \
+            -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "FoodBot Production Deployment",
+              "text": "Version ${{ needs.preflight.outputs.version }} deployed to production",
+              "priority": "normal",
+              "tags": ["environment:production", "service:foodbot"],
+              "alert_type": "info"
+            }'
+
+      - name: Notify Slack
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "good",
+                "title": "🚀 Production Deployment Successful",
+                "text": "Version ${{ needs.preflight.outputs.version }} is now live",
+                "fields": [
+                  {"title": "Version", "value": "${{ needs.preflight.outputs.version }}", "short": true},
+                  {"title": "Environment", "value": "Production", "short": true},
+                  {"title": "Deployed by", "value": "${{ github.actor }}", "short": true}
+                ]
+              }]
+            }'
+
+      - name: Update status page
+        if: ${{ secrets.STATUS_PAGE_API_KEY != '' }}
+        run: |
+          # Update status page with deployment information
+          curl -X POST "https://api.statuspage.io/v1/pages/${{ secrets.STATUS_PAGE_ID }}/incidents" \
+            -H "Authorization: OAuth ${{ secrets.STATUS_PAGE_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "incident": {
+                "name": "Deployment: '${{ needs.preflight.outputs.version }}'",
+                "status": "resolved",
+                "impact": "none",
+                "body": "Successfully deployed version ${{ needs.preflight.outputs.version }} to production"
+              }
+            }'

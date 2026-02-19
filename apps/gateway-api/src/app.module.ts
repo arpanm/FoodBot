@@ -17,6 +17,7 @@ class AppThrottlerGuard extends ThrottlerGuard {
 import { getDatabaseConfig } from './config/database.config';
 import { EventsModule } from './events/events.module';
 import { ValidationExceptionFilter } from './filters/validation-exception.filter';
+import { McpModule } from './mcp/mcp.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CartModule } from './modules/cart/cart.module';
@@ -24,6 +25,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { DishModule } from './modules/dish/dish.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { HealthModule } from './modules/health/health.module';
+import { JobsModule } from './modules/jobs/jobs.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { RestaurantModule } from './modules/restaurant/restaurant.module';
@@ -59,6 +61,7 @@ import { UserModule } from './modules/user/user.module';
       limit: 100,
     }]),
     EventsModule,
+    McpModule,
     AuthModule,
     ChatModule,
     RestaurantModule,
@@ -71,6 +74,7 @@ import { UserModule } from './modules/user/user.module';
     UserModule,
     AdminModule,
     HealthModule,
+    JobsModule,
   ],
   providers: [
     {

@@ -103,6 +103,40 @@ export interface JobStatusResponse {
   progress?: number;
 }
 
+// ==================== Job API Types ====================
+
+export interface CreateJobRequest {
+  action: string;
+  platform: string;
+  payload: Record<string, unknown>;
+}
+
+export interface CreateJobResponse {
+  id: string;
+  action: string;
+  platform: string;
+  status: JobStatus;
+  createdAt: string;
+}
+
+export interface GetJobStatusRequest {
+  jobId: string;
+}
+
+export interface GetJobStatusResponse<T = unknown> {
+  id: string;
+  action: string;
+  platform: string;
+  status: JobStatus;
+  result?: T;
+  error?: string;
+  progress?: number;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
 export interface ChatHistoryResponse {
   messages: Message[];
   sessionId: string;

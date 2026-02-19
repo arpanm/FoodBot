@@ -1,0 +1,112 @@
+# Metricbeat Configuration for FoodBot
+#
+# Collects system and application metrics
+
+metricbeat.modules:
+  # System metrics
+  - module: system
+    enabled: true
+    period: 10s
+    metricsets:
+      - cpu
+      - load
+      - memory
+      - network
+      - process
+      - process_summary
+      - socket_summary
+      - filesystem
+      - fsstat
+    process.include_top_n:
+      by_cpu: 5
+      by_memory: 5
+
+  # Docker metrics
+  - module: docker
+    enabled: true
+    period: 10s
+    hosts: ["unix:///var/run/docker.sock"]
+    metricsets:
+      - container
+      - cpu
+      - diskio
+      - healthcheck
+      - info
+      - memory
+      - network
+
+  # Elasticsearch metrics
+  - module: elasticsearch
+    enabled: true
+    period: 10s
+    hosts: ["http://elasticsearch:9200"]
+    metricsets:
+      - node
+      - node_stats
+      - cluster_stats
+
+  # Logstash metrics
+  - module: logstash
+    enabled: true
+    period: 10s
+    hosts: ["http://logstash:9600"]
+    metricsets:
+      - node
+      - node_stats
+
+  # Kibana metrics
+  - module: kibana
+    enabled: true
+    period: 10s
+    hosts: ["http://kibana:5601"]
+    metricsets:
+      - status
+
+  # PostgreSQL metrics
+  - module: postgresql
+    enabled: true
+    period: 10s
+    hosts: ["postgres://postgres:5432?sslmode=disable"]
+    username: postgres
+    password: ${POSTGRES_PASSWORD:postgres}
+    metricsets:
+      - database
+      - bgwriter
+      - activity
+
+  # Redis metrics
+  - module: redis
+    enabled: true
+    period: 10s
+    hosts: ["redis:6379"]
+    metricsets:
+      - info
+      - keyspace
+
+# Processors
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+# Output to Elasticsearch
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  index: "metricbeat-foodbot-%{+yyyy.MM.dd}"
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/metricbeat
+  name: metricbeat
+  keepfiles: 7
+
+# Monitoring
+monitoring.enabled: true
+monitoring.elasticsearch.hosts: ["elasticsearch:9200"]
+
+# Dashboards
+setup.dashboards.enabled: true
+setup.kibana:
+  host: "kibana:5601"

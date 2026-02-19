@@ -1,0 +1,119 @@
+# ============================================================================
+# Multi-stage Production Dockerfile for FoodBot Gateway API
+# ============================================================================
+#
+# Build optimizations:
+# - Multi-stage build to reduce final image size
+# - Layer caching for faster builds
+# - Non-root user for security
+# - Health checks
+# - Minimal dependencies
+#
+# Usage:
+#   docker build -f Dockerfile.production -t foodbot-gateway-api:latest .
+#   docker run -p 3000:3000 foodbot-gateway-api:latest
+#
+# Version: 1.0.0
+# ============================================================================
+
+# ============================================================================
+# Stage 1: Base Image
+# ============================================================================
+FROM node:18-alpine AS base
+
+# Install required tools
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Set working directory
+WORKDIR /app
+
+# ============================================================================
+# Stage 2: Dependencies
+# ============================================================================
+FROM base AS dependencies
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/gateway-api/package.json ./apps/gateway-api/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/workflows/package.json ./packages/workflows/
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+# ============================================================================
+# Stage 3: Build
+# ============================================================================
+FROM base AS build
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/gateway-api/package.json ./apps/gateway-api/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/workflows/package.json ./packages/workflows/
+
+# Install all dependencies (including dev)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY tsconfig.json tsconfig.prod.json ./
+COPY apps/gateway-api ./apps/gateway-api
+COPY packages/shared ./packages/shared
+COPY packages/workflows ./packages/workflows
+
+# Build shared packages first
+RUN cd packages/shared && pnpm run build:prod
+RUN cd packages/workflows && pnpm run build:prod
+
+# Build Gateway API
+RUN cd apps/gateway-api && pnpm run build:prod
+
+# ============================================================================
+# Stage 4: Production Runtime
+# ============================================================================
+FROM base AS production
+
+# Set NODE_ENV
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copy runtime dependencies
+COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=dependencies --chown=nodejs:nodejs /app/apps/gateway-api/node_modules ./apps/gateway-api/node_modules
+
+# Copy built artifacts
+COPY --from=build --chown=nodejs:nodejs /app/apps/gateway-api/dist ./apps/gateway-api/dist
+COPY --from=build --chown=nodejs:nodejs /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build --chown=nodejs:nodejs /app/packages/workflows/dist ./packages/workflows/dist
+
+# Copy package.json files
+COPY --chown=nodejs:nodejs package.json ./
+COPY --chown=nodejs:nodejs apps/gateway-api/package.json ./apps/gateway-api/
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
+CMD ["node", "apps/gateway-api/dist/main.js"]

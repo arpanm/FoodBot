@@ -380,15 +380,50 @@ export interface ErrorDetails {
 
 export type JobStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
-export interface Job {
+export type JobAction =
+  | 'search_restaurant'
+  | 'search_dish'
+  | 'get_restaurant_details'
+  | 'get_menu'
+  | 'place_order'
+  | 'track_order'
+  | 'get_order_history';
+
+export type Platform = 'swiggy' | 'zomato' | 'mock';
+
+export interface Job<T = unknown> {
   id: string;
+  action: JobAction;
+  platform: Platform;
   status: JobStatus;
-  result?: unknown;
+  result?: T;
   error?: string;
   progress?: number;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
+}
+
+export interface CreateJobPayload {
+  action: JobAction;
+  platform: Platform;
+  payload: Record<string, unknown>;
+}
+
+export interface SearchRestaurantJobResult {
+  restaurants: Restaurant[];
+  total: number;
+}
+
+export interface SearchDishJobResult {
+  dishes: Dish[];
+  total: number;
+}
+
+export interface RestaurantDetailsJobResult {
+  restaurant: Restaurant;
+  menu: Dish[];
 }
 
 // ==================== Filter & Search Models ====================

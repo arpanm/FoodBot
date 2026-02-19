@@ -1,0 +1,101 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: foodbot-ingress
+  namespace: foodbot
+  labels:
+    app: foodbot
+    component: ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://app.foodbot.com,https://restaurant.foodbot.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+spec:
+  tls:
+    - hosts:
+        - api.foodbot.com
+        - app.foodbot.com
+        - restaurant.foodbot.com
+      secretName: foodbot-tls
+  rules:
+    # API Gateway
+    - host: api.foodbot.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-api
+                port:
+                  number: 3000
+
+    # Customer App
+    - host: app.foodbot.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-app
+                port:
+                  number: 8080
+
+    # Restaurant App
+    - host: restaurant.foodbot.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: restaurant-app
+                port:
+                  number: 8081
+
+---
+# WebSocket Ingress for real-time communication
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: foodbot-websocket-ingress
+  namespace: foodbot
+  labels:
+    app: foodbot
+    component: websocket
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/websocket-services: "gateway-api"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "7d"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "7d"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "7d"
+spec:
+  tls:
+    - hosts:
+        - ws.foodbot.com
+      secretName: foodbot-ws-tls
+  rules:
+    - host: ws.foodbot.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-api
+                port:
+                  number: 3000

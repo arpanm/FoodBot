@@ -1,0 +1,234 @@
+# Artillery Load Test Configuration for FoodBot
+# Run: artillery run artillery-load-test.yml
+# Generate report: artillery run --output report.json artillery-load-test.yml && artillery report report.json
+
+config:
+  target: "http://localhost:4000"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+
+    # Ramp-up phase
+    - duration: 300
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp-up to 50 users/sec"
+
+    # Sustained load
+    - duration: 600
+      arrivalRate: 50
+      name: "Sustained load (50 users/sec)"
+
+    # Peak load
+    - duration: 300
+      arrivalRate: 100
+      name: "Peak load (100 users/sec)"
+
+    # Cool-down
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool-down"
+
+  payload:
+    path: "./test-data.csv"
+    fields:
+      - "email"
+      - "password"
+
+  variables:
+    restaurants:
+      - "Pizza Palace"
+      - "Burger Barn"
+      - "Sushi Station"
+      - "Taco Town"
+
+    platforms:
+      - "swiggy"
+      - "zomato"
+      - "internal"
+
+  plugins:
+    expect: {}
+    metrics-by-endpoint:
+      stripQueryString: true
+
+  processor: "./artillery-processor.js"
+
+  # Performance thresholds
+  ensure:
+    maxErrorRate: 1           # Max 1% error rate
+    p95: 500                  # 95th percentile < 500ms
+    p99: 1000                 # 99th percentile < 1000ms
+
+scenarios:
+  # Scenario 1: User registration and login
+  - name: "User Authentication Flow"
+    weight: 10
+    flow:
+      - post:
+          url: "/auth/register"
+          json:
+            email: "{{ $randomString() }}@loadtest.com"
+            password: "Password123!"
+            name: "Load Test User"
+          capture:
+            - json: "$.id"
+              as: "userId"
+            - json: "$.accessToken"
+              as: "authToken"
+          expect:
+            - statusCode: 201
+            - contentType: json
+            - hasProperty: "accessToken"
+
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.accessToken"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+            - hasProperty: "accessToken"
+
+  # Scenario 2: Restaurant search and browsing
+  - name: "Restaurant Search"
+    weight: 30
+    flow:
+      - function: "setAuthHeader"
+
+      - get:
+          url: "/restaurants/search"
+          qs:
+            q: "{{ $randomElement(restaurants) }}"
+            location: "Bangalore"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: "$[0].id"
+              as: "restaurantId"
+
+      - think: 2
+
+      - get:
+          url: "/restaurants/{{ restaurantId }}/menu"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: "$.dishes[0].id"
+              as: "dishId"
+
+  # Scenario 3: Job creation and polling
+  - name: "Job Lifecycle"
+    weight: 25
+    flow:
+      - function: "setAuthHeader"
+
+      - post:
+          url: "/jobs"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            actionType: "SEARCH_RESTAURANT"
+            platform: "{{ $randomElement(platforms) }}"
+            metadata:
+              query: "{{ $randomElement(restaurants) }}"
+              location: "Bangalore"
+          expect:
+            - statusCode: 201
+            - hasProperty: "id"
+          capture:
+            - json: "$.id"
+              as: "jobId"
+
+      - think: 1
+
+      - loop:
+          - get:
+              url: "/jobs/{{ jobId }}"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              expect:
+                - statusCode: 200
+          - think: 2
+        count: 5
+
+  # Scenario 4: Order creation
+  - name: "Create Order"
+    weight: 20
+    flow:
+      - function: "setAuthHeader"
+
+      - post:
+          url: "/orders"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            restaurantId: "rest-{{ $randomNumber(1, 10) }}"
+            items:
+              - dishId: "dish-{{ $randomNumber(1, 50) }}"
+                quantity: "{{ $randomNumber(1, 3) }}"
+            deliveryAddress:
+              street: "{{ $randomNumber(1, 100) }} Main St"
+              city: "Bangalore"
+              zipCode: "560001"
+            paymentMethod: "card"
+          expect:
+            - statusCode: 201
+            - hasProperty: "id"
+          capture:
+            - json: "$.id"
+              as: "orderId"
+
+      - think: 2
+
+      - get:
+          url: "/orders/{{ orderId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 5: Health checks and metrics
+  - name: "System Health"
+    weight: 5
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - hasProperty: "status"
+            - equals:
+                - "{{ status }}"
+                - "ok"
+
+      - get:
+          url: "/metrics"
+          expect:
+            - statusCode: 200
+
+  # Scenario 6: Real-time job updates (SSE/WebSocket simulation)
+  - name: "Job Polling"
+    weight: 10
+    flow:
+      - function: "setAuthHeader"
+
+      - loop:
+          - get:
+              url: "/jobs/pending"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              expect:
+                - statusCode: 200
+          - think: 2
+        count: 10

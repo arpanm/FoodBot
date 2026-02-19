@@ -8,3 +8,4 @@ export * from './models';
 export * from './api.types';
 export * from './redux.types';
 export * from './common.types';
+export * from './job.types';

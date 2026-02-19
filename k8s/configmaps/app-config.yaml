@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foodbot-config
+  namespace: foodbot
+  labels:
+    app: foodbot
+    component: config
+data:
+  # Node Environment
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # Database Configuration
+  DB_HOST: "foodbot-postgres"
+  DB_PORT: "5432"
+  DB_NAME: "foodbot"
+
+  # Redis Configuration
+  REDIS_HOST: "foodbot-redis"
+  REDIS_PORT: "6379"
+
+  # Temporal Configuration
+  TEMPORAL_ADDRESS: "temporal:7233"
+
+  # Kafka Configuration
+  KAFKA_BROKERS: "kafka:9092"
+
+  # Elasticsearch Configuration
+  ELASTICSEARCH_NODE: "http://elasticsearch:9200"
+  ELASTICSEARCH_INDEX: "foodbot_restaurants"
+
+  # API Configuration
+  PORT: "3000"
+  RATE_LIMIT_TTL: "60"
+  RATE_LIMIT_MAX: "100"
+
+  # JWT Configuration
+  JWT_EXPIRATION: "1h"
+
+  # Search Configuration
+  ES_TIMEOUT_MS: "200"
+  MCP_TIMEOUT_MS: "2000"
+  DB_TIMEOUT_MS: "500"
+  MAX_TOTAL_TIMEOUT_MS: "3000"
+  DEFAULT_SEARCH_STRATEGY: "comprehensive"
+  CACHE_TTL_SECONDS: "300"

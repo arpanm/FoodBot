@@ -267,6 +267,17 @@ FoodBot includes a comprehensive wrapper script (`./foodbot`) that provides a un
 ./foodbot infra:down         # Stop infrastructure
 ./foodbot logs [service]     # View logs
 
+# Production Operations
+./foodbot health             # Run production health checks
+./foodbot monitor            # Start real-time monitoring dashboard
+./foodbot deploy             # Deploy to production (zero-downtime)
+./foodbot deploy:rollback    # Rollback to previous deployment
+./foodbot benchmark          # Run performance benchmarks
+./foodbot benchmark:quick    # Quick benchmarks (ab + wrk)
+./foodbot logging:up         # Start ELK logging stack
+./foodbot logging:down       # Stop ELK logging stack
+./foodbot logging:logs       # View centralized logs
+
 # Help
 ./foodbot help               # Show all commands
 ```
@@ -1004,7 +1015,13 @@ Send Email     Update ES Index     Update Metrics
 
 ## MCP Integration Strategy
 
+> **📚 Comprehensive Research Report:** For detailed feasibility analysis, architecture options, implementation roadmap, and code examples, see [MCP Research & Feasibility Report](prompt-docs/MCP_RESEARCH_REPORT.md).
+
 FoodBot integrates with three different MCP (Model Context Protocol) providers: **Swiggy**, **Zomato**, and **Internal** (FoodBot's own database). Each has a different integration approach based on API availability and authentication requirements.
+
+**Integration Plans:**
+- [REST API Integration Plan](docs/REST_API_INTEGRATION_PLAN.md) - Official APIs from Swiggy/Zomato Developer Portals
+- [Chrome Plugin Integration Plan](docs/CHROME_PLUGIN_INTEGRATION_PLAN.md) - Browser automation with DOM parsing + LLM
 
 ### Integration Architecture Overview
 
@@ -1407,6 +1424,16 @@ FoodBot/
 | [QUICKSTART.md](QUICKSTART.md) | **⭐ Quick start guide - Start here!** |
 | [WRAPPER_SCRIPT_GUIDE.md](docs/WRAPPER_SCRIPT_GUIDE.md) | Complete `./foodbot` command reference |
 
+### MCP Integration Documentation
+
+| Document | Description |
+|----------|-------------|
+| [MCP_INTEGRATION_STATUS.md](docs/MCP_INTEGRATION_STATUS.md) | **✅ Complete MCP integration status and metrics** |
+| [MCP_TEST_REPORT.md](docs/MCP_TEST_REPORT.md) | **📊 Detailed test execution and results (283 tests)** |
+| [MCP_REQUIREMENTS.md](docs/MCP_REQUIREMENTS.md) | **📋 Requirements, acceptance criteria, and specifications** |
+| [MCP_CODE_REVIEW.md](docs/MCP_CODE_REVIEW.md) | **✅ Code quality review (9.1/10 score, approved)** |
+| [MCP_IMPLEMENTATION_DETAILS.md](docs/MCP_IMPLEMENTATION_DETAILS.md) | **🔧 Technical implementation, architecture, and code** |
+
 ### Architecture and Design
 
 | Document | Description |
@@ -1445,10 +1472,32 @@ FoodBot/
 
 | Document | Description |
 |----------|-------------|
+| [PRODUCTION_READINESS_SUMMARY.md](docs/PRODUCTION_READINESS_SUMMARY.md) | **✅ Production readiness status (12 tasks complete)** |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker Compose and Kubernetes deployment |
 | [PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) | Pre-launch verification checklist |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues, debugging, useful commands |
 | [SECURITY.md](docs/SECURITY.md) | Authentication, authorization, encryption |
+
+### Production Scripts & Automation
+
+| Script | Description |
+|--------|-------------|
+| [scripts/health-check.sh](scripts/health-check.sh) | **🏥 Production health checks (system, infrastructure, services)** |
+| [scripts/monitor.sh](scripts/monitor.sh) | **📊 Real-time monitoring dashboard (auto-refresh)** |
+| [scripts/production-deploy.sh](scripts/production-deploy.sh) | **🚀 Zero-downtime deployment automation (3 strategies)** |
+| [performance/benchmark.sh](performance/benchmark.sh) | **⚡ Performance benchmarking (ab, wrk, K6, Artillery)** |
+| [performance/k6-load-test.js](performance/k6-load-test.js) | **📈 K6 load testing suite (4 scenarios)** |
+| [performance/artillery-load-test.yml](performance/artillery-load-test.yml) | **🎯 Artillery load testing configuration** |
+
+### CI/CD Workflows
+
+| Workflow | Description |
+|----------|-------------|
+| [.github/workflows/ci.yml](.github/workflows/ci.yml) | **✅ Continuous Integration (lint, test, build)** |
+| [.github/workflows/cd-staging.yml](.github/workflows/cd-staging.yml) | **🚀 Staging deployment (auto on develop branch)** |
+| [.github/workflows/cd-production.yml](.github/workflows/cd-production.yml) | **🔒 Production deployment (blue-green, manual approval)** |
+| [.github/workflows/security-scan.yml](.github/workflows/security-scan.yml) | **🔐 Daily security scans (8 tools)** |
+| [.github/workflows/dependency-update.yml](.github/workflows/dependency-update.yml) | **📦 Weekly dependency updates (automated PRs)** |
 
 ### Diagrams
 

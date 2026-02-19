@@ -1,0 +1,99 @@
+/**
+ * JobPollingExample Styles
+ */
+
+.job-polling-example {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 40px 20px;
+}
+
+.job-polling-example__container {
+  max-width: 800px;
+  margin: 0 auto 40px auto;
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.job-polling-example__title {
+  margin: 0 0 24px 0;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.job-polling-example__start {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.job-polling-example__description {
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.job-polling-example__instructions {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.job-polling-example__instructions-title {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.job-polling-example__code-block {
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.job-polling-example__code-block pre {
+  margin: 0;
+  color: #d4d4d4;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .job-polling-example {
+    padding: 20px 16px;
+  }
+
+  .job-polling-example__container,
+  .job-polling-example__instructions {
+    padding: 24px 16px;
+  }
+
+  .job-polling-example__title {
+    font-size: 24px;
+  }
+
+  .job-polling-example__instructions-title {
+    font-size: 20px;
+  }
+
+  .job-polling-example__code-block {
+    padding: 16px;
+  }
+
+  .job-polling-example__code-block pre {
+    font-size: 11px;
+  }
+}

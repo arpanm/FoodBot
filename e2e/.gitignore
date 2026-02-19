@@ -1,0 +1,24 @@
+# E2E Test Artifacts
+
+# Test results
+test-results/
+playwright-report/
+*.zip
+
+# Screenshots and videos
+*.png
+*.webm
+
+# Traces
+trace.zip
+*.trace
+
+# Test output
+*.log
+*.xml
+*.json
+
+# Temporary files
+.DS_Store
+*.tmp
+*.temp

@@ -1,6 +1,7 @@
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { Address } from '../entities/address.entity';
+import { AgentJob } from '../entities/agent-job.entity';
 import { CartItem } from '../entities/cart-item.entity';
 import { Cart } from '../entities/cart.entity';
 import { Dish } from '../entities/dish.entity';
@@ -24,6 +25,7 @@ const entities = [
   Payment,
   Feedback,
   Workflow,
+  AgentJob,
 ];
 
 export const getDatabaseConfig = (): TypeOrmModuleOptions => {

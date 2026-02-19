@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { chatService } from '../services/chat.service';
+import { chatbotService } from '../services/chatbot.service';
 import type { Message } from '../types/models';
 
 export interface UseJobPollingOptions {
   interval?: number;
   maxAttempts?: number;
+  enabled?: boolean;
   onComplete?: (result: Message) => void;
   onError?: (error: Error) => void;
 }
@@ -22,20 +23,30 @@ export function useJobPolling(
   const {
     interval = 2000,
     maxAttempts = 60,
+    enabled = true,
     onComplete,
     onError,
   } = options;
 
   const [status, setStatus] = useState<string>('IDLE');
   const [progress, setProgress] = useState<number>(0);
-  const [result, setResult] = useState<Message | null>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<Error | null>(null);
 
   const attempts = useRef(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!jobId || !enabled) {
+      return;
+    }
+
+    // Reset state when jobId changes
+    setStatus('QUEUED');
+    setProgress(0);
+    setResult(null);
+    setError(null);
+    attempts.current = 0;
 
     const poll = async () => {
       try {
@@ -48,13 +59,15 @@ export function useJobPolling(
           return;
         }
 
-        const response = await chatService.getJobStatus(jobId);
+        const response = await chatbotService.getJobStatus(jobId);
         setStatus(response.status);
         setProgress(response.progress || 0);
 
         if (response.status === 'COMPLETED') {
           setResult(response.result);
-          onComplete?.(response.result);
+          if (response.result) {
+            onComplete?.(response.result as Message);
+          }
         } else if (response.status === 'FAILED') {
           const jobError = new Error(response.error || 'Job failed');
           setError(jobError);
@@ -76,7 +89,7 @@ export function useJobPolling(
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [jobId, interval, maxAttempts, onComplete, onError]);
+  }, [jobId, interval, maxAttempts, enabled, onComplete, onError]);
 
   return {
     status,

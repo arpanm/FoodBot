@@ -1,0 +1,338 @@
+# ============================================
+# FoodBot Helm Chart Values
+# ============================================
+
+# Global settings
+global:
+  namespace: foodbot
+  environment: production
+  imagePullPolicy: Always
+  storageClass: standard
+
+# Gateway API
+gatewayApi:
+  enabled: true
+  name: gateway-api
+  replicaCount: 3
+  image:
+    repository: foodbot/gateway-api
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: info
+    PORT: "3000"
+
+# Customer App (Frontend)
+customerApp:
+  enabled: true
+  name: customer-app
+  replicaCount: 2
+  image:
+    repository: foodbot/customer-app
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# Restaurant App (Frontend)
+restaurantApp:
+  enabled: true
+  name: restaurant-app
+  replicaCount: 2
+  image:
+    repository: foodbot/restaurant-app
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8081
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# Search Orchestrator
+searchOrchestrator:
+  enabled: true
+  name: search-orchestrator
+  replicaCount: 2
+  image:
+    repository: foodbot/search-orchestrator
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 3002
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+
+# MCP Adapter
+mcpAdapter:
+  enabled: true
+  name: mcp-adapter
+  replicaCount: 2
+  image:
+    repository: foodbot/mcp-adapter
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8082
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# Notification Service
+notificationService:
+  enabled: true
+  name: notification-service
+  replicaCount: 2
+  image:
+    repository: foodbot/notification-service
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 3003
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# PostgreSQL Configuration
+postgresql:
+  enabled: true
+  auth:
+    username: postgres
+    password: postgres
+    database: foodbot
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: standard
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    extraEnvVars:
+      - name: POSTGRESQL_MAX_CONNECTIONS
+        value: "200"
+      - name: POSTGRESQL_SHARED_BUFFERS
+        value: "256MB"
+
+# Redis Configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: foodbot-redis-password
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: standard
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 5Gi
+
+# Kafka Configuration
+kafka:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 30Gi
+    storageClass: standard
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 3Gi
+  zookeeper:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+# Elasticsearch Configuration
+elasticsearch:
+  enabled: true
+  master:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: standard
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 3Gi
+  data:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 100Gi
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: api.foodbot.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: gateway-api
+              port: 3000
+    - host: app.foodbot.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: customer-app
+              port: 8080
+    - host: restaurant.foodbot.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: restaurant-app
+              port: 8081
+  tls:
+    - secretName: foodbot-tls
+      hosts:
+        - api.foodbot.com
+        - app.foodbot.com
+        - restaurant.foodbot.com
+
+# Monitoring (Prometheus & Grafana)
+monitoring:
+  prometheus:
+    enabled: true
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  grafana:
+    enabled: true
+    adminUser: admin
+    adminPassword: admin
+    persistence:
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+# Service Account
+serviceAccount:
+  create: true
+  name: foodbot-sa
+  annotations: {}
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+  capabilities:
+    drop:
+      - ALL
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false

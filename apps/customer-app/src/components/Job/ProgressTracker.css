@@ -1,0 +1,353 @@
+/**
+ * ProgressTracker Styles
+ */
+
+.progress-tracker {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.progress-tracker__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.progress-tracker__status-section {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.progress-tracker__icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.progress-tracker__status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-tracker__status-label {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.progress-tracker__current-step {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.progress-tracker__percentage {
+  font-size: 18px;
+  font-weight: 600;
+  color: #666;
+}
+
+/* Progress Bar */
+.progress-tracker__bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-tracker__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.progress-tracker__fill--pending {
+  background-color: #9e9e9e;
+}
+
+.progress-tracker__fill--in_progress {
+  background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+  animation: progress-pulse 1.5s ease-in-out infinite;
+}
+
+.progress-tracker__fill--completed {
+  background-color: #4CAF50;
+}
+
+.progress-tracker__fill--failed {
+  background-color: #f44336;
+}
+
+.progress-tracker__fill--cancelled {
+  background-color: #ff9800;
+}
+
+@keyframes progress-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Progress Steps */
+.progress-tracker__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.progress-tracker__step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.progress-tracker__step-indicator {
+  flex-shrink: 0;
+}
+
+.progress-tracker__step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  border: 2px solid;
+  transition: all 0.3s ease;
+}
+
+.progress-tracker__step--pending .progress-tracker__step-number {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #9e9e9e;
+}
+
+.progress-tracker__step--active .progress-tracker__step-number {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+  animation: step-pulse 1s ease-in-out infinite;
+}
+
+.progress-tracker__step--completed .progress-tracker__step-number {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+.progress-tracker__step--failed .progress-tracker__step-number {
+  background-color: #f44336;
+  border-color: #f44336;
+  color: white;
+}
+
+@keyframes step-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.progress-tracker__step-content {
+  flex: 1;
+  padding-top: 4px;
+}
+
+.progress-tracker__step-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.progress-tracker__step--pending .progress-tracker__step-label {
+  color: #9e9e9e;
+}
+
+.progress-tracker__step-description {
+  font-size: 12px;
+  color: #666;
+}
+
+.progress-tracker__step--pending .progress-tracker__step-description {
+  color: #b0b0b0;
+}
+
+/* Error */
+.progress-tracker__error {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background-color: #ffebee;
+  border-left: 4px solid #f44336;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.progress-tracker__error-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.progress-tracker__error-content {
+  flex: 1;
+}
+
+.progress-tracker__error-message {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #c62828;
+}
+
+.progress-tracker__error-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #d32f2f;
+}
+
+/* Result */
+.progress-tracker__result {
+  margin-top: 20px;
+}
+
+.result {
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px solid;
+}
+
+.result--order {
+  background-color: #e8f5e9;
+  border-color: #4CAF50;
+}
+
+.result--search {
+  background-color: #e3f2fd;
+  border-color: #2196F3;
+}
+
+.result--cart {
+  background-color: #fff3e0;
+  border-color: #ff9800;
+}
+
+.result--generic {
+  background-color: #f5f5f5;
+  border-color: #9e9e9e;
+}
+
+.result__title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.result__message {
+  margin: 0;
+  font-size: 14px;
+  color: #424242;
+}
+
+.result__meta {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.result__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result__item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.result__label {
+  font-weight: 500;
+  color: #666;
+}
+
+.result__value {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.result__data {
+  margin: 0;
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+/* Compact Mode */
+.progress-tracker--compact {
+  padding: 12px;
+}
+
+.progress-tracker--compact .progress-tracker__header {
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.progress-tracker--compact .progress-tracker__icon {
+  font-size: 20px;
+}
+
+.progress-tracker--compact .progress-tracker__status {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.progress-tracker--compact .progress-tracker__percentage {
+  font-size: 14px;
+}
+
+.progress-tracker--compact .progress-tracker__bar {
+  height: 6px;
+  margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .progress-tracker {
+    padding: 16px;
+  }
+
+  .progress-tracker__status-label {
+    font-size: 16px;
+  }
+
+  .progress-tracker__percentage {
+    font-size: 16px;
+  }
+
+  .result__item {
+    flex-direction: column;
+    gap: 2px;
+  }
+}

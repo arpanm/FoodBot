@@ -1,0 +1,81 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Output configuration
+    "sourceMap": false,
+    "inlineSourceMap": false,
+    "declarationMap": false,
+    "declaration": true,
+    "removeComments": true,
+    "noEmit": false,
+    "outDir": "./dist",
+
+    // Stricter type checking for production
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    // Enhanced error detection
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+
+    // Module resolution
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Performance optimizations
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
+
+    // Emit options
+    "preserveConstEnums": false,
+    "isolatedModules": true,
+    "importHelpers": true,
+
+    // Advanced options
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "services/**/*.ts",
+    "packages/**/*.ts",
+    "chrome-extension/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    ".turbo",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "test/**/*",
+    "e2e/**/*",
+    "**/*.generated.ts",
+    "generated/**/*"
+  ]
+}
