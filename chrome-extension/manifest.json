@@ -23,8 +23,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.swiggy.com/*"],
-      "js": ["content-scripts/swiggy-content.js"],
+      "matches": [
+        "https://www.swiggy.com/*",
+        "https://www.zomato.com/*"
+      ],
+      "js": ["content-scripts/universal-content.js"],
       "run_at": "document_idle"
     }
   ],

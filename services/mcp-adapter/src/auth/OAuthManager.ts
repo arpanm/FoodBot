@@ -115,32 +115,68 @@ export class OAuthManager {
    */
   async exchangeCodeForTokens(
     platform: ProviderName,
-    _code: string
+    code: string
   ): Promise<OAuthTokenResponse> {
     const config = this.configs.get(platform);
     if (!config) {
       throw new Error(`No OAuth config registered for platform: ${platform}`);
     }
 
-    // In production, this would make an HTTP POST to config.tokenUrl
-    // For now, return a placeholder that indicates the exchange would happen
-    //
-    // const response = await fetch(config.tokenUrl, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    //   body: new URLSearchParams({
-    //     grant_type: 'authorization_code',
-    //     code,
-    //     redirect_uri: config.redirectUri,
-    //     client_id: config.clientId,
-    //     client_secret: config.clientSecret,
-    //   }),
-    // });
+    try {
+      const response = await fetch(config.tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: config.redirectUri,
+          client_id: config.clientId,
+          client_secret: config.clientSecret,
+        }),
+      });
 
-    throw new Error(
-      `OAuth token exchange not yet implemented for ${platform}. ` +
-        'Requires platform developer credentials.'
-    );
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new OAuthTokenExchangeError(
+          `Token exchange failed for ${platform}: ${response.status} ${response.statusText}`,
+          { platform, statusCode: response.status, errorBody: errorText }
+        );
+      }
+
+      const data = (await response.json()) as {
+        access_token: string;
+        refresh_token?: string;
+        expires_in: number;
+        token_type: string;
+        scope?: string;
+      };
+
+      if (!data.access_token) {
+        throw new OAuthTokenExchangeError(
+          `Invalid token response from ${platform}: missing access_token`,
+          { platform }
+        );
+      }
+
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in,
+        tokenType: data.token_type,
+        scope: data.scope ?? config.scopes.join(' '),
+      };
+    } catch (error) {
+      if (error instanceof OAuthTokenExchangeError) {
+        throw error;
+      }
+      throw new OAuthTokenExchangeError(
+        `OAuth token exchange failed for ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { platform, originalError: error }
+      );
+    }
   }
 
   /**
@@ -148,19 +184,67 @@ export class OAuthManager {
    */
   async refreshAccessToken(
     platform: ProviderName,
-    _refreshToken: string
+    refreshToken: string
   ): Promise<OAuthTokenResponse> {
     const config = this.configs.get(platform);
     if (!config) {
       throw new Error(`No OAuth config registered for platform: ${platform}`);
     }
 
-    // Similar to exchangeCodeForTokens, would POST to tokenUrl with
-    // grant_type: 'refresh_token'
-    throw new Error(
-      `OAuth token refresh not yet implemented for ${platform}. ` +
-        'Requires platform developer credentials.'
-    );
+    try {
+      const response = await fetch(config.tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: config.clientId,
+          client_secret: config.clientSecret,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new OAuthTokenRefreshError(
+          `Token refresh failed for ${platform}: ${response.status} ${response.statusText}`,
+          { platform, statusCode: response.status, errorBody: errorText }
+        );
+      }
+
+      const data = (await response.json()) as {
+        access_token: string;
+        refresh_token?: string;
+        expires_in: number;
+        token_type: string;
+        scope?: string;
+      };
+
+      if (!data.access_token) {
+        throw new OAuthTokenRefreshError(
+          `Invalid token refresh response from ${platform}: missing access_token`,
+          { platform }
+        );
+      }
+
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token ?? refreshToken,
+        expiresIn: data.expires_in,
+        tokenType: data.token_type,
+        scope: data.scope ?? config.scopes.join(' '),
+      };
+    } catch (error) {
+      if (error instanceof OAuthTokenRefreshError) {
+        throw error;
+      }
+      throw new OAuthTokenRefreshError(
+        `OAuth token refresh failed for ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { platform, originalError: error }
+      );
+    }
   }
 }
 
@@ -168,5 +252,25 @@ export class InvalidOAuthStateError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'InvalidOAuthStateError';
+  }
+}
+
+export class OAuthTokenExchangeError extends Error {
+  public readonly context: Record<string, unknown>;
+
+  constructor(message: string, context: Record<string, unknown> = {}) {
+    super(message);
+    this.name = 'OAuthTokenExchangeError';
+    this.context = context;
+  }
+}
+
+export class OAuthTokenRefreshError extends Error {
+  public readonly context: Record<string, unknown>;
+
+  constructor(message: string, context: Record<string, unknown> = {}) {
+    super(message);
+    this.name = 'OAuthTokenRefreshError';
+    this.context = context;
   }
 }

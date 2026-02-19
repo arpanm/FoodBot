@@ -2,7 +2,26 @@
  * Content Scripts - Entry point for all content script modules
  */
 
-export { SwiggyContentScript } from './swiggy-content';
+// Platform abstraction exports
+export { PlatformFactory, PlatformDetector } from './platforms/platform-factory';
+export { SwiggyContentScript } from './platforms/swiggy/swiggy-content';
+export { ZomatoContentScript } from './platforms/zomato/zomato-content';
+
+export type {
+  Platform,
+  SelectorConfig,
+  PlatformConfig,
+  IPlatformContentScript,
+  IPageDetector,
+  PlatformDetectionResult,
+  ExtensionMessage,
+  MessageResponse,
+  SearchResult,
+  CartResult,
+  CheckoutResult,
+} from './platforms/types';
+
+// Shared component exports (legacy)
 export { DomParser } from './dom-parser';
 export { ActionSimulator } from './action-simulator';
 export { ElementFinder } from './element-finder';

@@ -125,7 +125,7 @@ export const STORAGE_QUOTA = {
 
 // Feature Flags
 export const FEATURE_FLAGS = {
-  ENABLE_ZOMATO: false, // Not implemented yet
+  ENABLE_ZOMATO: true, // Zomato support now available
   ENABLE_VOICE_COMMANDS: false, // Future feature
   ENABLE_ANALYTICS: true,
   ENABLE_DEBUG_LOGGING: true,
