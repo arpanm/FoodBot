@@ -1,9 +1,9 @@
 # Functional Requirements - FoodBot
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Last Updated:** 2026-02-20
 **Status:** Active - Implementation Tracking
-**Total Requirements:** 87
+**Total Requirements:** 102 (includes new advanced features)
 
 ---
 
@@ -42,14 +42,17 @@ This document tracks all functional requirements for FoodBot with implementation
 | Category | Total | Implemented | In Progress | Pending | Blocked | % Complete |
 |----------|-------|-------------|-------------|---------|---------|------------|
 | Customer Agent | 15 | 8 | 2 | 5 | 0 | 53% |
-| Restaurant Agent | 12 | 2 | 0 | 10 | 0 | 17% |
+| Restaurant Agent | 15 | 2 | 0 | 13 | 0 | 13% |
 | MCP Layer | 18 | 18 | 0 | 0 | 0 | 100% |
 | LLM Orchestration | 10 | 10 | 0 | 0 | 0 | 100% |
-| Workflow Management | 8 | 2 | 0 | 6 | 0 | 25% |
+| Workflow Management | 12 | 2 | 0 | 10 | 0 | 17% |
 | Chrome Extension | 12 | 12 | 0 | 0 | 0 | 100% |
 | Mobile App | 8 | 6 | 0 | 0 | 2 | 75% |
 | Cross-Cutting | 4 | 2 | 0 | 2 | 0 | 50% |
-| **TOTAL** | **87** | **60** | **2** | **23** | **2** | **69%** |
+| Advanced Features | 8 | 0 | 0 | 8 | 0 | 0% |
+| **TOTAL** | **102** | **60** | **2** | **38** | **2** | **59%** |
+
+**Note:** Total requirements increased from 87 to 102 to reflect new advanced features (party planner, diet planner, vector caching, etc.)
 
 ---
 
@@ -1910,6 +1913,295 @@ const restaurant = result.data;
 - 🔄 Consolidated documentation (this document)
 
 ---
+
+---
+
+## 11. Advanced Features & Multi-Agent Development
+
+### 11.1 Party Planner
+
+#### FR-PLANNER-PARTY-001: Group Meal Planning 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Plan meals for multiple people with varying preferences.
+
+**Acceptance Criteria:**
+- 🟡 Group creation (2-50 people)
+- 🟡 Individual preference collection
+- 🟡 Budget constraints per person or total
+- 🟡 Dietary restriction aggregation
+- 🟡 Restaurant suggestions for groups
+- 🟡 Menu recommendations that satisfy all preferences
+- 🟡 Split billing options
+
+**Use Cases:**
+- Office lunch orders
+- Family gatherings
+- Birthday parties
+- Team celebrations
+
+---
+
+#### FR-PLANNER-PARTY-002: Event Catering 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Bulk ordering for events with advance planning.
+
+**Acceptance Criteria:**
+- 🟡 Event scheduling (date, time, headcount)
+- 🟡 Bulk menu selection
+- 🟡 Multi-restaurant orders
+- 🟡 Delivery coordination
+- 🟡 Payment collection from group
+
+---
+
+### 11.2 Diet Planner
+
+#### FR-PLANNER-DIET-001: Nutrition-Aware Suggestions 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Daily meal planning based on nutritional goals.
+
+**Acceptance Criteria:**
+- 🟡 Calorie target setting
+- 🟡 Macronutrient goals (protein, carbs, fats)
+- 🟡 Dietary preference (vegan, keto, paleo, etc.)
+- 🟡 Daily meal plan generation
+- 🟡 Nutritional analysis of suggested dishes
+- 🟡 Weekly meal schedule
+- 🟡 Shopping list generation
+
+**Implementation Approach:**
+- Integration with nutrition APIs (USDA, Nutritionix)
+- LLM-based meal plan generation
+- GraphDB for preference learning
+
+---
+
+#### FR-PLANNER-DIET-002: Health Goal Tracking 🟡
+
+**Status:** Pending
+**Priority:** Low
+
+**Description:** Track progress toward health goals.
+
+**Acceptance Criteria:**
+- 🟡 Weight tracking
+- 🟡 Calorie consumption tracking
+- 🟡 Macro balance visualization
+- 🟡 Goal progress reports
+
+---
+
+### 11.3 Multi-Agent Development Platform
+
+#### FR-DEV-AGENT-001: Claude Agent Development Automation 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Automated development lifecycle using Claude agents.
+
+**Pipeline:**
+```
+Requirements → Tasks → Test Cases → Code Generation →
+Test Execution → Code Review → Security Audit → Issue Fixing → Deployment
+```
+
+**Acceptance Criteria:**
+- 🟡 Requirements parsing from natural language
+- 🟡 Task breakdown and prioritization
+- 🟡 Test case generation from requirements
+- 🟡 Automated code generation (TypeScript/NestJS/React)
+- 🟡 Parallel and sequential task execution
+- 🟡 Test execution and failure analysis
+- 🟡 Automated code review (linting, complexity, patterns)
+- 🟡 Security audit (OWASP, vulnerability scanning)
+- 🟡 Automated issue fixing
+- 🟡 CI/CD integration
+
+**Agent Roles:**
+1. **Architect Agent**: System design, tech stack decisions
+2. **Developer Agent**: Code generation, refactoring
+3. **Tester Agent**: Test case generation, execution
+4. **Reviewer Agent**: Code quality, best practices
+5. **Security Agent**: Vulnerability detection, fixes
+6. **DevOps Agent**: CI/CD, deployment, monitoring
+
+**Tech Stack:**
+- Claude Opus 4.6 for complex reasoning
+- Claude Sonnet 4.5 for balanced tasks
+- Claude Haiku 4 for quick operations
+- Agent SDK for orchestration
+- Temporal for workflow management
+
+---
+
+### 11.4 Advanced Personalization
+
+#### FR-PERSONALIZATION-001: Vector-Based Caching 🟡
+
+**Status:** Pending
+**Priority:** High
+
+**Description:** Semantic caching using vector embeddings to reduce LLM costs.
+
+**Acceptance Criteria:**
+- 🟡 Vector database setup (Pinecone/Weaviate/Qdrant)
+- 🟡 Prompt embedding generation
+- 🟡 Semantic similarity search
+- 🟡 Cache hit rate >70%
+- 🟡 Cache TTL management
+- 🟡 Cache warming strategies
+
+**Performance Targets:**
+- Similarity search: <50ms
+- Cache hit reduction: 60% fewer LLM calls
+- Cost savings: 70% reduction in LLM API costs
+
+**Vector DB Options:**
+- **Pinecone**: Managed, fastest, expensive
+- **Weaviate**: Open-source, GraphQL API
+- **Qdrant**: Open-source, Rust-based, fast
+
+---
+
+#### FR-PERSONALIZATION-002: User Preference Graph 🟡
+
+**Status:** Pending
+**Priority:** High
+
+**Description:** Neo4j graph for deep personalization.
+
+**Graph Structure:**
+```cypher
+(User)-[:PREFERS_ON]->(DayOfWeek)
+(DayOfWeek)-[:AT_HOUR]->(Hour)
+(Hour)-[:FOR_CATEGORY]->(Category)
+(Category)-[:IN_SUBCATEGORY]->(Subcategory)
+(Subcategory)-[:AT_RESTAURANT]->(Restaurant)
+(Restaurant)-[:DISH]->(Dish)
+(Dish)-[:HAS_INGREDIENT]->(Ingredient)
+```
+
+**Acceptance Criteria:**
+- 🟡 Neo4j cluster setup
+- 🟡 Graph schema implementation
+- 🟡 Behavior tracking (orders, searches, ratings)
+- 🟡 Preference learning algorithm
+- 🟡 Real-time graph updates
+- 🟡 Graph traversal queries (<100ms)
+- 🟡 Recommendation generation
+
+**Use Cases:**
+- Time-based recommendations (lunch vs dinner)
+- Weather-based suggestions (rainy day comfort food)
+- Mood-based personalization
+- Social influence (friends' preferences)
+
+---
+
+### 11.5 Advanced Workflow Management
+
+#### FR-WORKFLOW-RESILIENCE-001: Circuit Breaker Pattern 🟡
+
+**Status:** Pending
+**Priority:** High
+
+**Description:** Prevent cascading failures with circuit breakers.
+
+**Acceptance Criteria:**
+- 🟡 Circuit breaker for each external service
+- 🟡 Failure threshold configuration
+- 🟡 Half-open state testing
+- 🟡 Fallback mechanisms
+- 🟡 Monitoring and alerting
+
+---
+
+#### FR-WORKFLOW-RESILIENCE-002: Alternative Plan Execution 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Generate alternative workflows on failure.
+
+**Acceptance Criteria:**
+- 🟡 LLM-based alternative generation
+- 🟡 Provider failover (Swiggy → Zomato)
+- 🟡 Quality degradation handling
+- 🟡 User notification of changes
+
+**Example:**
+```
+Original Plan: Order from Restaurant A via Swiggy
+Failure: Restaurant A unavailable
+Alternative 1: Order from Restaurant B (similar cuisine) via Swiggy
+Alternative 2: Order from Restaurant A via Zomato
+Alternative 3: Suggest similar restaurants nearby
+```
+
+---
+
+### 11.6 Restaurant Analytics (Advanced)
+
+#### FR-RA-ANALYTICS-003: Revenue Analytics 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Deep revenue insights for restaurant partners.
+
+**Acceptance Criteria:**
+- 🟡 Revenue breakdown by time, day, dish
+- 🟡 Order volume trends
+- 🟡 Average order value (AOV)
+- 🟡 Peak hours identification
+- 🟡 Forecasting (next week/month revenue)
+
+---
+
+#### FR-RA-ANALYTICS-004: Customer Insights 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** Understand customer behavior and preferences.
+
+**Acceptance Criteria:**
+- 🟡 Customer segmentation
+- 🟡 Repeat customer rate
+- 🟡 Customer lifetime value (CLV)
+- 🟡 Churn prediction
+- 🟡 Preference analysis
+
+---
+
+#### FR-RA-ANALYTICS-005: Menu Optimization 🟡
+
+**Status:** Pending
+**Priority:** Medium
+
+**Description:** AI-powered menu optimization recommendations.
+
+**Acceptance Criteria:**
+- 🟡 Dish performance analysis
+- 🟡 Underperforming dish identification
+- 🟡 Pricing recommendations
+- 🟡 Menu combination suggestions
+- 🟡 Seasonal trend analysis
+
+**LLM Integration:**
+- Claude for complex analysis
+- Natural language insights
+- Actionable recommendations
 
 ---
 

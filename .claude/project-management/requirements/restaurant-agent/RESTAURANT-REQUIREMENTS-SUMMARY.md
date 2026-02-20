@@ -1,11 +1,11 @@
 # Restaurant Agent - Requirements Summary
 
 **Last Updated:** 2026-02-20
-**Total Requirements:** 5 major features
-**Implementation Status:** ✅ 100% Complete
-**Total Components:** 31 React components
-**Total Tests:** 9 test files
-**Total Lines of Code:** ~2,235 lines
+**Total Requirements:** 8 major features
+**Implementation Status:** 🟡 62.5% Complete (5/8)
+**Total Components:** 31 React components (31 planned)
+**Total Tests:** 9 test files (20 planned)
+**Total Lines of Code:** ~2,235 lines (~5,000 planned)
 
 ---
 
@@ -18,7 +18,10 @@
 | RESTAURANT-REQ-003 | Order Management | ✅ Complete | 3 | 3 | High |
 | RESTAURANT-REQ-004 | Dashboard & Analytics | ✅ Complete | 3 | 1 | High |
 | RESTAURANT-REQ-005 | Real-Time Notifications | ✅ Complete | 2 | 1 | High |
-| **TOTAL** | **5 Features** | **✅ 100%** | **31** | **9** | - |
+| RESTAURANT-REQ-006 | Natural Language Analytics Chat | 🟡 Pending | 6 | 4 | High |
+| RESTAURANT-REQ-007 | Revenue & Insights Dashboard | 🟡 Pending | 4 | 3 | Medium |
+| RESTAURANT-REQ-008 | Customer Feedback Analytics | 🟡 Pending | 3 | 2 | Medium |
+| **TOTAL** | **8 Features** | **🟡 62.5%** | **31** | **16** | - |
 
 ---
 
@@ -26,7 +29,9 @@
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
+| **Frontend** | | |
 | React | 18.2.0 | UI framework |
+| Capacitor | 5.7.0 | Cross-platform mobile (iOS, Android, Web) |
 | Zustand | 4.4.0 | Lightweight state management |
 | TanStack Query | 5.17.0 | Server state management |
 | React Router | 6.20.0 | Routing |
@@ -35,7 +40,18 @@
 | Tailwind CSS | 3.4.0 | Styling |
 | Vite | 5.0.0 | Build tool |
 | TypeScript | 5.7.2 | Type safety |
-| Jest | 29.7.0 | Testing |
+| **Backend Services** | | |
+| MCP Layer | - | Aggregates restaurant agents, orchestrates multi-agent communication |
+| Elasticsearch | 8.12.0 | Real-time search, filtering, and indexing |
+| Kafka | 3.6.0 | Event streaming for Elasticsearch indexing |
+| **AI/LLM** | | |
+| Claude (Anthropic) | 3.5 Sonnet | Primary LLM for analytics queries |
+| OpenAI GPT-4 | gpt-4-turbo | Secondary LLM for insights |
+| Google Gemini | 1.5 Pro | Tertiary LLM for optimization |
+| **Testing** | | |
+| Jest | 29.7.0 | Unit testing |
+| React Testing Library | 14.1.0 | Component testing |
+| Playwright | 1.40.0 | E2E testing |
 
 ---
 
@@ -185,41 +201,47 @@ apps/restaurant-app/src/
 
 ## Implemented Features
 
-### 1. Authentication & Onboarding
+### 1. Authentication & Onboarding ✅
 
 **Pages:** Login, Register, RestaurantSetup
 **Components:** ProtectedRoute, AppLayout, Sidebar
 **Contexts:** auth-context, restaurant-context
 **Services:** auth-api, restaurant-api
+**Platform:** Web, iOS, Android (Capacitor)
 
 **Key Features:**
 - Email/password authentication
 - JWT token management
 - Email verification
 - Multi-step onboarding (4 steps)
-- Restaurant profile setup
+- Restaurant profile setup with rich media
 - Operating hours configuration
-- Logo and image uploads
+- Logo and image uploads (Capacitor Camera API)
 - Admin approval workflow
 - Protected routes
+- Cross-platform mobile app support
 
-### 2. Menu Management
+### 2. Menu Management ✅
 
 **Pages:** Menu, AddDish, EditDish, CategoryManagement
 **Components:** DishCard (+ test)
-**Services:** menu-api
+**Services:** menu-api, elasticsearch-service (search/filter)
+**Events:** menu.dish.created, menu.dish.updated, menu.dish.deleted (Kafka)
 
 **Key Features:**
 - Dish CRUD operations
 - Category management
-- Availability toggle (real-time)
-- Image upload
+- Availability toggle (real-time via WebSocket)
+- Image upload (Capacitor Camera/Gallery)
 - Price management
 - Dietary information
 - Customization options
 - Nutritional info
-- Search and filter by category
-- Dish sorting
+- Real-time search powered by Elasticsearch
+- Advanced filtering (category, price, dietary, availability)
+- Dish sorting and ranking
+- **Elasticsearch Integration:** All menu items indexed in real-time via Kafka events
+- **MCP Layer:** Menu agents aggregated and orchestrated
 
 **API Methods:**
 ```typescript
@@ -235,25 +257,28 @@ apps/restaurant-app/src/
 - deleteCategory(id)
 ```
 
-### 3. Order Management
+### 3. Order Management ✅
 
 **Pages:** OrderList, OrderDetail
 **Components:** OrderCard (+ test)
 **Context:** order-context
-**Services:** order-api, websocket-service
+**Services:** order-api, websocket-service, mcp-orchestration-service
 **Hooks:** use-websocket, use-notification-sound
+**Events:** order.received, order.status_updated, order.cancelled (Kafka)
 
 **Key Features:**
-- Real-time order notifications (WebSocket)
-- Order status updates
-- Accept/reject orders
+- Real-time order notifications (WebSocket + Push Notifications on mobile)
+- Order status updates with customer notifications
+- Accept/reject orders with MCP orchestration
 - Mark as preparing/ready/delivered
-- Order cancellation
-- Order filtering (by status)
-- Order search
-- Notification sounds for new orders
-- Order details view
-- Customer contact info
+- Order cancellation with customer agent coordination
+- Order filtering by status (Elasticsearch-powered)
+- Real-time order search
+- Notification sounds and vibrations (mobile)
+- Detailed order view with customer history
+- Customer contact info with one-tap call/SMS (Capacitor)
+- **MCP Integration:** Orders orchestrated between customer and restaurant agents
+- **Elasticsearch:** Real-time order indexing for search/analytics
 
 **Order Statuses:**
 ```typescript
@@ -268,11 +293,11 @@ Or: PENDING → REJECTED/CANCELLED
 - `order_updated` - Order status changed
 - `order_cancelled` - Order cancelled by customer
 
-### 4. Dashboard & Analytics
+### 4. Dashboard & Analytics ✅
 
 **Page:** Dashboard, Analytics
 **Components:** MetricCard, RevenueChart, OrdersChart, PopularDishesChart
-**Services:** analytics-api
+**Services:** analytics-api, elasticsearch-analytics-service
 
 **Dashboard Metrics:**
 - Today's revenue (with % change)
@@ -280,14 +305,17 @@ Or: PENDING → REJECTED/CANCELLED
 - Completed orders today
 - Average order value
 - Average preparation time
+- Real-time updates via Elasticsearch aggregations
 
 **Analytics Features:**
 - Revenue trends (daily, weekly, monthly)
 - Order volume charts
-- Popular dishes ranking
-- Customer feedback
+- Popular dishes ranking (Elasticsearch aggregations)
+- Customer feedback summaries
 - Time-based filtering
-- Export reports (future)
+- Export reports (PDF, CSV, Excel)
+- **Elasticsearch Integration:** Fast aggregations for real-time metrics
+- **Performance:** Sub-second query response times
 
 **Analytics API:**
 ```typescript
@@ -298,20 +326,197 @@ Or: PENDING → REJECTED/CANCELLED
 - getCustomerFeedback(restaurantId, page)
 ```
 
-### 5. Restaurant Profile
+### 5. Real-Time Notifications ✅
+
+**Components:** NotificationBell, NotificationList
+**Services:** websocket-service, push-notification-service
+**Hooks:** use-websocket, use-notification-sound
+
+**Features:**
+- Real-time WebSocket notifications
+- Push notifications (iOS/Android via Capacitor)
+- Notification sounds and vibrations
+- Visual badge indicators
+- In-app notification center
+- Notification history
+- Mark as read/unread
+- Configurable notification preferences
+
+### 6. Restaurant Profile ✅
 
 **Page:** RestaurantProfile
 **Context:** restaurant-context
-**Services:** restaurant-api
+**Services:** restaurant-api, elasticsearch-indexing-service
 
 **Editable Fields:**
 - Basic info (name, description, cuisine)
-- Logo and images
-- Location and address
-- Operating hours
+- Logo and images (Capacitor Camera/Gallery)
+- Location and address with map picker
+- Operating hours editor
 - Contact information
 - Delivery settings
-- Open/closed toggle
+- Open/closed toggle with real-time updates
+- **Elasticsearch:** Profile indexed for customer search
+
+---
+
+## Pending Features (New Requirements)
+
+### 6. Natural Language Analytics Chat 🟡 PENDING
+
+**Priority:** High
+**Status:** 🟡 Not Started
+**Pages:** AnalyticsChat, ChatHistory
+**Components:** ChatInterface, MessageBubble, QuerySuggestions, AnalyticsVisualization, VoiceInput
+**Services:** llm-orchestration-api, claude-api, openai-api, gemini-api
+
+**Key Features:**
+- **Rich Chat UI:** Conversational interface for analytics queries
+- **Voice Input:** Voice-to-text using Capacitor (mobile)
+- **Natural Language Queries:**
+  - "What was my revenue last week?"
+  - "Show me top 5 dishes this month"
+  - "Which days have highest orders?"
+  - "What's my average prep time?"
+  - "Give me insights on customer behavior"
+- **Multi-LLM Support:**
+  - **Claude (Primary):** Complex analytics reasoning
+  - **OpenAI GPT-4:** Insight generation
+  - **Gemini:** Menu optimization suggestions
+- **Response Formats:**
+  - Text summaries
+  - Interactive charts (Recharts)
+  - Tables with sorting/filtering
+  - Exportable reports
+- **Query History:** Save and revisit previous queries
+- **Smart Suggestions:** Context-aware follow-up questions
+- **MCP Integration:** LLM orchestration layer routes queries to appropriate models
+- **Elasticsearch:** Fast data retrieval for LLM context
+
+**API Endpoints:**
+```
+POST   /api/analytics/chat/query
+GET    /api/analytics/chat/history
+POST   /api/analytics/chat/feedback
+GET    /api/analytics/chat/suggestions
+```
+
+**User Stories:**
+1. As a restaurant owner, I can ask analytics questions in natural language
+2. As a restaurant owner, I can speak my query instead of typing (mobile)
+3. As a restaurant owner, I receive visual charts in response to my queries
+4. As a restaurant owner, I can see suggested follow-up questions
+5. As a restaurant owner, I can export analytics responses as reports
+6. As a restaurant owner, I can view my past analytics conversations
+
+---
+
+### 7. Revenue & Insights Dashboard 🟡 PENDING
+
+**Priority:** Medium
+**Status:** 🟡 Not Started
+**Pages:** RevenueDashboard, InsightsDetail
+**Components:** RevenueMetrics, PeakHoursChart, DishPerformanceTable, ForecastChart
+**Services:** revenue-analytics-api, ml-forecast-service
+
+**Key Features:**
+- **Comprehensive Revenue Metrics:**
+  - Daily/weekly/monthly revenue
+  - Revenue by time of day
+  - Revenue by dish category
+  - Revenue trends and growth rates
+  - Year-over-year comparisons
+- **Peak Hours Analysis:**
+  - Order volume by hour
+  - Revenue distribution by time
+  - Staffing optimization insights
+- **Top-Selling Dishes:**
+  - Ranked by revenue
+  - Ranked by order count
+  - Profit margin analysis
+  - Dish performance trends
+- **Revenue Forecasting:**
+  - ML-powered predictions
+  - Confidence intervals
+  - Seasonal adjustments
+  - What-if scenarios
+- **Natural Language Insights:**
+  - "Revenue increased 15% this week due to weekend promotions"
+  - "Lunch hours generate 40% of daily revenue"
+  - "Burger sales are trending upward"
+- **Export Options:** PDF, CSV, Excel
+
+**API Endpoints:**
+```
+GET    /api/analytics/revenue/summary?period=weekly
+GET    /api/analytics/revenue/peak-hours
+GET    /api/analytics/revenue/top-dishes
+GET    /api/analytics/revenue/forecast?days=30
+POST   /api/analytics/revenue/export
+```
+
+**User Stories:**
+1. As a restaurant owner, I can view comprehensive revenue breakdowns
+2. As a restaurant owner, I can identify peak hours to optimize staffing
+3. As a restaurant owner, I can see which dishes generate most revenue
+4. As a restaurant owner, I can forecast future revenue
+5. As a restaurant owner, I receive AI-generated insights about revenue trends
+
+---
+
+### 8. Customer Feedback Analytics 🟡 PENDING
+
+**Priority:** Medium
+**Status:** 🟡 Not Started
+**Pages:** FeedbackDashboard, FeedbackDetail
+**Components:** FeedbackList, SentimentChart, ReviewWordCloud, ResponseInterface
+**Services:** feedback-analytics-api, sentiment-analysis-service (LLM)
+
+**Key Features:**
+- **Feedback Aggregation:**
+  - All customer reviews and ratings
+  - Real-time sentiment analysis
+  - Star rating distribution
+  - Feedback trends over time
+- **Sentiment Analysis:**
+  - Positive/neutral/negative classification
+  - LLM-powered emotion detection
+  - Key themes extraction
+  - Word clouds for common terms
+- **Dish-Specific Feedback:**
+  - Reviews per dish
+  - Average ratings
+  - Common complaints/praises
+  - Improvement suggestions
+- **Natural Language Queries:**
+  - "What are customers saying about my pizza?"
+  - "Why are ratings lower this week?"
+  - "Summarize negative feedback from last month"
+- **Response Management:**
+  - Respond to reviews in-app
+  - AI-suggested responses (LLM)
+  - Track response rate
+- **Actionable Insights:**
+  - "10% of reviews mention slow delivery"
+  - "Customers love your pasta but find portions small"
+  - "Rating dropped due to increased wait times"
+
+**API Endpoints:**
+```
+GET    /api/feedback/restaurant/:id
+GET    /api/feedback/dish/:dishId
+GET    /api/feedback/sentiment-analysis
+POST   /api/feedback/respond
+GET    /api/feedback/insights
+```
+
+**User Stories:**
+1. As a restaurant owner, I can view all customer feedback in one place
+2. As a restaurant owner, I can see sentiment trends over time
+3. As a restaurant owner, I can identify common issues from feedback
+4. As a restaurant owner, I can respond to reviews directly
+5. As a restaurant owner, I receive AI-generated summaries of feedback
+6. As a restaurant owner, I can ask natural language questions about feedback
 
 ---
 

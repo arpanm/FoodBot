@@ -1,8 +1,8 @@
 # Technical Requirements - FoodBot
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Last Updated:** 2026-02-20
-**Status:** Active
+**Status:** Active - Updated with Advanced Features
 
 ---
 
@@ -16,6 +16,8 @@
 - [6. DevOps & Infrastructure](#6-devops--infrastructure)
 - [7. Development Tools](#7-development-tools)
 - [8. Performance Requirements](#8-performance-requirements)
+- [9. Advanced Features Tech Stack](#9-advanced-features-tech-stack)
+- [10. Multi-Agent Development Platform](#10-multi-agent-development-platform)
 
 ---
 
@@ -862,6 +864,495 @@ services:
 - **Database**: Read replicas for load distribution
 - **Caching**: Redis for hot data
 - **CDN**: Static assets served via CDN
+
+---
+
+## 9. Advanced Features Tech Stack
+
+### 9.1 Vector Database
+
+**NFR-VECTOR-001: Vector Database for Semantic Caching** 🟡 **PENDING**
+
+**Options Evaluation:**
+
+| Provider | Type | Pros | Cons | Cost | Choice |
+|----------|------|------|------|------|--------|
+| **Pinecone** | Managed | Fastest, no ops, excellent API | Expensive, vendor lock-in | $$$ | Production |
+| **Weaviate** | Open-source | GraphQL API, multi-modal, free | Self-hosted, ops overhead | $ | Development |
+| **Qdrant** | Open-source | Rust-based, very fast, free | Smaller community | $ | Alternative |
+| **Chroma** | Open-source | Simple, Python-first | Limited scale | Free | Local dev |
+
+**Selected Stack:**
+```json
+{
+  "production": "Pinecone",
+  "development": "Weaviate (Docker)",
+  "embedding": "OpenAI text-embedding-3-small (1536 dims)",
+  "similarityMetric": "cosine",
+  "indexSize": "1M vectors",
+  "cacheThreshold": 0.85
+}
+```
+
+**Configuration:**
+```typescript
+interface VectorDBConfig {
+  provider: 'pinecone' | 'weaviate' | 'qdrant';
+  indexName: string;
+  dimensions: 1536; // OpenAI embedding size
+  metric: 'cosine' | 'euclidean' | 'dotProduct';
+  namespace?: string; // For multi-tenancy
+  replicas: number;
+  shards: number;
+}
+```
+
+**Performance Targets:**
+- Insert latency: <10ms (p95)
+- Query latency: <50ms (p95)
+- Throughput: 1000+ queries/sec
+- Cache hit rate: >70%
+
+**Cost Optimization:**
+- Use smaller embeddings (512 dims) for non-critical caching
+- TTL-based expiration (24 hours default)
+- Periodic cleanup of low-hit-rate vectors
+
+---
+
+### 9.2 Graph Database (Neo4j)
+
+**NFR-GRAPH-001: User Preference Graph** 🟡 **PENDING**
+
+**Stack:**
+```json
+{
+  "database": "Neo4j 5.x",
+  "driver": "@neo4j/driver (Node.js)",
+  "deployment": "Neo4j Aura (managed) or self-hosted",
+  "clustering": "Causal cluster (3 nodes)",
+  "memory": "4GB heap size",
+  "storage": "50GB SSD"
+}
+```
+
+**Schema:**
+```cypher
+// User node
+CREATE (u:User {
+  id: 'uuid',
+  name: 'string',
+  createdAt: datetime()
+})
+
+// Preference hierarchy
+CREATE (u:User)-[:PREFERS_ON {score: 0.8}]->(dow:DayOfWeek {name: 'Monday'})
+CREATE (dow)-[:AT_HOUR {score: 0.9}]->(h:Hour {hour: 12})
+CREATE (h)-[:FOR_CATEGORY {score: 0.85}]->(c:Category {name: 'Italian'})
+CREATE (c)-[:AT_RESTAURANT {score: 0.95}]->(r:Restaurant {id: 'uuid'})
+CREATE (r)-[:DISH {score: 0.9}]->(d:Dish {id: 'uuid', name: 'Margherita Pizza'})
+
+// Indexes
+CREATE INDEX user_id FOR (u:User) ON (u.id)
+CREATE INDEX restaurant_id FOR (r:Restaurant) ON (r.id)
+CREATE INDEX dish_id FOR (d:Dish) ON (d.id)
+```
+
+**Query Performance:**
+```cypher
+// Get personalized recommendations (target: <100ms)
+MATCH (u:User {id: $userId})
+  -[:PREFERS_ON]->(dow:DayOfWeek {name: $dayOfWeek})
+  -[:AT_HOUR]->(h:Hour {hour: $hour})
+  -[catRel:FOR_CATEGORY]->(c:Category)
+  -[restRel:AT_RESTAURANT]->(r:Restaurant)
+  -[dishRel:DISH]->(d:Dish)
+RETURN d, (catRel.score + restRel.score + dishRel.score) / 3 as score
+ORDER BY score DESC
+LIMIT 10
+```
+
+**Performance Targets:**
+- Graph traversal: <100ms (p95)
+- Preference update: <50ms
+- Concurrent queries: 100+/sec
+- Graph size: 10M+ nodes, 50M+ relationships
+
+---
+
+### 9.3 Nutrition API Integration
+
+**NFR-NUTRITION-001: Nutrition Data** 🟡 **PENDING**
+
+**Provider Options:**
+
+| Provider | Coverage | Cost | Data Quality | Choice |
+|----------|----------|------|--------------|--------|
+| **USDA FoodData Central** | US-focused, 300k+ foods | Free | Excellent | Primary |
+| **Nutritionix** | 800k+ foods, restaurant data | $$ | Excellent | Secondary |
+| **Edamam** | Recipe analysis, nutrition | $$$ | Good | Fallback |
+
+**Selected:** USDA FoodData Central (free) + Nutritionix (paid)
+
+**Integration:**
+```typescript
+interface NutritionData {
+  calories: number;
+  protein: number; // grams
+  carbohydrates: number;
+  fat: number;
+  fiber: number;
+  sugar: number;
+  sodium: number; // mg
+  cholesterol: number; // mg
+  vitamins: Record<string, number>;
+  minerals: Record<string, number>;
+}
+
+async function getNutrition(dishName: string): Promise<NutritionData> {
+  // 1. Check cache (Redis)
+  // 2. Query USDA API
+  // 3. Fallback to Nutritionix
+  // 4. Cache result (24h TTL)
+}
+```
+
+---
+
+### 9.4 Agent SDK & Orchestration
+
+**NFR-AGENT-001: Multi-Agent Platform** 🟡 **PENDING**
+
+**Tech Stack:**
+```json
+{
+  "orchestrator": "Temporal.io",
+  "agentFramework": "Claude Agent SDK",
+  "llmProvider": "Anthropic Claude Opus 4.6",
+  "codeGeneration": "Claude Sonnet 4.5",
+  "quickTasks": "Claude Haiku 4",
+  "taskQueue": "Temporal task queues",
+  "stateManagement": "Temporal workflow state",
+  "monitoring": "Temporal Web UI + Grafana"
+}
+```
+
+**Agent Architecture:**
+```typescript
+interface Agent {
+  name: string;
+  role: 'architect' | 'developer' | 'tester' | 'reviewer' | 'security' | 'devops';
+  llmProvider: 'claude-opus' | 'claude-sonnet' | 'claude-haiku';
+  capabilities: string[];
+  execute(task: Task): Promise<TaskResult>;
+}
+
+interface Task {
+  id: string;
+  type: 'design' | 'code' | 'test' | 'review' | 'security' | 'deploy';
+  input: any;
+  dependencies: string[]; // Task IDs
+  parallelizable: boolean;
+}
+
+interface TaskResult {
+  success: boolean;
+  output: any;
+  artifacts: Artifact[]; // Code files, test results, reports
+  nextTasks?: Task[];
+}
+```
+
+**Workflow Example:**
+```typescript
+// Temporal workflow for feature implementation
+async function implementFeature(requirement: Requirement): Promise<void> {
+  // 1. Architect generates design (Claude Opus)
+  const design = await architectAgent.generateDesign(requirement);
+
+  // 2. Developer generates code (Claude Sonnet)
+  const code = await developerAgent.generateCode(design);
+
+  // 3. Parallel tasks
+  const [tests, review, securityScan] = await Promise.all([
+    testerAgent.generateTests(code),
+    reviewerAgent.reviewCode(code),
+    securityAgent.scanCode(code)
+  ]);
+
+  // 4. Fix issues (if any)
+  if (review.issues.length > 0 || securityScan.vulnerabilities.length > 0) {
+    const fixes = await developerAgent.fixIssues(code, [...review.issues, ...securityScan.vulnerabilities]);
+    code = fixes;
+  }
+
+  // 5. Run tests
+  const testResults = await testerAgent.runTests(tests);
+
+  if (!testResults.passed) {
+    // Fix failing tests
+    const fixes = await developerAgent.fixTests(code, testResults.failures);
+    code = fixes;
+  }
+
+  // 6. Deploy (DevOps agent)
+  await devopsAgent.deploy(code);
+}
+```
+
+**Performance:**
+- Task scheduling latency: <100ms
+- Agent response time: 1-30 seconds (LLM dependent)
+- Parallel task execution: Up to 10 agents
+- Workflow history: Persistent for 30 days
+
+---
+
+### 9.5 Browser Automation
+
+**NFR-BROWSER-001: Browser Automation Stack** 🟡 **PENDING**
+
+**Options:**
+
+| Tool | Pros | Cons | Use Case |
+|------|------|------|----------|
+| **OpenClaw** | AI-powered, smart selectors | New, less mature | Primary |
+| **Playwright** | Reliable, cross-browser | Brittle selectors | Fallback |
+| **Puppeteer** | Fast, Chrome-only | Chrome-only | Development |
+
+**Selected Stack:**
+```json
+{
+  "primary": "OpenClaw (AI browser automation)",
+  "fallback": "Playwright",
+  "headless": true,
+  "browser": "Chromium",
+  "timeout": 30000,
+  "retries": 3
+}
+```
+
+**Integration:**
+```typescript
+interface BrowserAgent {
+  navigate(url: string): Promise<void>;
+  fillForm(fields: Record<string, string>): Promise<void>;
+  click(selector: string): Promise<void>;
+  extractData(schema: Schema): Promise<any>;
+  screenshot(): Promise<Buffer>;
+}
+
+// OpenClaw example
+const agent = new OpenClawAgent({
+  aiModel: 'claude-sonnet-4-5',
+  smartSelectors: true, // AI finds elements without CSS selectors
+  errorRecovery: true
+});
+
+await agent.navigate('https://swiggy.com');
+await agent.fillForm({
+  search: 'pizza',
+  location: 'Bangalore'
+});
+await agent.click('Add to Cart'); // AI finds button by text
+const cart = await agent.extractData(cartSchema);
+```
+
+---
+
+## 10. Multi-Agent Development Platform
+
+### 10.1 Architecture
+
+**System Components:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Temporal Orchestrator                    │
+│  (Manages agent workflows, state, retry, compensation)      │
+└─────────────────────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│  Architect   │   │  Developer   │   │   Tester     │
+│  Agent       │   │  Agent       │   │   Agent      │
+│ (Claude Opus)│   │(Claude Sonnet)│  │(Claude Haiku)│
+└──────────────┘   └──────────────┘   └──────────────┘
+        │                   │                   │
+        └───────────────────┼───────────────────┘
+                            ▼
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│  Reviewer    │   │  Security    │   │   DevOps     │
+│  Agent       │   │  Agent       │   │   Agent      │
+│(Claude Sonnet)│  │(Claude Sonnet)│  │(Claude Haiku)│
+└──────────────┘   └──────────────┘   └──────────────┘
+```
+
+**Data Flow:**
+```
+Requirements (Natural Language)
+    ↓
+Architect: System Design
+    ↓
+Developer: Code Generation
+    ↓
+Tester: Test Case Generation
+    ↓
+[Parallel Execution]
+    ├─→ Reviewer: Code Review
+    ├─→ Security: Vulnerability Scan
+    └─→ Tester: Test Execution
+    ↓
+Developer: Fix Issues
+    ↓
+DevOps: Deploy
+```
+
+---
+
+### 10.2 Agent Specifications
+
+**Architect Agent (Claude Opus 4.6):**
+- **Capabilities:** System design, tech stack selection, architecture decisions
+- **Input:** Requirements (natural language or structured)
+- **Output:** Architecture diagrams, component design, API contracts
+- **Performance:** 5-30 seconds per design task
+- **Quality Metrics:** Design completeness, scalability, maintainability
+
+**Developer Agent (Claude Sonnet 4.5):**
+- **Capabilities:** Code generation (TypeScript, React, NestJS), refactoring, debugging
+- **Input:** Design documents, task descriptions
+- **Output:** Source code files, unit tests
+- **Performance:** 3-15 seconds per file
+- **Quality Metrics:** Code coverage, complexity, TypeScript strict mode compliance
+
+**Tester Agent (Claude Haiku 4):**
+- **Capabilities:** Test case generation, test execution, failure analysis
+- **Input:** Source code, API contracts
+- **Output:** Jest tests, integration tests, E2E tests
+- **Performance:** 2-10 seconds per test suite
+- **Quality Metrics:** Coverage (>80%), edge case coverage
+
+**Reviewer Agent (Claude Sonnet 4.5):**
+- **Capabilities:** Code review, best practices, performance analysis
+- **Input:** Source code
+- **Output:** Review comments, refactoring suggestions
+- **Performance:** 3-10 seconds per file
+- **Quality Metrics:** Issues found, false positive rate
+
+**Security Agent (Claude Sonnet 4.5):**
+- **Capabilities:** OWASP Top 10 checks, dependency scanning, SQL injection detection
+- **Input:** Source code, dependencies
+- **Output:** Vulnerability report, remediation suggestions
+- **Performance:** 5-20 seconds per scan
+- **Quality Metrics:** Vulnerabilities found, false positive rate
+
+**DevOps Agent (Claude Haiku 4):**
+- **Capabilities:** CI/CD pipeline, Docker, Kubernetes, monitoring setup
+- **Input:** Deployment requirements, infrastructure specs
+- **Output:** CI/CD configs, Dockerfiles, K8s manifests
+- **Performance:** 2-10 seconds per config
+- **Quality Metrics:** Deployment success rate, pipeline speed
+
+---
+
+### 10.3 LLM Selection Strategy
+
+| Task Type | Complexity | Selected LLM | Reasoning | Cost | Speed |
+|-----------|-----------|--------------|-----------|------|-------|
+| Architecture design | High | Claude Opus 4.6 | Best reasoning, system thinking | $$$ | Slow |
+| Code generation | Medium-High | Claude Sonnet 4.5 | Balanced quality & speed | $$ | Medium |
+| Test generation | Medium | Claude Sonnet 4.5 | Good code understanding | $$ | Medium |
+| Code review | Medium | Claude Sonnet 4.5 | Pattern recognition | $$ | Medium |
+| Security scan | Medium | Claude Sonnet 4.5 | Vulnerability knowledge | $$ | Medium |
+| Quick tasks | Low | Claude Haiku 4 | Fast, good for simple tasks | $ | Fast |
+
+**Cost Optimization:**
+- Use Haiku for repetitive, simple tasks
+- Use Sonnet for most coding tasks
+- Reserve Opus for complex architectural decisions
+- Estimated cost: $50-200 per feature (depending on complexity)
+
+---
+
+### 10.4 Workflow Orchestration
+
+**Temporal Workflow Definition:**
+```typescript
+@WorkflowFunction()
+async function developFeature(req: FeatureRequest): Promise<FeatureResult> {
+  // Step 1: Architecture (sequential)
+  const design = await activities.architectFeature(req);
+
+  // Step 2: Code generation (sequential)
+  const code = await activities.generateCode(design);
+
+  // Step 3: Quality checks (parallel)
+  const [tests, review, security] = await Promise.all([
+    activities.generateTests(code),
+    activities.reviewCode(code),
+    activities.scanSecurity(code)
+  ]);
+
+  // Step 4: Fix issues (conditional)
+  let finalCode = code;
+  const allIssues = [...review.issues, ...security.vulnerabilities];
+
+  if (allIssues.length > 0) {
+    finalCode = await activities.fixIssues(code, allIssues);
+  }
+
+  // Step 5: Test execution (sequential)
+  const testResults = await activities.runTests(tests, finalCode);
+
+  // Step 6: Fix test failures (conditional, with retry)
+  let attempts = 0;
+  while (!testResults.passed && attempts < 3) {
+    finalCode = await activities.fixTestFailures(finalCode, testResults);
+    testResults = await activities.runTests(tests, finalCode);
+    attempts++;
+  }
+
+  // Step 7: Deploy (sequential)
+  const deployment = await activities.deploy(finalCode);
+
+  return {
+    code: finalCode,
+    tests: testResults,
+    deployment
+  };
+}
+```
+
+**Error Handling:**
+- Automatic retry on transient failures (3 attempts)
+- Exponential backoff (100ms, 1s, 5s)
+- Compensation on permanent failure (rollback)
+- Human escalation after 3 failed attempts
+
+---
+
+### 10.5 Performance & Cost Targets
+
+**Performance:**
+- Simple feature (CRUD endpoint): 2-5 minutes
+- Medium feature (workflow): 5-15 minutes
+- Complex feature (new system): 15-60 minutes
+- Parallel agent execution: Up to 10 agents
+
+**Cost per Feature:**
+- Simple: $5-20
+- Medium: $20-100
+- Complex: $100-500
+
+**Quality Metrics:**
+- Code coverage: >80%
+- Type safety: 100% (TypeScript strict mode)
+- Security scan: 0 critical vulnerabilities
+- Code review: <5 major issues
 
 ---
 

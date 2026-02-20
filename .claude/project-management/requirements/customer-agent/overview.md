@@ -1,8 +1,8 @@
 # Customer Agent Requirements
 
 **Last Updated**: 2026-02-20
-**Total Requirements**: 45
-**Implemented**: 39 (87%)
+**Total Requirements**: 52
+**Implemented**: 39 (75%)
 **Component**: Customer-facing web/mobile application for food ordering
 
 ---
@@ -11,7 +11,18 @@
 
 The Customer Agent is a conversational AI-powered interface that enables users to discover restaurants, search dishes, build carts, place orders, and track deliveries through natural language interactions combined with rich UI components.
 
-**Implementation Status**: Core functionality implemented with React + Redux Toolkit, 161 tests passing, all major UI components complete.
+**Implementation Status**: Core functionality implemented with Capacitor + React + Redux Toolkit, 161 tests passing, all major UI components complete.
+
+**Key Capabilities**:
+- Multi-platform support (Web + iOS + Android) via Capacitor
+- Rich chat UI with cards, images, dynamic input fields, CTA buttons
+- Async job processing with frontend polling for long-running operations
+- AI-powered personalization using Redis/GraphDB preference graphs
+- Multi-LLM support (Claude, OpenAI, Gemini) with configurable routing
+- Multi-engine workflows (Temporal, Agent SDK, Browser, OpenClaw)
+- MCP integration (Swiggy, Zomato, ONDC, Internal) with enable/disable config
+- Advanced planning features (Party Planner, Diet Planner)
+- Vector caching for prompt-to-intent/workflow optimization
 
 ---
 
@@ -71,9 +82,17 @@ Each implementation document should link to its corresponding requirement specif
 **Status**: ✅ Implemented
 **Priority**: High
 **Files**: `apps/customer-app/src/components/Chat/ChatInterface.tsx`
+**Related Spec**: [FR-CA-UI-001](./FR-CA-UI-001-rich-chatbot-interface.md)
 
 **Description**:
-The system provides a rich chatbot interface with text-based conversational input, rich UI components (cards, buttons, images, input fields), card-based option selection, multiple CTA buttons, and dynamic input field rendering based on conversation context.
+The system provides a rich chatbot interface with:
+- Text-based conversational input
+- Rich UI components (cards with images, text, attributes)
+- Card-based option selection
+- Multiple CTA buttons per interaction
+- Dynamic input field rendering based on conversation context
+- Async job processing with chat prompt + user ID → async job → job ID → frontend polling
+- Support for multi-LLM responses (Claude, OpenAI, Gemini)
 
 **Acceptance Criteria**:
 - [x] Chat interface displays rich UI components
@@ -81,12 +100,15 @@ The system provides a rich chatbot interface with text-based conversational inpu
 - [x] CTA buttons trigger appropriate actions
 - [x] Input fields adapt to conversation context
 - [x] Loading states display during async operations
+- [x] Async job polling system working
+- [x] Multi-platform support (Web, iOS, Android) via Capacitor
 
 **Implementation**:
 - Files: `ChatInterface.tsx`, `MessageCard.tsx`, `CTAButton.tsx`, `DynamicForm.tsx`, `LoadingIndicator.tsx`
+- Technology: Capacitor + React + TypeScript
 - Completed: 2026-02-17
 - Tests: 6 test files covering all chat components
-- Notes: Redux-based state management, supports message history, dynamic forms
+- Notes: Redux-based state management, supports message history, dynamic forms, job polling with 2s interval
 
 ---
 
@@ -120,15 +142,26 @@ The system provides real-time status updates through job ID-based status polling
 **Description**:
 The system supports Progressive Web App (PWA), iOS native app via Capacitor, Android native app via Capacitor, with consistent UX across platforms.
 
+**Technology Stack**:
+- **Frontend Framework**: Capacitor + React 18.2.0
+- **State Management**: Redux Toolkit 2.0.0
+- **Build Tool**: Vite
+- **UI Library**: Material-UI / Tailwind CSS
+- **Type Safety**: TypeScript 5.7.2 (strict mode enabled)
+- **Platform APIs**: Capacitor plugins for native features
+- **Testing**: Jest + React Testing Library
+
 **Acceptance Criteria**:
 - [x] App runs on web, iOS, and Android
 - [x] UI adapts to platform conventions
 - [x] Core features work identically across platforms
+- [x] Native device features accessible (camera, push notifications, local storage)
+- [x] Responsive design for all screen sizes
 
 **Implementation**:
 - Completed: 2026-02-17
 - Technology: Capacitor + React
-- Notes: PWA manifest configured, Capacitor dependencies installed, responsive design implemented
+- Notes: PWA manifest configured, Capacitor dependencies installed, responsive design implemented, platform-specific optimizations applied
 
 ---
 
@@ -140,19 +173,28 @@ The system supports Progressive Web App (PWA), iOS native app via Capacitor, And
 **Files**: Gateway API chat endpoint
 
 **Description**:
-The system accepts natural language user prompts, extracts intent from user messages, generates workflow JSON based on intent, handles multi-turn conversations, and supports context switching.
+The system accepts natural language user prompts, extracts intent from user messages using multi-LLM routing, generates workflow JSON based on intent, handles multi-turn conversations, and supports context switching.
+
+**Multi-LLM Architecture**:
+- **LLM Providers**: Claude (primary), OpenAI, Gemini
+- **Configuration**: Enable/disable individual LLMs via config
+- **Routing Strategy**: Intent-based routing to optimal LLM
+- **Fallback**: Automatic fallback if primary LLM unavailable
+- **Cost Optimization**: Route simple queries to cheaper models
 
 **Acceptance Criteria**:
 - [x] System accepts natural language prompts (Chat endpoint implemented)
-- [ ] Intent extraction implemented (LLM router pending)
+- [ ] Intent extraction implemented (Multi-LLM router pending)
 - [ ] Workflow JSON generation (Temporal workflows ready, LLM integration pending)
 - [x] Multi-turn conversations maintain context (Redux state management)
 - [x] Context switches handled gracefully
+- [ ] Multi-LLM routing configured (Claude, OpenAI, Gemini)
+- [ ] LLM enable/disable switches working
 
 **Implementation**:
-- Files: `apps/gateway-api/src/chat/chat.controller.ts`, chat service
-- Status: Backend endpoint complete, LLM integration pending
-- Notes: Intent detection requires LLM router implementation (Phase 2)
+- Files: `apps/gateway-api/src/chat/chat.controller.ts`, chat service, LLM router
+- Status: Backend endpoint complete, multi-LLM router pending
+- Notes: Intent detection requires multi-LLM router implementation with Claude as primary (Phase 2)
 
 ---
 
@@ -162,42 +204,157 @@ The system accepts natural language user prompts, extracts intent from user mess
 **Files**: Vector database integration pending
 
 **Description**:
-The system caches prompt-to-intent mappings in vector database, similar query results, and frequently accessed data.
+The system caches prompt-to-intent mappings in vector database, similar query results, workflow templates, and frequently accessed data to optimize response times and reduce LLM costs.
+
+**Vector Caching Strategy**:
+- **Prompt-to-Intent Cache**: Store user prompts and extracted intents
+- **Workflow Template Cache**: Store frequently used workflow JSON templates
+- **Query Results Cache**: Cache restaurant/dish search results
+- **Semantic Search**: Use vector similarity for cache hits on similar queries
+- **Cache TTL**: Configurable time-to-live per cache type
+- **Invalidation Strategy**: Time-based + event-based (menu updates, restaurant changes)
+
+**Vector Database Options**:
+- Pinecone (managed, scalable)
+- Weaviate (open-source, self-hosted)
+- Qdrant (fast, Rust-based)
+- Recommended: Pinecone for production, Qdrant for development
 
 **Acceptance Criteria**:
 - [ ] Cache hit rate > 70% for common queries
 - [ ] Response time reduced by >50% for cached queries
 - [ ] Cache invalidation works correctly
+- [ ] Vector similarity search < 100ms
+- [ ] Semantic search accuracy > 85%
+- [ ] LLM cost reduction > 40%
 
 **Implementation**:
 - Status: Not started
 - Notes: Requires vector database (Pinecone/Weaviate/Qdrant) integration
 - Priority: Medium (planned for Phase 4)
+- Dependencies: Multi-LLM router, prompt engineering standards
 
 ---
 
 #### REQ-CA-CONV-003: User Context & Personalization
 **Status**: 🔄 Partially Implemented
 **Priority**: High
-**Files**: Redis integration for session context
+**Files**: Redis integration for session context, Neo4j for preference graph
 
 **Description**:
 The system loads user context from Redis/GraphDB, enriches prompts with personalization data, stores preference graph as hierarchical tree (Day of week → Hour → Category → Subcategory → Restaurants → Dishes), and updates preferences based on user behavior.
 
+**Personalization Architecture**:
+
+**Preference Graph Structure (Neo4j)**:
+```
+User
+ └─ Day of Week (Monday, Tuesday, etc.)
+     └─ Hour Range (Morning, Lunch, Evening, Night)
+         └─ Category (Italian, Chinese, Indian, etc.)
+             └─ Restaurant
+                 └─ Dish
+```
+
+**Data Storage**:
+- **Redis**: Session context, cart state, temporary preferences (TTL: 24 hours)
+- **Neo4j GraphDB**: Long-term preference graph, relationship weights, order history
+- **PostgreSQL**: User profile, addresses, payment methods
+
+**Personalization Features**:
+- Time-based recommendations (Monday lunch = past favorite restaurant)
+- Contextual suggestions (rainy day = comfort food preferences)
+- Collaborative filtering (similar users' preferences)
+- Behavioral learning (order frequency, dish ratings, search patterns)
+- Dynamic weight adjustment (recent orders weighted higher)
+
 **Acceptance Criteria**:
 - [x] User context loaded within 100ms (Redis configured)
-- [ ] Preference graph accurately reflects user history (Neo4j not integrated)
+- [ ] Preference graph accurately reflects user history (Neo4j integration pending)
 - [ ] Recommendations improve with user interaction (Recommendation engine pending)
 - [ ] Personalization increases conversion rate by >30% (Metrics not tracked yet)
+- [ ] Graph queries complete < 200ms
+- [ ] Preference weights updated in real-time after each order
 
 **Implementation**:
-- Files: Redis configured in Gateway API
+- Files: Redis configured in Gateway API, Neo4j integration pending
 - Status: Basic session context working, preference graph pending Neo4j integration
-- Notes: Graph DB integration planned for Phase 3
+- Notes: Graph DB integration planned for Phase 3, preference learning algorithm designed
 
 ---
 
-### 3. Restaurant Discovery & Search
+### 3. Advanced Planning Features
+
+#### REQ-CA-PLANNER-001: Future Party Planner
+**Status**: 🟡 Pending
+**Priority**: Medium
+**Files**: Planning service pending
+**Related Spec**: [FR-CA-PLANNER-001](./FR-CA-PLANNER-001-party-planner.md)
+
+**Description**:
+AI-powered party planning feature for bulk orders from multiple restaurants with budget-based planning and scheduled delivery.
+
+**Key Features**:
+- Accept party specifications (guests, budget, dietary restrictions, event type)
+- Recommend restaurants supporting bulk orders
+- Calculate dish quantities based on guest count
+- Multi-restaurant order coordination
+- Budget optimization across multiple restaurants
+- Payment splitting among attendees
+- Scheduled delivery coordination
+
+**Acceptance Criteria**:
+- [ ] Party planning conversation flow implemented
+- [ ] Bulk order restaurant filtering working
+- [ ] Quantity calculation algorithm accurate
+- [ ] Multi-restaurant order support
+- [ ] Payment splitting functionality
+- [ ] Scheduled delivery coordination
+- [ ] Budget tracking and optimization
+
+**Implementation**:
+- Status: Not started (planned for Phase 5)
+- Dependencies: Multi-LLM router, MCP bulk order support, payment splitting service
+- Notes: Requires restaurant partner agreements for bulk orders
+
+---
+
+#### REQ-CA-PLANNER-002: Daily Diet Planner
+**Status**: 🟡 Pending
+**Priority**: Medium
+**Files**: Diet planning service pending
+**Related Spec**: [FR-CA-PLANNER-002](./FR-CA-PLANNER-002-diet-planner.md)
+
+**Description**:
+AI-powered diet planning feature that creates weekly meal calendars based on health goals, tracks nutritional intake, and supports multi-address delivery scheduling.
+
+**Key Features**:
+- Accept dietary goals (weight loss, muscle gain, maintenance)
+- Calculate calorie and macro targets
+- Generate weekly meal plans
+- Filter dishes by nutritional requirements
+- Track daily nutritional intake
+- Support recurring orders for meal prep
+- Multi-address delivery (home, office, gym)
+- Progress tracking and insights
+
+**Acceptance Criteria**:
+- [ ] Diet goal conversation flow implemented
+- [ ] Calorie/macro calculation working (BMR, TDEE)
+- [ ] Weekly meal plan generation
+- [ ] Nutritional database integration (USDA, restaurant APIs)
+- [ ] Meal plan calendar view
+- [ ] Progress tracking dashboard
+- [ ] Multi-address delivery scheduling
+
+**Implementation**:
+- Status: Not started (planned for Phase 5)
+- Dependencies: Nutrition database, Multi-LLM router, MCP nutrition data support
+- Notes: Requires nutritional data from restaurants via MCP or USDA database
+
+---
+
+### 4. Restaurant Discovery & Search
 
 #### REQ-CA-SEARCH-001: Restaurant Search
 **Status**: ✅ Implemented
