@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "*",
+      "Write(*)",
+      "Edit(*)",
+      "Bash(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Bash(pnpm test:integration:*)",
+      "Bash(git stash:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm audit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint:fix:*)",
+      "Bash(npm run test:*)",
+      "Bash(node -e:*)",
+      "Bash(.github/workflows/deploy-aws.yml:*)",
+      "Bash(scripts/deploy.sh:*)",
+      "Bash(__NEW_LINE_8508911cf4f1e9b6__ chmod +x scripts/deploy.sh)",
+      "Bash(scripts/nginx-foodbot.conf:*)",
+      "Bash(docs/GITHUB_SECRETS.md:*)",
+      "Bash(docs/CICD_GUIDE.md:*)",
+      "Bash(chmod:*)",
+      "Bash(./foodbot help:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(npm run:*)",
+      "Bash(pnpm test:*)",
+      "Bash(ls:*)",
+      "Read(//Users/arpan1.mukherjee/code/FoodBot/**)",
+      "Bash(grep:*)",
+      "Read(//Users/arpan1.mukherjee/.claude/**)"
+    ],
+    "deny": [],
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": [
+      "/tmp",
+      "/Users/arpan1.mukherjee/.claude/plans"
+    ]
+  }
+}
