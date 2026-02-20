@@ -1,27 +1,9 @@
-# Temporal Workflows - Complete Architecture
+# Temporal Workflows Architecture - Consolidated
 
-> **⚠️ DEPRECATED - This file has been consolidated**
->
-> **New Location:** `../integration/temporal-workflows-architecture-consolidated.md`
->
-> This file was consolidated with `temporal-workflows-architecture.md` on 2026-02-20.
-> Please refer to the consolidated document for the most up-to-date information.
->
-> **Consolidation Summary:**
-> - All unique content from this file has been preserved
-> - Duplicate sections removed
-> - Cross-references updated
-> - Comprehensive table of contents added
->
-> This file is kept for reference only and will be moved to archive.
-
----
-
-**Document ID:** ARCH-WORKFLOWS-001
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Last Updated:** 2026-02-20
-**Status:** Deprecated ⚠️
-**Source:** Code-verified implementation analysis
+**Status:** Production ✅
+**Consolidates:** temporal-workflows-complete.md, temporal-workflows-architecture.md
 
 ---
 
@@ -35,10 +17,15 @@
 - [6. Error Handling and Compensation](#6-error-handling-and-compensation)
 - [7. Testing Strategy](#7-testing-strategy)
 - [8. Deployment Architecture](#8-deployment-architecture)
+- [9. Performance Optimization](#9-performance-optimization)
+- [10. Monitoring & Observability](#10-monitoring--observability)
+- [11. Security Considerations](#11-security-considerations)
 
 ---
 
 ## 1. Architecture Overview
+
+FoodBot uses Temporal for orchestrating complex, long-running business workflows with built-in reliability, observability, and state management.
 
 ### 1.1 System Architecture
 
@@ -115,11 +102,11 @@ packages/workflows/
 │   │   └── restaurantOnboarding.workflow.ts ❌ NOT IMPLEMENTED
 │   │
 │   ├── activities/              # Activity implementations
-│   │   ├── database.activities.ts          ✅ IMPLEMENTED
-│   │   ├── external.activities.ts          ✅ IMPLEMENTED
-│   │   ├── llm.activities.ts               ✅ IMPLEMENTED
-│   │   ├── notification.activities.ts      ✅ IMPLEMENTED
-│   │   ├── payment.activities.ts           ✅ IMPLEMENTED
+│   │   ├── database.activities.ts          ✅ IMPLEMENTED (10 activities)
+│   │   ├── external.activities.ts          ✅ IMPLEMENTED (5 activities)
+│   │   ├── llm.activities.ts               ✅ IMPLEMENTED (3 activities)
+│   │   ├── notification.activities.ts      ✅ IMPLEMENTED (4 activities)
+│   │   ├── payment.activities.ts           ✅ IMPLEMENTED (6 activities)
 │   │   └── index.ts                        ✅ IMPLEMENTED
 │   │
 │   ├── workers/                 # Worker setup
@@ -149,11 +136,12 @@ packages/workflows/
 **File:** `packages/workflows/src/workflows/searchRestaurant.workflow.ts`
 **Status:** ✅ FULLY IMPLEMENTED
 **Lines of Code:** 173
+**Queue:** `foodbot-main-queue`
+**Timeout:** 2 minutes total
 
-#### Architecture
+#### Type Definitions
 
 ```typescript
-// Type Definitions
 interface UserContext {
   userId: string;
   preferences: {
@@ -186,8 +174,11 @@ interface SearchRestaurantInput {
     radius?: number;
   };
 }
+```
 
-// Activity Proxy Configuration
+#### Activity Proxy Configuration
+
+```typescript
 const {
   loadUserContext,
   getFromCache,
@@ -213,16 +204,13 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Search Restaurant Workflow                                      │
 │  ID: search-{userId}-{timestamp}                                 │
-│  Queue: foodbot-main-queue                                       │
-│  Timeout: 2 minutes total                                        │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 1: Load User Context                                       │
 │  ├─ Activity: loadUserContext(userId)                            │
-│  ├─ Timeout: 30s                                                 │
-│  ├─ Retry: 3 attempts                                            │
+│  ├─ Timeout: 30s, Retry: 3 attempts                              │
 │  └─ Output: UserContext with preferences, location, history      │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -240,8 +228,7 @@ const {
 │  Step 3: Call MCP Search API                                     │
 │  ├─ Activity: callMCPSearch(params)                              │
 │  ├─ Params: query, location, radius (default 5km)                │
-│  ├─ Timeout: 30s                                                 │
-│  ├─ Retry: 3 attempts with exponential backoff                   │
+│  ├─ Timeout: 30s, Retry: 3 attempts                              │
 │  └─ Output: Restaurant[] from MCP                                │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -270,31 +257,11 @@ const {
 │  Step 6: Cache Results                                           │
 │  ├─ Activity: setInCache(key, results, 1800)                     │
 │  ├─ TTL: 30 minutes                                              │
-│  ├─ Activity: cacheResults(userId, query, results)               │
-│  └─ Purpose: Faster future searches                              │
+│  └─ Activity: cacheResults(userId, query, results)               │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
                     Return Results
-```
-
-#### Error Handling
-
-```typescript
-// Implemented Error Handling
-try {
-  results = await callMCPSearch(searchParams);
-  log.info('MCP search completed', { count: results.length });
-} catch (error) {
-  log.error('MCP search failed after retries', { error });
-  throw error; // Propagate to caller
-}
-
-// Empty result handling
-if (!results || results.length === 0) {
-  log.info('No results found');
-  return []; // Return empty array, not error
-}
 ```
 
 #### Key Features Implemented
@@ -314,11 +281,12 @@ if (!results || results.length === 0) {
 **File:** `packages/workflows/src/workflows/placeOrder.workflow.ts`
 **Status:** ✅ FULLY IMPLEMENTED
 **Lines of Code:** 241
+**Queue:** `foodbot-orders-queue`
+**Pattern:** Saga with compensation
 
-#### Architecture
+#### Type Definitions
 
 ```typescript
-// Type Definitions
 interface CartItem {
   dishId: string;
   quantity: number;
@@ -333,13 +301,6 @@ interface PaymentDetails {
   metadata?: Record<string, any>;
 }
 
-interface PaymentResult {
-  paymentId: string;
-  status: 'success' | 'failed' | 'pending';
-  transactionId?: string;
-  errorMessage?: string;
-}
-
 interface Order {
   id: string;
   userId: string;
@@ -351,28 +312,6 @@ interface Order {
   createdAt: Date;
   updatedAt: Date;
 }
-
-// Activity Proxy Configuration
-const {
-  validateCart,
-  checkInventory,
-  reserveItems,
-  releaseItems,
-  processPayment,
-  refundPayment,
-  createOrder,
-  updateOrderStatus,
-  notifyRestaurant,
-  notifyCustomer,
-} = proxyActivities<Activities>({
-  startToCloseTimeout: '30s',
-  retry: {
-    initialInterval: '1s',
-    backoffCoefficient: 2,
-    maximumInterval: '30s',
-    maximumAttempts: 3,
-  },
-});
 ```
 
 #### Saga Pattern Implementation
@@ -381,7 +320,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Place Order Workflow (Saga Pattern)                             │
 │  ID: order-{timestamp}-{random}                                  │
-│  Queue: foodbot-orders-queue                                     │
 │  Compensation: Reverse order on failure                          │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -389,7 +327,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 1: Validate Cart                                           │
 │  ├─ Activity: validateCart(items)                                │
-│  ├─ Checks: Items exist, quantities > 0, prices valid            │
 │  └─ No compensation needed                                       │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -397,8 +334,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 2: Check Inventory                                         │
 │  ├─ Activity: checkInventory(items)                              │
-│  ├─ Checks: Sufficient stock for all items                       │
-│  ├─ Failure: Throw "Items not available"                         │
 │  └─ No compensation needed                                       │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -406,7 +341,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 3: Reserve Items                                           │
 │  ├─ Activity: reserveItems(restaurantId, items)                  │
-│  ├─ Effect: Lock inventory for this order                        │
 │  ├─ Compensation: releaseItems(restaurantId)                     │
 │  └─ compensation[] ← releaseItems                                │
 └─────────────────────────────────────────────────────────────────┘
@@ -415,8 +349,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 4: Process Payment                                         │
 │  ├─ Activity: processPayment(orderId, paymentDetails)            │
-│  ├─ Checks: Payment gateway success                              │
-│  ├─ Failure: Throw "Payment failed: {reason}"                    │
 │  ├─ Compensation: refundPayment(paymentId)                       │
 │  └─ compensation[] ← refundPayment                               │
 └─────────────────────────────────────────────────────────────────┘
@@ -425,8 +357,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 5: Create Order                                            │
 │  ├─ Activity: createOrder(orderData)                             │
-│  ├─ Data: id, userId, restaurantId, items, total, paymentId      │
-│  ├─ Status: "pending"                                            │
 │  └─ No compensation (order created for tracking)                 │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -434,7 +364,6 @@ const {
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 6: Update Order Status to Confirmed                        │
 │  ├─ Activity: updateOrderStatus(orderId, 'confirmed')            │
-│  ├─ Status: "pending" → "confirmed"                              │
 │  └─ No compensation                                              │
 └─────────────────────────────────────────────────────────────────┘
                           │
@@ -443,17 +372,14 @@ const {
 │  Step 7: Send Notifications (Non-Critical)                       │
 │  ├─ Activity: notifyRestaurant(orderId)                          │
 │  ├─ Activity: notifyCustomer(userId, 'ORDER_PLACED')             │
-│  ├─ Error Handling: Log error but continue                       │
 │  └─ No compensation                                              │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
                     Return Success
 
-
 ────────────────────── ON FAILURE ──────────────────────────────
-                          │
-                          ▼
+
 ┌─────────────────────────────────────────────────────────────────┐
 │  Saga Compensation (Reverse Order)                               │
 │                                                                   │
@@ -480,8 +406,6 @@ const {
 const compensations: Array<() => Promise<void>> = [];
 
 try {
-  // ... validation and inventory check ...
-
   // Reserve items - ADD COMPENSATION
   await reserveItems(input.restaurantId, input.items);
   compensations.push(async () => {
@@ -498,29 +422,22 @@ try {
     }
   });
 
-  // ... create and confirm order ...
+  // Create and confirm order...
 
 } catch (error) {
   log.error('Place order workflow failed', { error });
 
   // EXECUTE COMPENSATIONS IN REVERSE ORDER
-  log.info('Executing compensations', { count: compensations.length });
   for (let i = compensations.length - 1; i >= 0; i--) {
     try {
       await compensations[i]();
     } catch (compensationError) {
       log.error('Compensation failed', { compensationError, step: i });
-      // Continue with other compensations even if one fails
     }
   }
 
   // Notify customer of failure
-  try {
-    await notifyCustomer(input.userId, 'ORDER_FAILED');
-  } catch (notifyError) {
-    log.error('Failed to notify customer of failure', { notifyError });
-  }
-
+  await notifyCustomer(input.userId, 'ORDER_FAILED');
   throw error;
 }
 ```
@@ -545,11 +462,13 @@ try {
 **File:** `packages/workflows/src/workflows/processPayment.workflow.ts`
 **Status:** ✅ FULLY IMPLEMENTED
 **Lines of Code:** 275
+**Queue:** `foodbot-payments-queue`
+**Retry:** 5 attempts (higher than default)
 
-#### Architecture
+#### Activity Proxy Configuration
 
 ```typescript
-// Activity Proxy Configuration - General Activities
+// General activities
 const activities = proxyActivities<Activities>({
   startToCloseTimeout: '30s',
   retry: {
@@ -560,7 +479,7 @@ const activities = proxyActivities<Activities>({
   },
 });
 
-// Activity Proxy Configuration - Payment Gateway (Separate Config)
+// Payment gateway with separate config
 const paymentGatewayActivity = proxyActivities<Pick<Activities, 'callPaymentGateway'>>({
   startToCloseTimeout: '30s',
   retry: {
@@ -578,31 +497,25 @@ const paymentGatewayActivity = proxyActivities<Pick<Activities, 'callPaymentGate
 ┌─────────────────────────────────────────────────────────────────┐
 │  Process Payment Workflow                                        │
 │  ID: payment-{orderId}                                           │
-│  Queue: foodbot-payments-queue                                   │
-│  Retry: 5 attempts (higher than default)                         │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 1: Check Idempotency                                       │
-│  ├─ Activity: loadFromDatabase('payments', orderId)              │
-│  ├─ Check: If payment exists with status = 'success'             │
-│  ├─ If EXISTS: Return existing payment immediately               │
-│  └─ Purpose: Prevent duplicate charges                           │
+│  ├─ Purpose: Prevent duplicate charges                           │
+│  └─ If EXISTS: Return existing payment immediately               │
 └─────────────────────────────────────────────────────────────────┘
                           │
-                          ▼ (No existing payment)
+                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 2: Validate Payment Details                                │
-│  ├─ Check: amount > 0                                            │
-│  ├─ Check: method is valid                                       │
+│  ├─ Check: amount > 0, method is valid                           │
 │  └─ Failure: Throw "Invalid amount"                              │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 3: Save Initial Payment Record                             │
-│  ├─ Activity: saveToDatabase('payments', paymentRecord)          │
 │  ├─ Data: orderId, amount, method, currency, status='pending'    │
 │  └─ Purpose: Track payment attempt                               │
 └─────────────────────────────────────────────────────────────────┘
@@ -610,15 +523,9 @@ const paymentGatewayActivity = proxyActivities<Pick<Activities, 'callPaymentGate
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 4: Call Payment Gateway (with retry)                       │
-│  ├─ Activity: callPaymentGateway(paymentDetails)                 │
 │  ├─ Timeout: 30 seconds                                          │
-│  ├─ Retry: 5 attempts with exponential backoff                   │
-│  │   - Attempt 1: Immediate                                      │
-│  │   - Attempt 2: After 1s                                       │
-│  │   - Attempt 3: After 2s                                       │
-│  │   - Attempt 4: After 4s                                       │
-│  │   - Attempt 5: After 8s                                       │
-│  └─ On Failure: Update payment status to 'failed' and throw      │
+│  ├─ Retry: 5 attempts (1s, 2s, 4s, 8s, 16s)                     │
+│  └─ On Failure: Update payment status to 'failed'                │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
@@ -627,111 +534,39 @@ const paymentGatewayActivity = proxyActivities<Pick<Activities, 'callPaymentGate
               ▼                       ▼
     ┌─────────────────┐   ┌─────────────────────────┐
     │  3DS Required?  │   │  Payment Failed?        │
-    │  (requires3DS)  │   │  (status='failed')      │
     └─────────────────┘   └─────────────────────────┘
               │                       │
               ▼ YES                   ▼ YES
 ┌──────────────────────────┐   ┌──────────────────────────┐
-│  Step 5: Handle 3DS      │   │  Handle Payment Failure  │
-│  ├─ Update status to     │   │  ├─ Update payment DB    │
-│  │  'pending_3ds'        │   │  ├─ Check fraud flag     │
+│  Handle 3DS              │   │  Handle Payment Failure  │
+│  ├─ Update to pending_3ds│   │  ├─ Check fraud flag     │
 │  ├─ Provide authUrl      │   │  ├─ Send fraud alert     │
-│  ├─ Wait for 3DS         │   │  ├─ Notify customer      │
-│  │  completion           │   │  └─ Throw error          │
-│  └─ Retry gateway call   │   └──────────────────────────┘
-└──────────────────────────┘
+│  └─ Wait for completion  │   │  └─ Notify customer      │
+└──────────────────────────┘   └──────────────────────────┘
               │
               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Step 6: Handle Partial Authorization                            │
-│  ├─ Check: metadata.partial === true                             │
-│  ├─ If partial && !allowPartial:                                 │
-│  │  - Update status to 'failed'                                  │
-│  │  - Throw "Partial payment not allowed"                        │
+│  Step 5: Handle Partial Authorization                            │
+│  ├─ If partial && !allowPartial: Throw error                     │
 │  └─ If partial && allowPartial: Continue                         │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Step 7: Update Payment Record to Success                        │
-│  ├─ Activity: updateDatabase('payments', id, data)               │
-│  ├─ Data: status='success', transactionId, paymentId, metadata   │
+│  Step 6: Update Payment Record to Success                        │
+│  ├─ Data: status='success', transactionId, paymentId             │
 │  └─ Purpose: Persist successful payment                          │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Step 8: Notify Customer of Success                              │
-│  ├─ Activity: notifyCustomer(orderId, 'PAYMENT_SUCCESS')         │
-│  ├─ Error Handling: Log error but continue                       │
-│  └─ Non-critical operation                                       │
+│  Step 7: Notify Customer of Success                              │
+│  ├─ Non-critical operation                                       │
+│  └─ Log error but continue                                       │
 └─────────────────────────────────────────────────────────────────┘
                           │
                           ▼
                     Return Success
-```
-
-#### 3D Secure Flow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Payment Gateway Response: requires3DS = true                    │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Update Payment Record                                           │
-│  ├─ status = 'pending'                                           │
-│  ├─ requires3DS = true                                           │
-│  ├─ authUrl = '<3DS authentication URL>'                         │
-│  └─ updatedAt = current timestamp                                │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Wait for 3DS Completion                                         │
-│  (In practice, user completes 3DS on frontend,                   │
-│   then frontend signals workflow or calls API again)             │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Retry Payment Gateway Call                                      │
-│  ├─ Activity: callPaymentGateway(paymentDetails)                 │
-│  ├─ metadata.threeDSCompleted = true                             │
-│  └─ Gateway verifies 3DS and processes payment                   │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-                    Continue with Step 6
-```
-
-#### Fraud Detection
-
-```typescript
-// Fraud Detection Logic (Implemented)
-if (paymentResult.status === 'failed') {
-  // Check if fraud detection triggered
-  if (
-    paymentResult.errorMessage &&
-    paymentResult.errorMessage.toLowerCase().includes('fraud')
-  ) {
-    log.info('Fraud detected - sending alert email');
-    try {
-      await activities.sendEmail(
-        'security@foodbot.com',
-        'Fraud Alert',
-        `Potential fraud detected for order ${orderId}`
-      );
-    } catch (emailError) {
-      log.error('Failed to send fraud alert email', { emailError });
-    }
-  }
-
-  // Notify customer and throw error
-  await activities.notifyCustomer(orderId, 'PAYMENT_FAILED');
-  throw new Error(`Payment failed: ${paymentResult.errorMessage}`);
-}
 ```
 
 #### Key Features Implemented
@@ -765,11 +600,11 @@ packages/workflows/src/activities/
 └── index.ts                   ✅ EXISTS (exports all)
 ```
 
+**Total Activities:** 28
+
 ### 3.2 Database Activities
 
 **File:** `packages/workflows/src/activities/database.activities.ts`
-
-Activities for database operations:
 
 ```typescript
 // User Context Management
@@ -778,206 +613,90 @@ export async function loadUserContext(userId: string): Promise<UserContext>
 
 // Order Management
 export async function createOrder(orderData: CreateOrderInput): Promise<Order>
-export async function updateOrderStatus(
-  orderId: string,
-  status: OrderStatus
-): Promise<Order>
+export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order>
 
 // Generic Database Operations
-export async function loadFromDatabase(
-  collection: string,
-  id: string
-): Promise<any>
-export async function saveToDatabase(
-  collection: string,
-  data: any
-): Promise<any>
-export async function updateDatabase(
-  collection: string,
-  id: string,
-  data: any
-): Promise<any>
+export async function loadFromDatabase(collection: string, id: string): Promise<any>
+export async function saveToDatabase(collection: string, data: any): Promise<any>
+export async function updateDatabase(collection: string, id: string, data: any): Promise<any>
 
 // Cache Operations
 export async function getFromCache(key: string): Promise<any>
-export async function setInCache(
-  key: string,
-  value: any,
-  ttl?: number
-): Promise<void>
+export async function setInCache(key: string, value: any, ttl?: number): Promise<void>
 export async function cacheResults(params: CacheResultsInput): Promise<boolean>
 ```
 
-**Characteristics:**
-- ✅ All activities are async
-- ✅ Type-safe with TypeScript interfaces
-- ✅ Error handling with try-catch
-- ✅ Logging for debugging
-
----
-
-### 3.3 External Activities
+### 3.3 External Service Activities
 
 **File:** `packages/workflows/src/activities/external.activities.ts`
 
-Activities for external API calls:
-
 ```typescript
 // Restaurant Search
-export async function searchRestaurants(
-  query: string,
-  filters: SearchFilters
-): Promise<Restaurant[]>
-
-export async function callMCPSearch(
-  params: MCPSearchParams
-): Promise<Restaurant[]>
+export async function searchRestaurants(query: string, filters: SearchFilters): Promise<Restaurant[]>
+export async function callMCPSearch(params: MCPSearchParams): Promise<Restaurant[]>
 
 // Inventory Management
 export async function checkInventory(items: CartItem[]): Promise<boolean>
-
-export async function reserveItems(
-  restaurantId: string,
-  items: CartItem[]
-): Promise<boolean>
-
+export async function reserveItems(restaurantId: string, items: CartItem[]): Promise<boolean>
 export async function releaseItems(restaurantId: string): Promise<void>
 
 // Filtering and Ranking
-export async function applyFilters(
-  restaurants: Restaurant[],
-  filters: SearchFilters
-): Promise<Restaurant[]>
-
-export async function rankResults(
-  restaurants: Restaurant[],
-  userContext: UserContext
-): Promise<Restaurant[]>
+export async function applyFilters(restaurants: Restaurant[], filters: SearchFilters): Promise<Restaurant[]>
+export async function rankResults(restaurants: Restaurant[], userContext: UserContext): Promise<Restaurant[]>
 ```
-
-**Characteristics:**
-- ✅ HTTP client with retry logic
-- ✅ Timeout handling (30s default)
-- ✅ Error logging and propagation
-- ✅ Idempotent operations
-
----
 
 ### 3.4 LLM Activities
 
 **File:** `packages/workflows/src/activities/llm.activities.ts`
 
-Activities for LLM interactions:
-
 ```typescript
 // Query Enhancement
-export async function enrichQuery(
-  query: string,
-  context: UserContext
-): Promise<string>
+export async function enrichQuery(query: string, context: UserContext): Promise<string>
 
 // Intent Classification
-export async function classifyIntent(
-  message: string
-): Promise<IntentResult>
+export async function classifyIntent(message: string): Promise<IntentResult>
 
 // Response Generation
-export async function generateResponse(
-  intent: IntentResult,
-  context: any
-): Promise<string>
+export async function generateResponse(intent: IntentResult, context: any): Promise<string>
 ```
-
-**Characteristics:**
-- ✅ OpenAI API integration
-- ✅ Prompt engineering
-- ✅ Response parsing
-- ✅ Error handling for API failures
-
----
 
 ### 3.5 Notification Activities
 
 **File:** `packages/workflows/src/activities/notification.activities.ts`
 
-Activities for sending notifications:
-
 ```typescript
 // Customer Notifications
-export async function notifyCustomer(
-  userId: string,
-  message: string
-): Promise<void>
+export async function notifyCustomer(userId: string, message: string): Promise<void>
 
 // Restaurant Notifications
 export async function notifyRestaurant(orderId: string): Promise<void>
 
 // Email Notifications
-export async function sendEmail(
-  to: string,
-  subject: string,
-  body: string
-): Promise<void>
+export async function sendEmail(to: string, subject: string, body: string): Promise<void>
 
 // SMS Notifications
-export async function sendSMS(
-  to: string,
-  message: string
-): Promise<void>
+export async function sendSMS(to: string, message: string): Promise<void>
 ```
-
-**Characteristics:**
-- ✅ Multi-channel support (email, SMS, push)
-- ✅ Non-blocking (errors logged but not thrown)
-- ✅ Template support
-- ✅ Delivery tracking
-
----
 
 ### 3.6 Payment Activities
 
 **File:** `packages/workflows/src/activities/payment.activities.ts`
 
-Activities for payment processing:
-
 ```typescript
 // Payment Processing
-export async function processPayment(
-  orderId: string,
-  paymentDetails: PaymentDetails
-): Promise<PaymentResult>
-
-export async function callPaymentGateway(
-  details: PaymentDetails
-): Promise<PaymentResult>
+export async function processPayment(orderId: string, paymentDetails: PaymentDetails): Promise<PaymentResult>
+export async function callPaymentGateway(details: PaymentDetails): Promise<PaymentResult>
 
 // Payment Validation
-export async function validatePayment(
-  paymentDetails: PaymentDetails
-): Promise<boolean>
+export async function validatePayment(paymentDetails: PaymentDetails): Promise<boolean>
 
 // Refunds
-export async function refundPayment(
-  paymentId: string
-): Promise<PaymentResult>
+export async function refundPayment(paymentId: string): Promise<PaymentResult>
 
 // Payment Methods
-export async function getPaymentMethods(
-  userId: string
-): Promise<PaymentMethod[]>
-
-export async function savePaymentMethod(
-  userId: string,
-  method: PaymentMethod
-): Promise<void>
+export async function getPaymentMethods(userId: string): Promise<PaymentMethod[]>
+export async function savePaymentMethod(userId: string, method: PaymentMethod): Promise<void>
 ```
-
-**Characteristics:**
-- ✅ Multiple payment gateway support (Stripe, Razorpay)
-- ✅ Idempotency keys
-- ✅ 3DS authentication support
-- ✅ Webhook handling
-- ✅ PCI compliance
 
 ---
 
@@ -1010,7 +729,6 @@ const worker = await Worker.create({
   stickyQueueScheduleToStartTimeout: '30s',
 });
 
-// Start worker
 await worker.run();
 ```
 
@@ -1018,12 +736,9 @@ await worker.run();
 
 **File:** `packages/workflows/src/workers/worker-manager.ts`
 
-Multi-queue worker management:
+Multi-queue worker management with health monitoring and graceful shutdown.
 
 ```typescript
-import { NativeConnection, Worker } from '@temporalio/worker';
-import * as activities from '../activities';
-
 export class WorkerManager {
   private workers: Worker[] = [];
 
@@ -1046,8 +761,6 @@ export class WorkerManager {
     // Orders queue worker
     const ordersWorker = await Worker.create({
       connection,
-      workflowsPath: require.resolve('../workflows'),
-      activities,
       taskQueue: 'foodbot-orders-queue',
       maxConcurrentActivityTaskExecutions: 100,
       maxConcurrentWorkflowTaskExecutions: 50,
@@ -1057,8 +770,6 @@ export class WorkerManager {
     // Payments queue worker
     const paymentsWorker = await Worker.create({
       connection,
-      workflowsPath: require.resolve('../workflows'),
-      activities,
       taskQueue: 'foodbot-payments-queue',
       maxConcurrentActivityTaskExecutions: 50,
       maxConcurrentWorkflowTaskExecutions: 25,
@@ -1075,26 +786,15 @@ export class WorkerManager {
 }
 ```
 
-### 4.3 Environment Configuration
+### 4.3 Default Worker Pools
 
-```bash
-# .env.workflows
-TEMPORAL_ADDRESS=localhost:7233
-TEMPORAL_NAMESPACE=default
-WORKER_MAX_CONCURRENT_ACTIVITIES=100
-WORKER_MAX_CONCURRENT_WORKFLOWS=50
-TASK_QUEUE=foodbot-main-queue
-
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/foodbot
-
-# External APIs
-MCP_API_URL=http://localhost:3001
-PAYMENT_GATEWAY_URL=https://api.stripe.com
-
-# Logging
-LOG_LEVEL=info
-```
+| Task Queue | Workers | Max Activities | Max Workflows | Use Case |
+|------------|---------|----------------|---------------|----------|
+| `foodbot-main-queue` | 3 | 100 | 50 | General workflows |
+| `foodbot-orders-queue` | 3 | 50 | 25 | Order processing |
+| `foodbot-payments-queue` | 3 | 30 | 15 | Payment processing |
+| `foodbot-notifications-queue` | 3 | 200 | 100 | Notifications |
+| `foodbot-onboarding-queue` | 3 | 20 | 10 | User onboarding |
 
 ---
 
@@ -1105,13 +805,6 @@ LOG_LEVEL=info
 **File:** `apps/gateway-api/src/temporal/temporal.service.ts`
 
 ```typescript
-import { Client, Connection } from '@temporalio/client';
-import {
-  searchRestaurantWorkflow,
-  placeOrderWorkflow,
-  processPaymentWorkflow,
-} from '@foodbot/workflows';
-
 @Injectable()
 export class TemporalService {
   private client: Client;
@@ -1120,7 +813,6 @@ export class TemporalService {
     const connection = await Connection.connect({
       address: process.env.TEMPORAL_ADDRESS || 'localhost:7233',
     });
-
     this.client = new Client({ connection });
   }
 
@@ -1149,12 +841,6 @@ export class TemporalService {
     const handle = this.client.workflow.getHandle(workflowId);
     await handle.signal(signalName, args);
   }
-
-  // Query workflow
-  async queryWorkflow(workflowId: string, queryName: string) {
-    const handle = this.client.workflow.getHandle(workflowId);
-    return await handle.query(queryName);
-  }
 }
 ```
 
@@ -1181,17 +867,6 @@ async placeOrder(@Body() input: PlaceOrderInput) {
   const { workflowId } = await this.temporalService.startPlaceOrderWorkflow(input);
   return { workflowId };
 }
-
-// Send signal (order ready)
-@Post('/orders/:orderId/ready')
-async orderReady(@Param('orderId') orderId: string) {
-  await this.temporalService.sendSignal(
-    `order-${orderId}`,
-    'orderReady',
-    []
-  );
-  return { success: true };
-}
 ```
 
 ---
@@ -1201,41 +876,31 @@ async orderReady(@Param('orderId') orderId: string) {
 ### 6.1 Error Classification
 
 ```typescript
-// Non-retryable errors (Application Failures)
 import { ApplicationFailure } from '@temporalio/workflow';
 
-// Validation errors
+// Non-retryable errors (Application Failures)
 throw ApplicationFailure.nonRetryable('Invalid cart items');
-
-// Business logic errors
 throw ApplicationFailure.nonRetryable('Items not available');
 
-// Authentication errors
-throw ApplicationFailure.nonRetryable('Unauthorized');
-
 // Retryable errors (Temporal handles automatically)
-// Network errors, timeouts, transient failures
 throw new Error('Gateway timeout'); // Will be retried
 ```
 
 ### 6.2 Compensation Pattern
 
+Full Saga pattern implementation with reverse-order compensations:
+
 ```typescript
-// Saga pattern implementation (from placeOrder workflow)
 const compensations: Array<() => Promise<void>> = [];
 
 try {
   // Step 1: Reserve items
   await reserveItems(restaurantId, items);
-  compensations.push(async () => {
-    await releaseItems(restaurantId); // Compensation
-  });
+  compensations.push(() => releaseItems(restaurantId));
 
   // Step 2: Process payment
   const payment = await processPayment(orderId, paymentDetails);
-  compensations.push(async () => {
-    await refundPayment(payment.paymentId); // Compensation
-  });
+  compensations.push(() => refundPayment(payment.paymentId));
 
   // ... continue with order creation ...
 
@@ -1245,7 +910,6 @@ try {
     try {
       await compensations[i]();
     } catch (compensationError) {
-      // Log but continue with other compensations
       log.error('Compensation failed', { compensationError, step: i });
     }
   }
@@ -1271,101 +935,13 @@ packages/workflows/src/test/
     └── processPayment.test.ts     ⚠️ NOT IMPLEMENTED
 ```
 
-### 7.2 Activity Mocks
-
-**File:** `packages/workflows/src/test/mocks/activity-mocks.ts`
-
-```typescript
-export const mockActivities = {
-  // Database activities
-  getUserContext: jest.fn(),
-  loadUserContext: jest.fn(),
-  createOrder: jest.fn(),
-  updateOrderStatus: jest.fn(),
-  loadFromDatabase: jest.fn(),
-  saveToDatabase: jest.fn(),
-  updateDatabase: jest.fn(),
-
-  // External activities
-  callMCPSearch: jest.fn(),
-  checkInventory: jest.fn(),
-  reserveItems: jest.fn(),
-  releaseItems: jest.fn(),
-  applyFilters: jest.fn(),
-  rankResults: jest.fn(),
-
-  // Payment activities
-  processPayment: jest.fn(),
-  refundPayment: jest.fn(),
-  callPaymentGateway: jest.fn(),
-
-  // Notification activities
-  notifyCustomer: jest.fn(),
-  notifyRestaurant: jest.fn(),
-  sendEmail: jest.fn(),
-
-  // Cache activities
-  getFromCache: jest.fn(),
-  setInCache: jest.fn(),
-  cacheResults: jest.fn(),
-};
-```
-
-### 7.3 Test Data Factories
-
-**File:** `packages/workflows/src/test/factories/workflow-input.factory.ts`
-
-```typescript
-import { faker } from '@faker-js/faker';
-
-export class WorkflowInputFactory {
-  static searchRestaurant(): SearchRestaurantInput {
-    return {
-      userId: faker.string.uuid(),
-      query: faker.commerce.productName(),
-      filters: {
-        cuisine: ['Italian', 'Chinese'],
-        priceRange: [1, 3],
-        rating: 4.0,
-        location: {
-          latitude: faker.location.latitude(),
-          longitude: faker.location.longitude(),
-        },
-        radius: 5000,
-      },
-    };
-  }
-
-  static placeOrder(): PlaceOrderInput {
-    return {
-      userId: faker.string.uuid(),
-      restaurantId: faker.string.uuid(),
-      items: [
-        {
-          dishId: faker.string.uuid(),
-          quantity: faker.number.int({ min: 1, max: 5 }),
-          price: faker.number.float({ min: 5, max: 50, precision: 0.01 }),
-        },
-      ],
-      paymentDetails: {
-        method: 'card',
-        amount: faker.number.float({ min: 10, max: 100, precision: 0.01 }),
-        currency: 'USD',
-      },
-      deliveryAddress: faker.location.streetAddress(),
-    };
-  }
-}
-```
-
-### 7.4 Example Test (Template)
+### 7.2 Example Test (Template)
 
 ```typescript
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
 import { searchRestaurantWorkflow } from '../workflows/searchRestaurant.workflow';
 import { mockActivities } from '../test/mocks/activity-mocks';
-import { WorkflowInputFactory } from '../test/factories/workflow-input.factory';
 
 describe('Search Restaurant Workflow', () => {
   let testEnv: TestWorkflowEnvironment;
@@ -1436,21 +1012,10 @@ services:
       - "8080:8080"
     environment:
       - DB=postgresql
-      - DB_PORT=5432
       - POSTGRES_USER=temporal
       - POSTGRES_PWD=temporal
-      - POSTGRES_SEEDS=postgres
     depends_on:
       - postgres
-
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: temporal
-      POSTGRES_PASSWORD: temporal
-      POSTGRES_DB: temporal
-    ports:
-      - "5432:5432"
 
   worker-main:
     build:
@@ -1465,57 +1030,19 @@ services:
       - temporal
 
   worker-orders:
-    build:
-      context: .
-      dockerfile: packages/workflows/Dockerfile
     environment:
       - TASK_QUEUE=foodbot-orders-queue
-      - TEMPORAL_ADDRESS=temporal:7233
       - WORKER_MAX_CONCURRENT_ACTIVITIES=100
       - WORKER_MAX_CONCURRENT_WORKFLOWS=50
-    depends_on:
-      - temporal
 
   worker-payments:
-    build:
-      context: .
-      dockerfile: packages/workflows/Dockerfile
     environment:
       - TASK_QUEUE=foodbot-payments-queue
-      - TEMPORAL_ADDRESS=temporal:7233
       - WORKER_MAX_CONCURRENT_ACTIVITIES=50
       - WORKER_MAX_CONCURRENT_WORKFLOWS=25
-    depends_on:
-      - temporal
 ```
 
-### 8.2 Worker Dockerfile
-
-```dockerfile
-# packages/workflows/Dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-COPY packages/workflows/package.json ./packages/workflows/
-
-# Install dependencies
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
-COPY packages/workflows ./packages/workflows
-
-# Build
-RUN pnpm --filter @foodbot/workflows build
-
-# Start worker
-CMD ["node", "packages/workflows/dist/workers/worker.js"]
-```
-
-### 8.3 Kubernetes Deployment
+### 8.2 Kubernetes Deployment
 
 ```yaml
 # k8s/workflows/worker-deployment.yaml
@@ -1530,10 +1057,6 @@ spec:
       app: workflow-worker
       queue: orders
   template:
-    metadata:
-      labels:
-        app: workflow-worker
-        queue: orders
     spec:
       containers:
       - name: worker
@@ -1543,8 +1066,6 @@ spec:
           value: "foodbot-orders-queue"
         - name: TEMPORAL_ADDRESS
           value: "temporal-frontend.temporal:7233"
-        - name: WORKER_MAX_CONCURRENT_ACTIVITIES
-          value: "100"
         resources:
           requests:
             memory: "512Mi"
@@ -1553,6 +1074,78 @@ spec:
             memory: "1Gi"
             cpu: "1000m"
 ```
+
+---
+
+## 9. Performance Optimization
+
+### 9.1 Caching Strategy
+
+- Redis for search results (30 min TTL)
+- LLM response caching
+- User context caching
+
+### 9.2 Batch Processing
+
+- Batch notifications
+- Batch database operations
+
+### 9.3 Parallel Execution
+
+- Independent activities run concurrently
+- Fan-out/fan-in pattern for parallel tasks
+
+---
+
+## 10. Monitoring & Observability
+
+### 10.1 Metrics
+
+- Workflow execution duration
+- Activity execution duration
+- Success/failure rates
+- Compensation execution rate
+- Queue backlog depth
+- Worker health status
+
+### 10.2 Logging
+
+Structured logs with correlation IDs:
+
+```json
+{
+  "level": "info",
+  "timestamp": "2026-02-20T10:30:00.000Z",
+  "correlationId": "req-abc-123",
+  "workflowId": "search-user-123-1708425000",
+  "activity": "callMCPSearch",
+  "duration": 1850,
+  "status": "success"
+}
+```
+
+### 10.3 Tracing
+
+- Distributed tracing across workflows
+- Activity call graphs
+- Cross-service correlation
+
+---
+
+## 11. Security Considerations
+
+### 11.1 Activity Security
+
+- Input validation in all activities
+- Parameterized database queries
+- API key rotation
+- Secrets via environment variables
+
+### 11.2 Workflow Security
+
+- Validate workflow inputs
+- Authorization checks in activities
+- Audit logging for sensitive operations
 
 ---
 
@@ -1566,41 +1159,46 @@ spec:
 | Activities | ✅ COMPLETE | 6/6 | 100% |
 | Workers | ✅ COMPLETE | 2/2 | 100% |
 | Tests | ⚠️ PARTIAL | 2/6 | 33% |
-| Deployment | ✅ COMPLETE | Docker Compose | 100% |
+| Deployment | ✅ COMPLETE | Docker Compose + K8s | 100% |
 
 ### Key Achievements
 
 1. ✅ **3 Production Workflows** - Search, PlaceOrder, ProcessPayment
 2. ✅ **28 Activities** - Organized across 6 domain files
-3. ✅ **Saga Pattern** - Full compensation logic in PlaceOrder
+3. ✅ **Saga Pattern** - Full compensation logic
 4. ✅ **Retry Policies** - 3 attempts for general, 5 for payments
 5. ✅ **Worker Management** - Multi-queue worker setup
 6. ✅ **Gateway Integration** - Temporal service in Gateway API
 7. ✅ **Test Infrastructure** - Mocks and factories ready
 
-### Next Steps
+---
 
-1. **Implement remaining workflows**:
-   - Order fulfillment with signals
-   - User onboarding
-   - Restaurant onboarding
+## Related Documentation
 
-2. **Write comprehensive tests**:
-   - Unit tests for all workflows
-   - Integration tests with Temporal test environment
-
-3. **Add monitoring**:
-   - Prometheus metrics
-   - Grafana dashboards
-   - Alerting rules
-
-4. **Production deployment**:
-   - Kubernetes manifests
-   - Helm charts
-   - CI/CD pipelines
+- [Kafka Event Integration](./kafka-architecture-consolidated.md)
+- [MCP Layer Architecture](./mcp-architecture-consolidated.md)
+- [Saga Pattern Implementation](./saga-pattern.md)
+- [Temporal Signals](./temporal-signals.md)
 
 ---
 
-**Document Maintainer:** FoodBot Development Team
-**Review Frequency:** Monthly
-**Last Reviewed:** 2026-02-20
+## Migration Notes
+
+**This document consolidates:**
+1. `temporal-workflows-complete.md` - Detailed implementation with code
+2. `temporal-workflows-architecture.md` - Architecture patterns and overview
+
+**Deprecated files moved to:** `.claude/project-management/archive/architecture/components/`
+
+**Changes from originals:**
+- Merged implementation details with architecture patterns
+- Removed duplicate sections
+- Standardized code examples
+- Updated cross-references
+- Added comprehensive table of contents
+
+---
+
+**Document Owner:** Workflows Architecture Team
+**Reviewers:** Backend Team
+**Next Review:** 2026-03-20

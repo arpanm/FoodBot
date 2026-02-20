@@ -1,9 +1,27 @@
 # Kafka Event Specifications - FoodBot Backend
 
+> **⚠️ DEPRECATED - This file has been consolidated**
+>
+> **New Location:** `../integration/kafka-architecture-consolidated.md`
+>
+> This file was consolidated with `kafka-event-architecture.md` and `kafka-event-streaming.md` on 2026-02-20.
+> Please refer to the consolidated document for the most up-to-date information.
+>
+> **Consolidation Summary:**
+> - All unique content from this file has been preserved
+> - Duplicate sections removed
+> - Cross-references updated
+> - Comprehensive table of contents added
+>
+> This file is kept for reference only and will be moved to archive.
+
+---
+
 **Message Broker:** Apache Kafka
 **Client Libraries:** KafkaJS (TypeScript), Spring Kafka (Java)
 **Message Format:** JSON
 **Schema Registry:** Not implemented (future enhancement)
+**Status:** Deprecated ⚠️
 
 ---
 

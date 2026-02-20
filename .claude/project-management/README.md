@@ -6,6 +6,41 @@
 
 ---
 
+## 📊 Current Project Status
+
+### Implementation Progress
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| **Overall Architecture** | 69% (18/26 components) | 🚧 In Progress |
+| **Requirements Complete** | 89% (40/45) | ✅ Nearly Complete |
+| **Tasks Completed** | 35% (8/23) | 🚧 In Progress |
+| **Production Ready** | 42% (11/26 components) | ⚠️ Not Ready |
+
+### Critical Blockers (P0)
+
+| Blocker | Status | Impact | Estimate |
+|---------|--------|--------|----------|
+| **Gateway API** | 15% | Entire backend non-functional | 3-4 weeks |
+| **Database Migrations** | 30% | Cannot persist data | 1 week |
+| **OAuth Integration** | 40% | Cannot use real MCP providers | 1-2 weeks |
+| **Mobile Native Init** | 0% | Apps cannot run on devices | 1 week |
+
+### Quick Stats
+
+- **Architecture Documents:** 27 files across 5 categories
+- **Requirements:** 45 total (40 implemented, 4 partial, 1 not started)
+- **Tasks:** 23 total (8 completed, 1 in progress, 14 pending/backlog)
+- **Archived Reports:** 114+ historical documents
+
+**🔗 Quick Links:**
+- [Architecture Status](./architecture/implementation-status.md) - Detailed implementation progress
+- [Requirements Index](./requirements/index.md) - 45 functional requirements
+- [Tasks Index](./tasks/index.md) - 23 active tasks
+- [Archive Index](./archive/prompt-docs/INDEX.md) - Historical task outputs
+
+---
+
 ## 📋 Table of Contents
 
 - [Overview](#overview)
@@ -150,6 +185,238 @@ find tasks/ -name "TASK-050*"
 # Find architecture docs about MCP
 find architecture/ -name "*mcp*"
 ```
+
+---
+
+## 🤖 Working with AI Agents
+
+### Quick Reference Guides
+
+**📚 Comprehensive Guides:**
+- **[Pending Tasks Summary](./PENDING_TASKS_SUMMARY.md)** - All 7 pending task groups (40+ subtasks)
+- **[Agent Workflow Guide](./AGENT_WORKFLOW_GUIDE.md)** - Complete guide for working with AI agents
+
+---
+
+### Initiating Agent Groups for Pending Tasks
+
+Use AI agents to execute multiple tasks in parallel for faster implementation.
+
+**View Pending Tasks:**
+
+```bash
+# See all pending tasks
+cat .claude/project-management/PENDING_TASKS_SUMMARY.md
+
+# Or list pending task files
+ls .claude/project-management/tasks/pending/
+```
+
+**Current Pending Tasks:**
+1. 🔴 **Gateway API Implementation** (17 subtasks, 3-4 weeks) - CRITICAL
+2. 🔴 **MCP Order Placement** (8 days) - CRITICAL
+3. 🔴 **Complete MCP Test Coverage** (5 days) - CRITICAL
+4. 🟠 **Docker Build Automation** (4 hours) - HIGH
+5. 🟠 **Kubernetes Deployment** (8 hours) - HIGH
+6. 🟡 **Search Enhancements** (5 subtasks, 22 days) - MEDIUM
+7. 🟡 **Event Streaming Enhancements** (5 subtasks, 16 days) - MEDIUM
+
+**Initiate Parallel Agents:**
+
+```
+@claude I need to implement the Gateway API with 17 subtasks in parallel.
+See @.claude/project-management/tasks/pending/gateway-api-implementation-tasks.md
+
+Create 4 agent groups:
+- Agent 1: Authentication modules (tasks 1-3)
+- Agent 2: Core API modules (tasks 4-7)
+- Agent 3: Additional modules (tasks 8-11)
+- Agent 4: Infrastructure & testing (tasks 12-17)
+
+Each agent should:
+1. Read the task requirements
+2. Generate code following @.claude/rules/development-guardrails.md
+3. Write tests with 80%+ coverage
+4. Update task status when complete
+
+Run all 4 agents in parallel.
+```
+
+**📖 Full Guide:** [Agent Workflow Guide - Initiating Agents](./AGENT_WORKFLOW_GUIDE.md#initiating-agent-groups-for-pending-tasks)
+
+---
+
+### Adding New Tasks/Requirements
+
+**Quick Add - New Task:**
+
+```bash
+cd .claude/project-management/tasks/pending
+
+# Copy template
+cp ../templates/task-template.md TASK-NEW-001-my-task.md
+
+# Edit with required fields
+code TASK-NEW-001-my-task.md
+```
+
+**Required Fields:**
+- **Status:** Pending/In Progress/Completed
+- **Priority:** P0 (Critical) / P1 (High) / P2 (Medium) / P3 (Low)
+- **Estimated Effort:** X days/hours
+- **Description:** What needs to be done
+- **Acceptance Criteria:** Checklist of completion requirements
+- **Related Requirements:** Link to FR-XX-YYY-ZZZ
+- **Related Architecture:** Link to architecture docs
+
+**Quick Add - New Requirement:**
+
+```bash
+cd .claude/project-management/requirements/{category}
+
+# Create requirement file
+# Format: FR-{COMPONENT}-{CATEGORY}-{NUMBER}-{slug}.md
+touch FR-CA-ORDER-004-scheduled-orders.md
+
+# Edit with required fields
+code FR-CA-ORDER-004-scheduled-orders.md
+```
+
+**Required Fields:**
+- **ID:** Unique identifier (FR-XX-YYY-ZZZ)
+- **Component:** customer-agent, restaurant-agent, mcp-layer, etc.
+- **Status:** Planned/In Progress/Implemented
+- **User Stories:** As a [role], I want [feature], so that [benefit]
+- **Acceptance Criteria:** Testable completion criteria
+- **Technical Specifications:** Database, API, workflow details
+- **Related Tasks:** Links to implementation tasks
+
+**Using AI Agent:**
+
+```
+@claude Create a new requirement for "Scheduled Orders" feature:
+- ID: FR-CA-ORDER-004
+- Category: customer-agent/
+- Include user stories, acceptance criteria, technical specs
+- Link to 3 implementation tasks
+- Follow the template at @.claude/project-management/templates/requirement-template.md
+```
+
+**📖 Full Guide:** [Agent Workflow Guide - Adding New Items](./AGENT_WORKFLOW_GUIDE.md#adding-new-tasksrequirements)
+
+---
+
+### Changing Requirements/Architecture and Creating Tasks
+
+When modifying existing requirements or architecture, follow this workflow:
+
+#### Step 1: Update the Requirement/Architecture
+
+```bash
+# Example: Add Apple Pay support to order placement
+code .claude/project-management/requirements/customer-agent/FR-CA-ORDER-001-order-placement.md
+```
+
+Add change log section:
+
+```markdown
+## Change Log
+
+### 2026-02-20 - Added Apple Pay and Google Pay Support
+
+**Changes:**
+- Added Apple Pay integration
+- Added Google Pay integration
+- Updated payment validation logic
+
+**Impact:**
+- Requires payment module updates
+- New API endpoints needed
+- Frontend UI changes required
+
+**Breaking Changes:**
+- Payment request format changed
+```
+
+#### Step 2: Update Related Architecture
+
+```bash
+code .claude/project-management/architecture/components/gateway-api.md
+```
+
+Document architectural changes:
+
+```markdown
+## Recent Changes (2026-02-20)
+
+### Multiple Payment Method Support
+
+**Architecture:** Implemented Strategy pattern for payments
+
+**Diagram:**
+```
+PaymentController → PaymentService → PaymentStrategyFactory
+                                        ├─► CardPaymentStrategy
+                                        ├─► ApplePayStrategy (NEW)
+                                        └─► GooglePayStrategy (NEW)
+```
+```
+
+#### Step 3: Create Implementation Tasks
+
+```bash
+cd .claude/project-management/tasks/pending
+
+# Create task for changes
+cat > TASK-PAYMENT-001-multiple-payment-methods.md << 'EOF'
+# TASK-PAYMENT-001: Implement Multiple Payment Methods
+
+**Status:** Pending
+**Priority:** P1 (High)
+**Estimated Effort:** 5 days
+**Related Requirement:** FR-CA-ORDER-001 (updated 2026-02-20)
+**Related Architecture:** [Gateway API](../../architecture/components/gateway-api.md)
+
+## Changes Required
+- Backend: Apple Pay + Google Pay integration (2 days)
+- Frontend: New payment UI (2 days)
+- Testing: Comprehensive test suite (1 day)
+
+## Acceptance Criteria
+- [ ] Apple Pay integration complete
+- [ ] Google Pay integration complete
+- [ ] Tests passing with 80%+ coverage
+EOF
+```
+
+#### Step 4: Update All Index Files
+
+```bash
+# Update requirements index
+code .claude/project-management/requirements/index.md
+
+# Update architecture index
+code .claude/project-management/architecture/index.md
+
+# Update tasks index
+code .claude/project-management/tasks/index.md
+```
+
+**Using AI Agent for End-to-End Update:**
+
+```
+@claude I want to add Apple Pay and Google Pay to order payments.
+
+1. Update FR-CA-ORDER-001 with change log
+2. Update gateway-api architecture with Strategy pattern
+3. Create TASK-PAYMENT-001 for implementation (5 days)
+4. Link all documents together
+5. Update all index files
+
+Follow templates and conventions in @.claude/project-management/
+```
+
+**📖 Full Guide:** [Agent Workflow Guide - Changing Requirements](./AGENT_WORKFLOW_GUIDE.md#changing-requirementsarchitecture-and-creating-tasks)
 
 ---
 
@@ -377,11 +644,64 @@ Weekly/Monthly:
 
 ---
 
-## Statistics (Auto-Updated)
+## Statistics (Updated 2026-02-20)
 
-Last generated: Run `./scripts/generate-task-list.sh` to update
+### Documentation Coverage
 
-See `task-lists/all-tasks.md` for current statistics.
+| Category | Files | Status | Completion |
+|----------|-------|--------|------------|
+| **Architecture** | 27 | Active | 69% |
+| **Requirements** | 47 | Active | 89% |
+| **Tasks** | 23 | Active | 35% complete |
+| **Archive** | 114+ | Historical | - |
+| **Total** | 211+ | - | - |
+
+### Task Breakdown
+
+```
+Total Tasks: 23
+├── Completed: 8 (35%)
+│   ✅ MCP Adapter, Search, Events, Workflows, Frontend, Chrome Extension
+├── In Progress: 1 (4%)
+│   🚧 OAuth 2.1 implementation (40% complete, blocking)
+├── Pending: 7 (30%)
+│   🟡 Gateway API (CRITICAL), DB migrations, MCP order placement
+├── Backlog: 2 (9%)
+│   📦 Real Swiggy/Zomato integration, ML routing
+├── Technical Debt: 2 (9%)
+│   ⚠️ Cart workflow complexity, OAuth service extraction
+├── Technical Tasks: 2 (9%)
+│   📝 Test specifications
+└── Bug Fixes: 1 (4%)
+    🐛 OAuth token refresh
+```
+
+### Requirements Summary
+
+```
+Total Requirements: 45
+├── Implemented: 40 (89%)
+├── Partial: 4 (9%)
+│   ⚠️ FR-CA-ORDER-003 (Feedback)
+│   ⚠️ FR-MCP-SWIGGY-001 (Mock only)
+│   ⚠️ FR-MCP-ZOMATO-001 (Mock only)
+│   ⚠️ FR-RA-ANALYTICS-001 (Partial)
+└── Not Started: 1 (2%)
+    📝 Gateway API requirements
+```
+
+### Architecture Status
+
+```
+Components Implemented: 18/26 (69%)
+Production Ready: 11/26 (42%)
+
+✅ Complete: Chrome Extension, Kafka, Redis, Elasticsearch
+🚧 Partial: Mobile Apps (85%), Search (85%), Temporal (65%), MCP (60%)
+⚠️ Critical: Gateway API (15%), Database (30%), OAuth (40%)
+```
+
+**Note:** Run `./scripts/generate-task-list.sh` to generate detailed task list reports.
 
 ---
 
@@ -463,18 +783,23 @@ The MCP (Model Context Protocol) Layer is a critical component that integrates e
 - MCP Adapter Service: `services/mcp-adapter/`
 - MCP Orchestrator Service: `services/mcp-orchestrator/`
 
-### Current Status
+### Current Status (2026-02-20)
 
-| Component | Status | Coverage | Priority |
-|-----------|--------|----------|----------|
-| Internal Provider | ✅ Implemented | 65% | P0 |
-| Swiggy Provider | ⚠️ Partial | 45% | P0 |
-| Zomato Provider | ⚠️ Partial | 40% | P0 |
-| OAuth Integration | ⚠️ Partial | 30% | P0 |
-| Aggregator | ✅ Implemented | 70% | P0 |
-| Cache Layer | ✅ Implemented | 95% | P1 |
-| Resilience Patterns | ✅ Implemented | 75% | P0 |
-| Order Placement | ❌ Pending | 0% | P0 |
+| Component | Status | Progress | Priority | Blocking |
+|-----------|--------|----------|----------|----------|
+| **Internal Provider** | ✅ Complete | 100% | P0 | - |
+| **Swiggy Provider** | ⚠️ Mock Only | 40% | P0 | OAuth |
+| **Zomato Provider** | ⚠️ Mock Only | 40% | P0 | OAuth |
+| **OAuth Integration** | 🚧 In Progress | 40% | P0 | TASK-MCP-001 |
+| **Aggregator** | ✅ Complete | 100% | P0 | - |
+| **Cache Layer** | ✅ Complete | 100% | P1 | - |
+| **Resilience Patterns** | ✅ Complete | 100% | P0 | - |
+| **Order Placement** | 🟡 Pending | 0% | P0 | OAuth + TASK-MCP-002 |
+| **Test Coverage** | ⚠️ Partial | 60% | P1 | TASK-MCP-003 |
+
+**Critical Blocker:** OAuth 2.1 implementation (TASK-MCP-001) at 40% completion, blocking real provider integration and order placement.
+
+**Overall MCP Status:** 60% complete
 
 ---
 

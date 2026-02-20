@@ -10,7 +10,7 @@
 
 An AI-orchestrated, spec-driven restaurant commerce platform that combines conversational UX, multi-LLM reasoning, and deterministic workflow execution using Temporal. FoodBot is not a simple chatbot -- it is a goal-driven commerce agent that plans, validates, and executes workflows safely across multiple food delivery providers.
 
-**Status:** 95% Production Ready | **Tests:** 206 tests passing | **Code:** 26,545 lines
+**Status:** 69% Architecture Complete, 42% Production Ready | **Tests:** 206 tests passing | **Code:** 26,545 lines
 
 ---
 
@@ -21,6 +21,7 @@ An AI-orchestrated, spec-driven restaurant commerce platform that combines conve
 - [Architecture Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
+- [🤖 Working with AI Agents](#-working-with-ai-agents)
 - [Project Commands](#project-commands)
 - [Development Setup](#development-setup)
 - [Running Tests](#running-tests)
@@ -337,6 +338,271 @@ pnpm test:all           # All tests
 ```
 
 For detailed setup instructions, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md).
+
+---
+
+## 🤖 Working with AI Agents
+
+FoodBot supports parallel development using AI agents to execute tasks efficiently. This section provides quick reference for the most common agent workflows.
+
+📚 **Complete Guides:**
+- [Pending Tasks Summary](.claude/project-management/PENDING_TASKS_SUMMARY.md) - Full inventory of 7 pending task groups (40+ subtasks)
+- [Agent Workflow Guide](.claude/project-management/AGENT_WORKFLOW_GUIDE.md) - Step-by-step workflows for all operations
+
+### Quick Reference: Pending Tasks
+
+**Critical Priority (P0) - Must Complete for MVP:**
+1. **Gateway API Implementation** - 17 subtasks, 25.5 days, 15% complete ⚠️ **BLOCKING**
+2. **MCP Order Placement** - 8 days, pending OAuth completion
+3. **MCP Test Coverage** - 5 days, increase from 60% to 80%
+
+**High Priority (P1) - Deployment:**
+4. **Docker Build Automation** - 4 hours
+5. **Kubernetes Deployment Automation** - 8 hours
+
+**Medium Priority (P2) - Post-MVP:**
+6. **Search Enhancements** - 5 subtasks, 22 days
+7. **Event Streaming Enhancements** - 5 subtasks, 16 days
+
+**Total:** 7 task groups, 40+ subtasks, ~80 days effort
+
+See [PENDING_TASKS_SUMMARY.md](.claude/project-management/PENDING_TASKS_SUMMARY.md) for detailed breakdown.
+
+---
+
+### 1️⃣ Initiating Agent Groups for Pending Tasks
+
+Use AI agents to execute tasks in parallel for faster development.
+
+**Example: Parallel Gateway API Implementation**
+
+```bash
+@claude Implement Gateway API with 17 subtasks in parallel.
+See @.claude/project-management/tasks/pending/gateway-api-implementation-tasks.md
+
+Create 4 agents:
+- Agent 1: Auth modules (tasks 1-3)
+- Agent 2: Core API (tasks 4-7)
+- Agent 3: Additional API (tasks 8-11)
+- Agent 4: Infrastructure & tests (tasks 12-17)
+
+Requirements:
+- Follow @.claude/rules/development-guardrails.md
+- 80%+ test coverage
+- Update task status when complete
+
+Run in parallel.
+```
+
+**Example: Docker + Kubernetes Deployment**
+
+```bash
+@claude Complete deployment automation tasks:
+
+Task 1: Docker Build Automation (4 hours)
+- See @.claude/project-management/tasks/pending/TASK-DEPLOY-001-docker-build-automation.md
+- Create scripts/docker-build.sh with multi-stage builds
+- Add CI/CD integration
+- Update Dockerfiles for optimization
+
+Task 2: Kubernetes Deployment (8 hours)
+- See @.claude/project-management/tasks/pending/TASK-DEPLOY-002-kubernetes-deployment-automation.md
+- Create k8s/ manifests
+- Add scripts/k8s-deploy.sh automation
+- Configure HPA and health checks
+
+Run sequentially (Task 2 depends on Task 1).
+Update task files when complete.
+```
+
+**Monitoring Agent Progress:**
+
+```bash
+# Check task status
+ls .claude/project-management/tasks/in-progress/
+ls .claude/project-management/tasks/completed/
+
+# View pending tasks summary
+cat .claude/project-management/PENDING_TASKS_SUMMARY.md
+```
+
+📚 **See:** [Agent Workflow Guide - Section A](.claude/project-management/AGENT_WORKFLOW_GUIDE.md#initiating-agent-groups-for-pending-tasks)
+
+---
+
+### 2️⃣ Adding New Tasks or Requirements
+
+When adding new features, create linked requirements, architecture, and tasks.
+
+**Quick Add - New Feature End-to-End:**
+
+```bash
+@claude Add "Scheduled Orders" feature end-to-end:
+
+1. Create requirement FR-CA-ORDER-004
+   - File: .claude/project-management/requirements/customer-agent/FR-CA-ORDER-004-scheduled-orders.md
+   - Include user stories, acceptance criteria, technical specs
+   - Use template: .claude/project-management/templates/requirement-template.md
+
+2. Create architecture documentation
+   - Update: .claude/project-management/architecture/components/order-workflow.md
+   - Add database schema changes
+   - Add Temporal workflow design
+
+3. Create implementation tasks
+   - TASK-ORDER-001: Backend implementation (3 days)
+   - TASK-ORDER-002: Frontend implementation (2 days)
+   - TASK-ORDER-003: Tests and integration (1 day)
+   - Location: .claude/project-management/tasks/pending/
+
+4. Link all documents
+   - Requirements ↔ Architecture ↔ Tasks
+   - Update index files
+
+Follow naming conventions and templates in @.claude/project-management/templates/
+```
+
+**Manual Steps:**
+
+```bash
+# 1. Create requirement
+cd .claude/project-management/requirements/customer-agent/
+cp ../templates/requirement-template.md FR-CA-ORDER-004-scheduled-orders.md
+code FR-CA-ORDER-004-scheduled-orders.md
+
+# 2. Create tasks
+cd .claude/project-management/tasks/pending/
+cp ../templates/task-template.md TASK-ORDER-001-backend.md
+code TASK-ORDER-001-backend.md
+
+# 3. Update indexes
+code .claude/project-management/requirements/README.md
+code .claude/project-management/tasks/index.md
+```
+
+**Requirement ID Format:** `FR-XX-YYY-ZZZ`
+- **FR** = Functional Requirement
+- **XX** = Component (CA=Customer Agent, RA=Restaurant Agent, MCP=MCP Layer)
+- **YYY** = Feature area (ORDER, SEARCH, PAYMENT)
+- **ZZZ** = Sequential number (001, 002, 003)
+
+📚 **See:** [Agent Workflow Guide - Section B](.claude/project-management/AGENT_WORKFLOW_GUIDE.md#adding-new-tasksrequirements)
+
+---
+
+### 3️⃣ Changing Requirements/Architecture
+
+When modifying existing requirements or architecture, follow this workflow:
+
+**Example: Add Apple Pay/Google Pay Support**
+
+```bash
+@claude Update payment requirements to add Apple Pay and Google Pay:
+
+Step 1: Update requirement
+- File: @.claude/project-management/requirements/customer-agent/FR-CA-PAYMENT-001-payment-processing.md
+- Add Apple Pay and Google Pay to payment methods
+- Update acceptance criteria
+- Add change log entry with date and reason
+
+Step 2: Update architecture
+- File: @.claude/project-management/architecture/components/payment-gateway.md
+- Add integration architecture for Apple Pay/Google Pay
+- Update sequence diagrams
+- Document new API endpoints
+
+Step 3: Create implementation tasks
+- TASK-PAYMENT-004: Apple Pay integration (4 days)
+- TASK-PAYMENT-005: Google Pay integration (4 days)
+- TASK-PAYMENT-006: Testing and validation (2 days)
+- Location: @.claude/project-management/tasks/pending/
+
+Step 4: Update indexes
+- @.claude/project-management/requirements/README.md
+- @.claude/project-management/tasks/index.md
+- @.claude/project-management/architecture/index.md
+
+Document breaking changes if any.
+Generate all files with proper linking.
+```
+
+**4-Step Process:**
+1. **Update Requirement/Architecture** - Modify existing docs with change log
+2. **Update Related Architecture** - Update component docs, diagrams
+3. **Create Implementation Tasks** - Break down work into tasks
+4. **Update Index Files** - Ensure all cross-references are current
+
+📚 **See:** [Agent Workflow Guide - Section C](.claude/project-management/AGENT_WORKFLOW_GUIDE.md#changing-requirementsarchitecture-and-creating-tasks)
+
+---
+
+### Agent Types
+
+Choose the right agent for the job:
+
+| Agent Type | Use Case | Example |
+|------------|----------|---------|
+| **Bash** | Terminal operations, git, npm commands | Run tests, build project, docker commands |
+| **General-Purpose** | Complex implementation, multi-step tasks | Implement features, refactor code |
+| **Explore** | Code exploration, searching | Find files, search keywords, analyze codebase |
+| **Plan** | Architecture planning, design | Design new features, plan refactoring |
+
+---
+
+### Best Practices
+
+**DO:**
+- ✅ Break large tasks into smaller, parallelizable subtasks
+- ✅ Define clear success criteria and acceptance tests
+- ✅ Link requirements ↔ architecture ↔ tasks
+- ✅ Run tests after implementation
+- ✅ Review agent outputs before merging
+- ✅ Update task status (pending → in-progress → completed)
+
+**DON'T:**
+- ❌ Run dependent tasks in parallel
+- ❌ Skip validation and testing
+- ❌ Forget to update documentation and indexes
+- ❌ Create tasks without linking requirements
+- ❌ Ignore development guardrails
+
+---
+
+### File Locations
+
+**Documentation:**
+```
+.claude/project-management/
+├── PENDING_TASKS_SUMMARY.md          # 7 task groups, 40+ subtasks
+├── AGENT_WORKFLOW_GUIDE.md           # Complete workflow guide
+├── tasks/
+│   ├── pending/                      # 7 task files
+│   ├── in-progress/                  # Active work
+│   └── completed/                    # Finished tasks
+├── requirements/                     # 47 requirement files
+├── architecture/                     # 27 architecture files
+└── templates/                        # Templates for new items
+```
+
+**Quick Commands:**
+```bash
+# View pending tasks
+cat .claude/project-management/PENDING_TASKS_SUMMARY.md
+
+# View workflow guide
+cat .claude/project-management/AGENT_WORKFLOW_GUIDE.md
+
+# List pending tasks
+ls .claude/project-management/tasks/pending/
+
+# Move task to in-progress
+mv .claude/project-management/tasks/pending/TASK-XXX-*.md \
+   .claude/project-management/tasks/in-progress/
+
+# Move task to completed
+mv .claude/project-management/tasks/in-progress/TASK-XXX-*.md \
+   .claude/project-management/tasks/completed/
+```
 
 ---
 
@@ -1834,7 +2100,10 @@ Each service has its own README with setup, API, configuration, and development 
 
 - **Total Lines:** 26,545 lines of TypeScript/TSX/Java
 - **Test Coverage:** 75% (206 tests across 41 files)
-- **Production Readiness:** 95%
+- **Architecture Complete:** 69% (18/26 components)
+- **Production Readiness:** 42% (11/26 components production-ready)
+- **Requirements Complete:** 89% (40/45 requirements)
+- **Tasks Complete:** 35% (8/23 tasks)
 - **Security:** OWASP Top 10 compliant
 - **Performance:** <500ms p95 for API responses
 

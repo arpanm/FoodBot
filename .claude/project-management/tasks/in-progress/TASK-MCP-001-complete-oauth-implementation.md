@@ -2,10 +2,12 @@
 
 **Task ID:** TASK-MCP-001
 **Created:** 2026-02-20
-**Status:** In Progress
+**Status:** In Progress (Day 2 of 5)
+**Progress:** 40%
 **Priority:** P0 (Critical)
 **Assignee:** Backend Team
 **Estimated Effort:** 5 days
+**Next Milestone:** Complete Swiggy/Zomato OAuth callbacks by EOD 2026-02-20
 
 ---
 

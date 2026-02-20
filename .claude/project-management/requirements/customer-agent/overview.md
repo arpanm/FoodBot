@@ -15,6 +15,54 @@ The Customer Agent is a conversational AI-powered interface that enables users t
 
 ---
 
+## Document Organization
+
+This directory contains two types of requirement documents:
+
+### 1. Functional Requirement Specifications (FR-CA-XXX-XXX)
+**Purpose:** Formal requirement definitions for product and engineering teams
+
+**Format:** `FR-CA-{CATEGORY}-{NUMBER}-{name}.md`
+
+**Contains:**
+- High-level feature description
+- Acceptance criteria
+- Dependencies on other requirements
+- Performance metrics and SLAs
+- Related components (generic)
+
+**Examples:**
+- `FR-CA-UI-001-rich-chatbot-interface.md`
+- `FR-CA-SEARCH-001-restaurant-search.md`
+- `FR-CA-UI-002-realtime-status-updates.md`
+
+### 2. Implementation Documentation (CUSTOMER-REQ-XXX)
+**Purpose:** Detailed implementation status for developers
+
+**Format:** `CUSTOMER-REQ-{NUMBER}-{name}.md`
+
+**Contains:**
+- Specific component file paths
+- Redux state management details
+- Service layer implementation
+- Exact API endpoints with query params
+- Test coverage (specific test files)
+- User stories with context
+- Future enhancement plans
+- Detailed flow diagrams
+
+**Examples:**
+- `CUSTOMER-REQ-001-chat-interface.md`
+- `CUSTOMER-REQ-002-restaurant-search.md`
+- `CUSTOMER-REQ-003-cart-management.md`
+
+### Cross-References
+Each implementation document should link to its corresponding requirement specification where available. This ensures traceability between requirements and implementation.
+
+**Note:** Not all implementation documents have corresponding FR-CA specs yet. As the project matures, formal requirement specifications will be created for all features.
+
+---
+
 ## Requirements by Category
 
 ### 1. User Interface Requirements

@@ -1,7 +1,8 @@
 # Architecture - Navigation Hub
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-20
 **Status:** Active
+**Overall Completion:** 69% (18/26 components implemented)
 
 ---
 
@@ -9,15 +10,9 @@
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [System Architecture](./system-architecture.md) | High-level system design | 🚧 In Progress |
-| [Component Architecture](./component-architecture.md) | Component breakdown and interactions | 📝 Planned |
-| [Data Architecture](./data-architecture.md) | Data flow and storage design | 📝 Planned |
-| [Integration Architecture](./integration-architecture.md) | External integrations (MCP, APIs) | 📝 Planned |
-| [Security Architecture](./security-architecture.md) | Security design and controls | 📝 Planned |
-| [Deployment Architecture](./deployment-architecture.md) | Infrastructure and deployment | 📝 Planned |
-| [Technology Stack](./technology-stack.md) | Tech stack decisions | 📝 Planned |
-| [Architecture Decisions](./architecture-decisions.md) | ADRs (Architecture Decision Records) | 📝 Planned |
-| [Changelog](./changelog.md) | Architecture change history | 📝 Planned |
+| [System Architecture](./system-architecture.md) | High-level system design and layers | ✅ Complete |
+| [Component Architecture](./component-architecture.md) | Component breakdown and interactions | ✅ Complete |
+| [Implementation Status](./implementation-status.md) | Current implementation progress (69%) | ✅ Updated 2026-02-20 |
 
 ---
 
@@ -30,15 +25,15 @@ FoodBot follows a **4-tier architecture**:
 ```
 ┌─────────────────────────────────────────┐
 │         CLIENT LAYER                    │
-│  - Customer App (React Native)          │
-│  - Restaurant App (React Native)        │
-│  - Chrome Extension                     │
+│  - Customer App (React Native) 85%     │
+│  - Restaurant App (React Native) 85%   │
+│  - Chrome Extension 100%               │
 └─────────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────┐
 │         API GATEWAY LAYER               │
-│  - NestJS Gateway API                   │
+│  - NestJS Gateway API 15%              │
 │  - Authentication/Authorization         │
 │  - Rate Limiting                        │
 └─────────────────────────────────────────┘
@@ -46,10 +41,11 @@ FoodBot follows a **4-tier architecture**:
                   ▼
 ┌─────────────────────────────────────────┐
 │         SERVICE LAYER                   │
-│  - LLM Router Service                   │
-│  - MCP Adapter Service                  │
-│  - Workflow Service (Temporal)          │
-│  - Search Orchestrator                  │
+│  - LLM Router Service (planned)        │
+│  - MCP Adapter Service 60%             │
+│  - Workflow Service (Temporal) 65%     │
+│  - Search Orchestrator 85%             │
+│  - Notification Service 75%            │
 └─────────────────────────────────────────┘
                   │
                   ▼
@@ -66,98 +62,146 @@ FoodBot follows a **4-tier architecture**:
 
 ## 🔑 Key Components
 
-### 1. Client Layer
+### 1. Client Layer (85% Complete)
 
 **Customer App (React Native)**
-- [📄 Component Details](./component-architecture.md#customer-app)
+- [📄 Component Details](./components/customer-app.md)
 - Chat interface for conversational ordering
 - Restaurant search and menu browsing
 - Cart management and checkout
 - Order tracking
-- **Status:** 📝 Planned
+- **Status:** 85% - Code complete, native initialization pending
 
 **Restaurant App (React Native)**
-- [📄 Component Details](./component-architecture.md#restaurant-app)
+- [📄 Component Details](./components/restaurant-app.md)
 - Order management dashboard
 - Menu management
 - Analytics and reporting
-- **Status:** 📝 Planned
+- **Status:** 85% - Code complete, native initialization pending
 
 **Chrome Extension**
-- [📄 Component Details](./component-architecture.md#chrome-extension)
+- [📄 Component Details](./components/chrome-extension.md)
 - Browser automation for Swiggy/Zomato
 - Platform abstraction layer (Strategy Pattern)
 - DOM parsing and action simulation
-- **Status:** 🚧 In Progress
+- **Status:** ✅ 100% Complete - Zomato & Swiggy support production-ready
 
 ---
 
-### 2. API Gateway Layer
+### 2. API Gateway Layer (15% Complete - 🔴 CRITICAL BLOCKER)
 
 **Gateway API (NestJS)**
-- [📄 Component Details](./component-architecture.md#gateway-api)
+- [📄 Component Details](./components/gateway-api.md)
 - Unified API entry point
 - JWT authentication
 - Request validation and transformation
 - Rate limiting
-- **Status:** ✅ Complete
+- **Status:** ⚠️ 15% - Only scaffolding exists, requires immediate implementation
 
 ---
 
-### 3. Service Layer
+### 3. Service Layer (Mixed Completion)
 
 **LLM Router Service**
-- [📄 Component Details](./component-architecture.md#llm-router)
+- [📄 Component Details](./components/llm-router.md)
 - Multi-provider support (Claude, OpenAI, Gemini)
 - Provider selection and load balancing
 - Streaming support
-- **Status:** 📝 Planned
+- **Status:** 📝 Planned - Not yet implemented
 
 **MCP Adapter Service**
-- [📄 Component Details](./component-architecture.md#mcp-adapter)
+- [📄 Component Details](./components/mcp-adapter.md)
 - Integration with Swiggy MCP, Zomato MCP
 - OAuth 2.1 account linking
 - Result aggregation
 - Circuit breaker pattern
-- **Status:** 🚧 In Progress
+- **Status:** 🚧 60% - Core functionality complete, OAuth and order placement pending
 
 **Workflow Service (Temporal)**
-- [📄 Component Details](./component-architecture.md#workflow-service)
+- [📄 Component Details](./components/temporal-workflows.md)
 - Order processing workflows
 - Payment processing
 - Notification workflows
-- **Status:** ✅ Complete
+- **Status:** 🚧 65% - 6/9 workflows complete
 
 **Search Orchestrator**
-- [📄 Component Details](./component-architecture.md#search-orchestrator)
+- [📄 Component Details](./components/search-orchestrator.md)
 - Multi-source search (Elasticsearch, MCP, Database)
 - Result ranking and aggregation
-- **Status:** ✅ Complete
+- **Status:** 🚧 85% - Core complete, advanced features pending
+
+**Notification Service**
+- [📄 Component Details](./components/notification-service.md)
+- Multi-channel notifications (email, SMS, push)
+- Kafka-driven event processing
+- **Status:** 🚧 75% - Core channels implemented
 
 ---
 
-### 4. Data Layer
+### 4. Data Layer (90% Complete)
 
 **PostgreSQL**
+- [📄 Schema Details](./data/postgres-schema.md)
 - Primary database for transactional data
 - User accounts, orders, restaurants, menus
-- **Status:** ✅ Complete
+- **Status:** ⚠️ 90% - Running but 70% of schema migrations missing
 
 **Redis**
 - Caching layer for frequently accessed data
 - Session storage
 - Rate limiting counters
-- **Status:** ✅ Complete
+- **Status:** ✅ 100% Complete
 
 **Elasticsearch**
+- [📄 Architecture Details](./data/elasticsearch-search.md)
 - Full-text search for restaurants and dishes
 - Indexing and filtering
-- **Status:** ✅ Complete
+- **Status:** ✅ 100% Complete
 
 **Kafka**
+- [📄 Architecture Details](./integration/kafka-event-streaming.md)
 - Event streaming for real-time updates
 - Order events, notification events
-- **Status:** 🚧 In Progress
+- **Status:** ✅ 100% Complete - 13 topics, 5 consumer groups
+
+---
+
+## 📂 Architecture Documentation
+
+### Components (7 files)
+- [Gateway API](./components/gateway-api.md)
+- [LLM Router](./components/llm-router.md)
+- [MCP Adapter](./components/mcp-adapter.md)
+- [Notification Service](./components/notification-service.md)
+- [Search Orchestrator](./components/search-orchestrator.md)
+- [Customer App (React Native)](./components/customer-app.md)
+- [Temporal Workflows](./components/temporal-workflows.md)
+
+### Data Layer (2 files)
+- [PostgreSQL Schema](./data/postgres-schema.md)
+- [Elasticsearch Search](./data/elasticsearch-search.md)
+
+**⚠️ Missing:** Neo4j Graph DB, Vector Database documentation
+
+### Integration (7 files)
+- [Kafka Event Streaming (Consolidated)](./integration/kafka-event-streaming.md) ⭐ Current
+- [MCP Architecture (Consolidated)](./integration/mcp-architecture-consolidated.md) ⭐ Current
+- [Temporal Workflows (Consolidated)](./integration/temporal-workflows-architecture-consolidated.md) ⭐ Current
+- [Kafka Architecture (Legacy)](./integration/kafka-architecture.md) 📦 Superseded
+- [MCP Architecture (Legacy)](./integration/mcp-architecture.md) 📦 Superseded
+- [OAuth Flow](./integration/oauth-flow.md)
+- [Event Streaming Requirements](./integration/event-streaming-requirements.md)
+
+### Deployment (6 files)
+- [Deployment Architecture](./deployment/deployment-architecture.md)
+- [Docker Infrastructure](./deployment/docker-infrastructure.md)
+- [AWS Deployment](./deployment/aws-deployment.md)
+- [Kubernetes Deployment](./deployment/kubernetes-deployment.md)
+- [Disaster Recovery](./deployment/disaster-recovery.md)
+- [Deployment Verification](./deployment/deployment-verification.md)
+
+### Security (0 files)
+**⚠️ Missing:** Security architecture documentation (planned)
 
 ---
 
@@ -165,12 +209,13 @@ FoodBot follows a **4-tier architecture**:
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [ADR-001](./architecture-decisions.md#adr-001) | Database Choice: PostgreSQL | ✅ Accepted | 2026-01-15 |
-| [ADR-002](./architecture-decisions.md#adr-002) | MCP as Primary Integration | ✅ Accepted | 2026-02-19 |
-| [ADR-003](./architecture-decisions.md#adr-003) | React Native for Mobile Apps | ✅ Accepted | 2026-02-19 |
-| [ADR-004](./architecture-decisions.md#adr-004) | Hybrid LLM Architecture | ✅ Accepted | 2026-02-19 |
-| [ADR-005](./architecture-decisions.md#adr-005) | Strategy Pattern for Chrome Extension | ✅ Accepted | 2026-02-19 |
-| [ADR-006](./architecture-decisions.md#adr-006) | Temporal for Workflow Orchestration | ✅ Accepted | 2026-01-20 |
+| ADR-001 | Database Choice: PostgreSQL | ✅ Accepted | 2026-01-15 |
+| ADR-002 | MCP as Primary Integration | ✅ Accepted | 2026-02-19 |
+| ADR-003 | React Native for Mobile Apps | ✅ Accepted | 2026-02-19 |
+| ADR-004 | Hybrid LLM Architecture | ✅ Accepted | 2026-02-19 |
+| ADR-005 | Strategy Pattern for Chrome Extension | ✅ Accepted | 2026-02-19 |
+| ADR-006 | Temporal for Workflow Orchestration | ✅ Accepted | 2026-01-20 |
+| ADR-007 | TypeScript MCP Adapter over Spring Boot | ✅ Accepted | 2026-02-20 |
 
 ---
 
@@ -180,9 +225,9 @@ FoodBot follows a **4-tier architecture**:
 
 | Service | Type | Purpose | Status |
 |---------|------|---------|--------|
-| Swiggy MCP | Official MCP | Restaurant search, ordering | 🚧 In Progress |
-| Zomato MCP | Open-source MCP | Restaurant search, ordering | 🚧 In Progress |
-| Claude API | LLM | Natural language processing | ✅ Complete |
+| Swiggy MCP | Mock (OAuth pending) | Restaurant search, ordering | 🚧 40% - Mock complete, OAuth blocked |
+| Zomato MCP | Mock (OAuth pending) | Restaurant search, ordering | 🚧 40% - Mock complete, OAuth blocked |
+| Claude API | LLM | Natural language processing | ✅ 100% Complete |
 | OpenAI API | LLM | Natural language processing | 📝 Planned |
 | Gemini API | LLM | Natural language processing | 📝 Planned |
 | ONDC | Open protocol | Alternative integration | 📝 Planned |
@@ -194,11 +239,11 @@ FoodBot follows a **4-tier architecture**:
 - **Authentication**: JWT with RS256 algorithm (15-minute access, 7-day refresh)
 - **Authorization**: Role-based access control (RBAC)
 - **Encryption**: AES-256-GCM for sensitive data at rest, TLS 1.3 for data in transit
-- **OAuth**: OAuth 2.1 for platform account linking
+- **OAuth**: OAuth 2.1 for platform account linking (implementation pending)
 - **Rate Limiting**: Redis-based rate limiting (100 req/min per user)
 - **OWASP Top 10**: Full compliance with OWASP security standards
 
-[📄 Full Security Architecture](./security-architecture.md)
+**⚠️ Missing:** Detailed security architecture documentation
 
 ---
 
@@ -211,7 +256,7 @@ FoodBot follows a **4-tier architecture**:
 - **Logging**: ELK Stack (Elasticsearch, Logstash, Kibana)
 - **Deployment Strategy**: Blue-Green deployments with zero downtime
 
-[📄 Full Deployment Architecture](./deployment-architecture.md)
+[📄 Full Deployment Architecture](./deployment/deployment-architecture.md)
 
 ---
 
@@ -220,19 +265,20 @@ FoodBot follows a **4-tier architecture**:
 ### Backend
 - **Runtime**: Node.js 20 LTS
 - **Framework**: NestJS (TypeScript)
-- **MCP Service**: Spring Boot (Java 17)
+- **MCP Service**: TypeScript (decision changed from Spring Boot)
 - **Workflow**: Temporal
 
 ### Frontend
 - **Mobile**: React Native (TypeScript)
 - **Chrome Extension**: Vanilla TypeScript
-- **State Management**: Redux Toolkit
+- **State Management**: Redux Toolkit (customer) / Zustand (restaurant)
 
 ### Databases
 - **Primary**: PostgreSQL 16
 - **Cache**: Redis 7
 - **Search**: Elasticsearch 8
 - **Streaming**: Kafka 3.x
+- **Planned**: Neo4j (graph), Vector DB (semantic search)
 
 ### DevOps
 - **Containers**: Docker + Docker Compose
@@ -240,7 +286,32 @@ FoodBot follows a **4-tier architecture**:
 - **CI/CD**: GitHub Actions
 - **Monitoring**: Prometheus, Grafana, ELK
 
-[📄 Full Technology Stack](./technology-stack.md)
+---
+
+## 📊 Implementation Status Summary
+
+**Last Updated:** 2026-02-20
+
+### By Component:
+
+| Component | Status | Completion | Priority |
+|-----------|--------|------------|----------|
+| Chrome Extension | ✅ Production Ready | 100% | P3 |
+| Mobile Apps | 🚧 Code Complete | 85% | P2 |
+| Search Orchestrator | 🚧 Mostly Complete | 85% | P1 |
+| Kafka Events | ✅ Production Ready | 100% | P1 |
+| Temporal Workflows | 🚧 In Progress | 65% | P1 |
+| MCP Adapter | 🚧 In Progress | 60% | P0 |
+| Gateway API | ⚠️ Critical Blocker | 15% | P0 |
+
+### Critical Blockers (P0):
+
+1. **Gateway API** - 85% incomplete, estimated 3-4 weeks
+2. **Database Migrations** - 70% incomplete, estimated 1 week
+3. **Mobile Native Init** - 100% incomplete, estimated 1 week
+4. **OAuth Integration** - Blocking MCP real provider integration
+
+**Full Status Report:** [implementation-status.md](./implementation-status.md)
 
 ---
 
@@ -248,16 +319,16 @@ FoodBot follows a **4-tier architecture**:
 
 - [Requirements Documentation](../requirements/index.md)
 - [Task Tracking](../tasks/index.md)
-- [Progress Dashboard](../progress/index.md)
+- [Archive](../archive/README.md)
 
 ---
 
 ## 📝 How to Use This Hub
 
 1. **Finding Architecture Info**: Use the Quick Links table or search by component name
-2. **Adding New Components**: Document in component-architecture.md
-3. **Recording Decisions**: Create ADRs in architecture-decisions.md
-4. **Cross-Referencing**: Link to components using [Component Name](./component-architecture.md#anchor)
+2. **Adding New Components**: Document in components/ subfolder
+3. **Recording Decisions**: Create ADRs in this index
+4. **Cross-Referencing**: Link to components using `[Component Name](./components/component-name.md)`
 
 ---
 
@@ -271,4 +342,4 @@ FoodBot follows a **4-tier architecture**:
 
 ---
 
-**For questions or updates, refer to the [main README](../../../README.md) or contact the project team.**
+**For questions or updates, refer to the [main README](../../README.md) or [project README](../README.md).**
