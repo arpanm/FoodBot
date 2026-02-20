@@ -34,49 +34,99 @@ An AI-orchestrated, spec-driven restaurant commerce platform that combines conve
 
 ## Project Overview
 
-FoodBot is a full-stack food ordering platform built as a pnpm monorepo. It provides:
+FoodBot is a **Claude multi-agent development platform** for building an AI-orchestrated restaurant commerce system with intelligent workflow execution. Built as a pnpm monorepo with spec-driven development.
 
-- **Conversational AI Interface**: Users interact with a chat-based UI that understands natural language queries about restaurants, dishes, and orders.
-- **Multi-Provider Aggregation**: A Java-based MCP (Model Context Protocol) orchestrator aggregates results from multiple food delivery providers (Swiggy, Zomato, mock data) with circuit breakers, rate limiters, and smart failover.
-- **Workflow Orchestration**: Temporal workflows handle complex multi-step operations like restaurant search, order placement, and payment processing with saga-pattern compensation.
-- **Event-Driven Architecture**: Apache Kafka powers real-time event streaming across services with 13 topics and Zod-validated schemas.
-- **Full Commerce Flow**: End-to-end support for user registration, restaurant discovery, menu browsing, cart management, order placement, payment processing, order tracking, and feedback submission.
-- **Role-Based Access Control**: Three user roles (customer, restaurant_owner, admin) with appropriate permissions enforced via JWT authentication and guard-based authorization.
+**Core Capabilities:**
+
+- **Multi-Agent Development**: Claude-powered parallel and sequential task execution for requirement expansion, planning, code generation, testing, code review, security audit, and issue fixes
+- **Hybrid Frontend**: Capacitor + React for cross-platform web and mobile (iOS/Android) deployment
+- **Intelligent Backend**: NestJS + Node.js with multi-LLM orchestration (Claude, OpenAI, Gemini) with on/off configuration
+- **Rich Chat UI**: Conversational interface with cards, images, attributes, CTA buttons, and dynamic input fields
+- **Async Job Processing**: Chat prompts create async jobs, return job IDs, frontend polls for real-time status updates
+- **Personalization Engine**: User context enrichment from Redis/GraphDB with preference graphs (day/hour/category/restaurant/dish trees)
+- **Vector-Based Caching**: Prompt-to-intent/workflow caching in vector DB to reduce LLM API calls
+- **Multi-Engine Workflows**: Support for Temporal, Claude/OpenAI/Gemini Agent SDKs, browser-based (Chrome plugin), and OpenClaw-like execution engines
+- **MCP Aggregation Layer**: Integrates Swiggy MCP, Zomato MCP, ONDC, and internal restaurant implementations
+- **Dual-Agent Architecture**: Customer Agent (ordering, planning) and Restaurant Agent (management, analytics) with MCP orchestration
+- **Elasticsearch Integration**: Real-time search/filter with Kafka-based indexing for restaurants, dishes, pricing, and availability
+- **Advanced Planning**: Future party planning (bulk orders, multi-restaurant, scheduled) and daily diet planning (weekly meal calendars)
 
 ---
 
 ## Key Features
 
-### Customer Features
-- Natural language chat interface for restaurant discovery
-- Restaurant search with filters (cuisine, price range, rating, location)
-- Elasticsearch-powered full-text and geo-spatial search
-- Menu browsing with dietary filters (vegetarian, vegan)
-- Cart management (add, update, remove items)
-- Order placement with saga-pattern workflow orchestration
-- Real-time order tracking with signal-based updates
-- Payment processing (card, UPI, wallet)
-- Feedback and rating submission
+### Customer Agent Features
 
-### Restaurant Owner Features
-- Restaurant profile creation and management
-- Menu item (dish) CRUD operations with availability toggling
-- Order status management with real-time WebSocket notifications
-- Analytics dashboard with revenue and order metrics
+**Basic Ordering:**
+- Rich chat UI with cards (restaurant/dish images, attributes, ratings)
+- Search restaurants by name, type, location, or dish
+- Search dishes by name, type, or restaurant
+- Dynamic filters with real-time availability
+- Restaurant details with full menu, pricing, and availability
+- Recommendations (AI-powered based on preferences, order history)
+- Cart management with address selection
+- Multi-payment options (card, UPI, wallet)
+- Order tracking, cancellation, and feedback
 
-### Admin Features
-- User management (view, suspend, reactivate)
-- Restaurant approval workflow (approve/reject pending restaurants)
-- Dashboard statistics and system monitoring
+**Advanced Planning:**
+- **Future Party Planner**:
+  - Bulk orders from multiple restaurants
+  - Budget-based menu suggestions
+  - Veg/non-veg preference handling
+  - Scheduled delivery for future dates
+  - Multi-restaurant order coordination
+- **Daily Diet Planner**:
+  - Weekly meal calendars (breakfast, lunch, snacks, dinner)
+  - Health goal-based recommendations (weight loss, muscle gain)
+  - Dietary preference tracking
+  - Multi-address meal scheduling
+  - Skip/edit individual meals or days
+  - Auto-scheduled order placement
+
+### Restaurant Agent Features
+
+**Management:**
+- Restaurant onboarding with profile setup
+- Menu management (add, edit, delete dishes)
+- Real-time availability toggling
+- Order status management with notifications
+- Multi-channel order tracking
+
+**Analytics:**
+- Natural language analytics queries via chat
+- Revenue and order metrics dashboards
+- Popular dish insights
+- Peak hour analysis
+- Customer feedback analytics
+
+### Multi-Agent Development Features
+
+**Claude-Powered Workflows:**
+- Requirement expansion and documentation
+- Task breakdown and planning
+- Automated test case generation
+- Code generation with guardrails
+- Test execution and failure analysis
+- Automated code review
+- Static and dynamic code analysis
+- Security audit (OWASP compliance)
+- Issue fixing (tests, quality, security)
+- Parallel agent execution where possible
+- Sequential execution for dependent tasks
 
 ### Platform Capabilities
-- **Security:** JWT authentication with token blacklisting, rate limiting, Helmet headers, CORS whitelist, webhook signature verification, audit logging
-- **Performance:** Redis caching (60%+ hit rate), React.memo optimization, list virtualization, lazy loading, database index optimization
-- **Reliability:** Temporal workflow orchestration with retry policies, saga compensation, circuit breakers (Resilience4j)
-- **Search:** Elasticsearch 8 with BM25 scoring, geo-location, faceted filtering, multi-source aggregation
-- **Messaging:** Kafka event streaming with 13 topics, 5 consumer groups, Zod-validated schemas, DLQ handling
+
+- **Multi-LLM Support:** Claude, OpenAI, Gemini with configurable on/off switches and API keys
+- **Async Job Processing:** Job ID-based status tracking with frontend polling
+- **Personalization:** User context graphs (day→hour→category→subcategory→restaurant→dish)
+- **Vector Caching:** Prompt-to-intent/workflow caching to reduce LLM costs
+- **Workflow Engines:** Temporal, Claude/OpenAI/Gemini Agent SDKs, browser-based (Chrome plugin), OpenClaw-like
+- **Workflow Resiliencies:** Error handling, retry, circuit breaking, bulkhead, backtracing, alternative plan execution
+- **MCP Integration:** Swiggy MCP, Zomato MCP, ONDC, internal implementation with enable/disable configuration
+- **Mock APIs:** Swiggy, Zomato, ONDC mocks for testing
+- **Search:** Elasticsearch with Kafka-based real-time indexing
+- **Cross-Platform:** Capacitor + React for web, iOS, and Android
 - **Testing:** 1,081 tests across 106 test files (314 passing, 767 failing - 71% failure rate) ⚠️ **Test stabilization in progress**
-- **Monitoring:** Health check endpoints, Prometheus metrics, structured JSON logging (Pino/Logback), audit trail
 - **Quality:** ESLint, Prettier, TypeScript strict mode, 80% coverage threshold, development guardrails
 
 ---
@@ -84,46 +134,78 @@ FoodBot is a full-stack food ordering platform built as a pnpm monorepo. It prov
 ## Architecture Overview
 
 ```
-+----------------------------------------------------------------+
-|                       Client Layer                              |
-+-------------------------------+--------------------------------+
-|  Customer App (React/Redux)   |  Restaurant App (React/Zustand)|
-+---------------+---------------+----------------+---------------+
-                |                                |
-                |         HTTPS / REST           |
-                |                                |
-+---------------v--------------------------------v---------------+
-|                     Gateway API (NestJS)                        |
-|  JWT Auth | Rate Limiting | Helmet | CORS | Validation         |
-+------+-------------------+--------------------+----------------+
-       |                   |                    |
-       v                   v                    v
-+------+------+  +---------+---------+  +------+------+
-| Temporal    |  | MCP Orchestrator  |  | Notification|
-| Workflows   |  | (Spring Boot)     |  | Service     |
-| (TS SDK)    |  | Elasticsearch     |  | (Kafka)     |
-+------+------+  | Redis Cache       |  +------+------+
-       |         | Resilience4j      |         |
-       |         +---------+---------+         |
-       |                   |                   |
-       v                   v                   v
-+------+-------------------+-------------------+--+
-|                    Data Layer                     |
-|  PostgreSQL | Redis 7 | Elasticsearch 8 | Kafka  |
-+-------------------------------------------------+
+┌──────────────────────────────────────────────────────────────────┐
+│                 Multi-Agent Development Layer                     │
+│  Claude Agents (Parallel/Sequential) → Requirements → Tasks →    │
+│  Test Cases → Code Gen → Test Execution → Code Review →         │
+│  Security Audit → Issue Fixing                                   │
+└────────────────────────┬─────────────────────────────────────────┘
+                         │
+┌────────────────────────┴─────────────────────────────────────────┐
+│                        Client Layer                               │
+│  Customer App (Capacitor+React) | Restaurant App (Capacitor+React│
+│  Web + iOS + Android Support    | Web + iOS + Android Support   │
+└────────────────────┬─────────────────────────────────────────────┘
+                     │ HTTPS/REST + Job ID Polling
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Gateway API (NestJS)                           │
+│  • Chat Prompt + User ID → Async Job → Job ID Response         │
+│  • JWT Auth | Rate Limiting | CORS | Validation                │
+│  • Job Status Updates (LLM, Workflow, Execution)                │
+└──┬─────────────┬────────────────┬────────────────┬─────────────┘
+   │             │                │                │
+   ▼             ▼                ▼                ▼
+┌─────────┐ ┌──────────┐  ┌─────────────┐  ┌──────────────┐
+│Multi-LLM│ │Workflow  │  │     MCP     │  │Personalization│
+│Layer    │ │Engines   │  │ Aggregator  │  │   Engine      │
+│         │ │          │  │             │  │               │
+│•Claude  │ │•Temporal │  │•Swiggy MCP  │  │•Redis         │
+│•OpenAI  │ │•Agent SDK│  │•Zomato MCP  │  │•GraphDB       │
+│•Gemini  │ │•Browser  │  │•ONDC        │  │•Preference    │
+│         │ │•OpenClaw │  │•Internal    │  │ Graph Trees   │
+└────┬────┘ └────┬─────┘  └──────┬──────┘  └───────┬──────┘
+     │           │               │                  │
+     └───────────┴───────────────┴──────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               Intelligence & Orchestration Layer                 │
+│  • Vector DB (Prompt→Intent/Workflow Cache)                     │
+│  • Workflow DB (JSON workflow definitions)                      │
+│  • Elasticsearch (Restaurant/Dish Search with Kafka indexing)   │
+└─────────────────────────────────────────────────────────────────┘
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        Data Layer                                │
+│  PostgreSQL | Redis | GraphDB | Elasticsearch | Kafka | Vector DB
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Architectural Decisions:**
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| API Gateway | NestJS | TypeScript-native, decorator-based, modular |
-| Workflow Engine | Temporal | Durable execution, saga compensation, signal-based tracking |
-| Search Engine | Elasticsearch 8 | Full-text + geo-spatial, BM25 scoring, faceted filters |
-| Multi-Provider | Spring Boot MCP | JVM performance, Resilience4j patterns, WebClient |
-| Event Streaming | Apache Kafka | Decoupled services, event replay, multi-consumer |
-| Frontend State | Redux Toolkit / Zustand | Customer app uses Redux; Restaurant app uses Zustand |
-| Package Manager | pnpm | Efficient monorepo workspace management |
+| **Development** | Claude Multi-Agent | Parallel task execution, automated code generation, review, testing, security audit |
+| **Frontend** | Capacitor + React | Cross-platform (web + iOS + Android) with single codebase |
+| **Backend** | NestJS + Node.js | TypeScript-native, decorator-based, async job processing |
+| **Multi-LLM** | Claude + OpenAI + Gemini | Configurable on/off, best model for each task, cost optimization |
+| **Async Processing** | Job ID + Polling | Non-blocking UI, real-time status updates, scalable |
+| **Personalization** | Redis/GraphDB Trees | Fast context enrichment with day→hour→category→restaurant→dish preferences |
+| **Workflow Engines** | Multi-Engine Support | Temporal (backend), Agent SDKs (MCP), Browser (Chrome plugin), OpenClaw (app control) |
+| **MCP Layer** | Swiggy/Zomato/ONDC/Internal | Unified aggregation with configurable enable/disable, mock APIs for testing |
+| **Vector Caching** | Vector DB | Prompt-to-intent/workflow caching reduces LLM API calls and costs |
+| **Search** | Elasticsearch + Kafka | Real-time indexing for restaurant/dish search with filters |
+| **Workflow Resiliencies** | Comprehensive | Error handling, retry, circuit breaking, bulkhead, backtracing, alternative plans |
+| **Package Manager** | pnpm | Efficient monorepo workspace management |
+
+**Workflow Execution Models:**
+
+| Model | Use Case | Implementation |
+|-------|----------|----------------|
+| **Backend (Temporal)** | API-based workflows | Standard REST API calls to Swiggy/Zomato/Internal |
+| **Agent SDK** | MCP workflows | Claude/OpenAI/Gemini SDKs with MCP client support |
+| **Browser-based** | DOM manipulation | Chrome plugin polling workflow JSON, executing in client |
+| **OpenClaw-like** | App control | Control Chrome/Android/iOS apps, DOM parsing with smaller models |
 
 For detailed architecture documentation, see [.claude/project-management/architecture/component-architecture.md](.claude/project-management/architecture/component-architecture.md) and the [Architecture Index](.claude/project-management/architecture/index.md).
 
@@ -133,19 +215,29 @@ For detailed architecture documentation, see [.claude/project-management/archite
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Frontend (Customer)** | React 18, Redux Toolkit, TypeScript | Chat interface and commerce UI |
-| **Frontend (Restaurant)** | React 18, Zustand, TanStack Query, Tailwind | Owner management dashboard |
-| **Backend API** | NestJS 10, TypeScript, TypeORM | REST API gateway with JWT auth |
-| **MCP Orchestrator** | Java 17, Spring Boot 3.2, Resilience4j | Multi-provider search aggregation |
-| **MCP Adapter** | TypeScript, Zod, ioredis | Provider integration adapter |
-| **Search Orchestrator** | TypeScript, Express | Multi-source search coordination |
-| **Workflows** | Temporal (TypeScript SDK 1.11) | Durable workflow orchestration |
-| **Notifications** | TypeScript, Pino | Multi-channel notification dispatch |
+| **Development** | Claude Multi-Agent | Parallel/sequential task execution, code generation, testing, review, security audit |
+| **Frontend** | Capacitor 6, React 18, TypeScript | Cross-platform (web + iOS + Android) |
+| **Frontend (Customer)** | React 18, Redux Toolkit, Rich UI Components | Chat with cards, images, buttons, dynamic inputs |
+| **Frontend (Restaurant)** | React 18, Zustand, TanStack Query, Tailwind | Analytics, order, menu management |
+| **Backend API** | NestJS 10, Node.js, TypeScript, TypeORM | Async job processing, JWT auth |
+| **Multi-LLM** | Claude API, OpenAI API, Gemini API | Configurable on/off, prompt-to-intent/workflow |
+| **Personalization** | Redis, GraphDB | User context preference graphs (day→hour→category→restaurant→dish) |
+| **Vector Caching** | Vector DB (Pinecone/Weaviate/Qdrant) | Prompt-to-intent/workflow caching to reduce LLM costs |
+| **Workflow Engines** | Temporal (TypeScript SDK 1.11) | Backend workflow orchestration with resiliencies |
+| **Agent SDKs** | Claude SDK, OpenAI SDK, Gemini SDK | MCP client workflows when available |
+| **Browser Workflows** | Chrome Plugin | Client-side workflow execution, DOM parsing, smaller models |
+| **App Control** | OpenClaw-like Implementation | Control browser/mobile apps for Swiggy/Zomato/ONDC |
+| **MCP Layer** | Swiggy MCP, Zomato MCP, ONDC, Internal | Aggregated multi-provider integration |
+| **MCP Orchestrator** | TypeScript, NestJS | MCP aggregation with enable/disable config |
+| **Mock APIs** | TypeScript, Express | Swiggy/Zomato/ONDC mocks for testing |
+| **Search** | Elasticsearch 8.11 | Restaurant/dish search with filters |
+| **Real-time Indexing** | Apache Kafka (Confluent 7.5) | Kafka → Elasticsearch indexing pipeline |
 | **Database** | PostgreSQL 15 | Primary data store |
-| **Cache** | Redis 7 | Session management, caching, rate limiting |
-| **Search** | Elasticsearch 8.11 | Full-text search, geo-search, faceted filtering |
-| **Messaging** | Apache Kafka (Confluent 7.5) | Event streaming, real-time indexing |
-| **Testing** | Jest, Playwright, Supertest, React Testing Library | Unit, integration, and E2E testing |
+| **Graph Database** | Neo4j / Amazon Neptune | User preference graphs |
+| **Cache** | Redis 7 | Session, personalization data, rate limiting |
+| **Job Status** | Redis / PostgreSQL | Job ID → status mapping for frontend polling |
+| **Workflow DB** | PostgreSQL / MongoDB | JSON workflow definitions storage |
+| **Testing** | Jest, Playwright, Supertest, React Testing Library | Unit, integration, E2E testing |
 | **Code Quality** | ESLint, Prettier, TypeScript strict | Linting, formatting, type safety |
 | **Infrastructure** | Docker Compose, Kubernetes | Local dev and production deployment |
 
