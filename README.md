@@ -1,7 +1,7 @@
 # FoodBot - Agentic Restaurant Commerce Platform
 
-[![Production Ready](https://img.shields.io/badge/production-ready-brightgreen)](https://github.com/foodbot/foodbot)
-[![Test Coverage](https://img.shields.io/badge/coverage-75%25-yellow)](https://github.com/foodbot/foodbot)
+[![Active Development](https://img.shields.io/badge/status-active%20development-orange)](https://github.com/foodbot/foodbot)
+[![Test Status](https://img.shields.io/badge/tests-314%2F1081%20passing-red)](https://github.com/foodbot/foodbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-10.0-red)](https://nestjs.com/)
 [![React](https://img.shields.io/badge/React-18.0-blue)](https://reactjs.org/)
@@ -10,7 +10,7 @@
 
 An AI-orchestrated, spec-driven restaurant commerce platform that combines conversational UX, multi-LLM reasoning, and deterministic workflow execution using Temporal. FoodBot is not a simple chatbot -- it is a goal-driven commerce agent that plans, validates, and executes workflows safely across multiple food delivery providers.
 
-**Status:** 69% Architecture Complete, 42% Production Ready | **Tests:** 206 tests passing | **Code:** 26,545 lines
+**Status:** 69% Architecture Complete, 29% Test Success Rate (314/1081 passing) | **Code:** ~109K lines | **⚠️ Active Development**
 
 ---
 
@@ -75,7 +75,7 @@ FoodBot is a full-stack food ordering platform built as a pnpm monorepo. It prov
 - **Reliability:** Temporal workflow orchestration with retry policies, saga compensation, circuit breakers (Resilience4j)
 - **Search:** Elasticsearch 8 with BM25 scoring, geo-location, faceted filtering, multi-source aggregation
 - **Messaging:** Kafka event streaming with 13 topics, 5 consumer groups, Zod-validated schemas, DLQ handling
-- **Testing:** 206 tests (unit, integration, E2E) with 75% coverage, deterministic test factories
+- **Testing:** 1,081 tests across 106 test files (314 passing, 767 failing - 71% failure rate) ⚠️ **Test stabilization in progress**
 - **Monitoring:** Health check endpoints, Prometheus metrics, structured JSON logging (Pino/Logback), audit trail
 - **Quality:** ESLint, Prettier, TypeScript strict mode, 80% coverage threshold, development guardrails
 
@@ -125,7 +125,7 @@ FoodBot is a full-stack food ordering platform built as a pnpm monorepo. It prov
 | Frontend State | Redux Toolkit / Zustand | Customer app uses Redux; Restaurant app uses Zustand |
 | Package Manager | pnpm | Efficient monorepo workspace management |
 
-For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For detailed architecture documentation, see [.claude/project-management/architecture/component-architecture.md](.claude/project-management/architecture/component-architecture.md) and the [Architecture Index](.claude/project-management/architecture/index.md).
 
 ---
 
@@ -189,7 +189,7 @@ All events use Zod-validated schemas defined in `@foodbot/events` package:
 - **Consumer Lag:** < 100 messages
 - **Throughput:** 12,500+ events/sec
 
-📚 **Documentation:** [Event Streaming Guide](docs/EVENT_STREAMING.md) | [Kafka Architecture](.claude/project-management/architecture/integration/kafka-event-streaming.md) | [Requirements](.claude/project-management/requirements/workflows/event-streaming-requirements.md)
+📚 **Documentation:** [Kafka Architecture](.claude/project-management/architecture/integration/kafka-event-streaming.md) | [Requirements](.claude/project-management/requirements/workflows/event-streaming-requirements.md)
 
 ---
 
@@ -261,7 +261,7 @@ Kafka consumers in MCP Orchestrator provide real-time Elasticsearch indexing:
 - **Indexing Latency:** < 5 seconds from database change to searchable
 - **Error Handling:** Failed documents sent to DLQ for retry
 
-📚 **Documentation:** [Search Architecture](docs/SEARCH_ARCHITECTURE.md) | [Elasticsearch Architecture](.claude/project-management/architecture/data/elasticsearch-search.md) | [Search Orchestrator Architecture](.claude/project-management/architecture/components/search-orchestrator.md) | [Requirements](.claude/project-management/requirements/llm/search-requirements.md)
+📚 **Documentation:** [Elasticsearch Architecture](.claude/project-management/architecture/data/elasticsearch-search.md) | [Search Orchestrator Architecture](.claude/project-management/architecture/components/search-orchestrator.md) | [Requirements](.claude/project-management/requirements/llm/search-requirements.md)
 
 ---
 
@@ -286,7 +286,7 @@ cd foodbot
 ./foodbot dev
 ```
 
-**👉 See [QUICKSTART.md](QUICKSTART.md) for detailed guide with all commands**
+**👉 See "Project Commands" section below for all available commands**
 
 ### Option B: Manual Setup
 
@@ -337,7 +337,7 @@ pnpm test:e2e           # E2E tests (requires full stack)
 pnpm test:all           # All tests
 ```
 
-For detailed setup instructions, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md).
+For detailed setup instructions, see the [Development Setup](#development-setup) section below and [Development Guardrails](.claude/rules/development-guardrails.md).
 
 ---
 
@@ -608,7 +608,7 @@ mv .claude/project-management/tasks/in-progress/TASK-XXX-*.md \
 
 ## Project Commands
 
-FoodBot includes a comprehensive wrapper script (`./foodbot`) that provides a unified interface for all project operations. See [QUICKSTART.md](QUICKSTART.md) for detailed examples.
+FoodBot includes a comprehensive wrapper script (`./foodbot`) that provides a unified interface for all project operations.
 
 ### Common Commands
 
@@ -1156,6 +1156,38 @@ pnpm --filter @foodbot/workflows worker
 ./foodbot dev restaurant-app
 ```
 
+#### 3. Mobile App (React Native) 📱
+
+**Location**: `apps/mobile-app/`
+**Platform**: iOS and Android
+**Tech**: React Native, TypeScript
+
+**Features:**
+- Native mobile experience for customers
+- Same features as customer web app
+- Push notifications
+- Camera integration for receipts
+- Location services
+
+**Status:** ✅ Implemented (Phase 1 complete)
+
+**Documentation:**
+- [Implementation Summary](apps/mobile-app/IMPLEMENTATION_SUMMARY.md)
+- [Phase 1 Complete](apps/mobile-app/PHASE1_COMPLETE.md)
+
+#### 4. Chrome Extension 🔌
+
+**Location**: `chrome-extension/`
+**Purpose**: Browser integration for quick ordering
+
+**Features:**
+- Quick search from browser
+- Save favorite restaurants
+- Order tracking notifications
+- Browser action for quick access
+
+**Status:** ✅ Implemented
+
 ### Running All Services
 
 ```bash
@@ -1225,12 +1257,15 @@ FoodBot uses a three-tier testing strategy:
 ### Unit Tests
 
 ```bash
-pnpm test:unit          # Run all unit tests
+pnpm test:unit          # Run all unit tests (1,081 tests)
 pnpm test:watch         # Watch mode
 pnpm test:coverage      # With coverage report
 ```
 
-Coverage thresholds enforced at 80% for branches, functions, lines, and statements.
+**Current Status:** ⚠️ 314 passing, 767 failing (71% failure rate)
+- Many Temporal workflow tests timing out (10s timeout exceeded)
+- Test suite stabilization in progress
+- Coverage thresholds configured at 80% for branches, functions, lines, and statements
 
 ### Integration Tests
 
@@ -1252,7 +1287,7 @@ pnpm test:e2e:debug     # Debug mode
 pnpm test:all           # Unit + Integration + E2E
 ```
 
-For testing patterns and conventions, see [docs/TESTING.md](docs/TESTING.md).
+For testing patterns and conventions, see [Development Guardrails](.claude/rules/development-guardrails.md) (Section 4: Testing Guardrails).
 
 ### Test Organization
 
@@ -1993,62 +2028,50 @@ FoodBot/
 
 | Document | Description |
 |----------|-------------|
-| [QUICKSTART.md](QUICKSTART.md) | **⭐ Quick start guide - Start here!** |
-| [WRAPPER_SCRIPT_GUIDE.md](docs/WRAPPER_SCRIPT_GUIDE.md) | Complete `./foodbot` command reference |
+| [README.md](README.md) | **⭐ Start here! Complete setup and usage guide** |
+| [Project Commands](#project-commands) | `./foodbot` wrapper script reference (in this README) |
+| [Working with AI Agents](#-working-with-ai-agents) | Guide for parallel development with AI agents |
 
-### MCP Integration Documentation
+### Project Management Documentation
 
-| Document | Description |
-|----------|-------------|
-| [MCP_INTEGRATION_STATUS.md](docs/MCP_INTEGRATION_STATUS.md) | **✅ Complete MCP integration status and metrics** |
-| [MCP_TEST_REPORT.md](docs/MCP_TEST_REPORT.md) | **📊 Detailed test execution and results (283 tests)** |
-| [MCP_REQUIREMENTS.md](docs/MCP_REQUIREMENTS.md) | **📋 Requirements, acceptance criteria, and specifications** |
-| [MCP_CODE_REVIEW.md](docs/MCP_CODE_REVIEW.md) | **✅ Code quality review (9.1/10 score, approved)** |
-| [MCP_IMPLEMENTATION_DETAILS.md](docs/MCP_IMPLEMENTATION_DETAILS.md) | **🔧 Technical implementation, architecture, and code** |
-
-### Architecture and Design
+📁 **Comprehensive documentation located in:** `.claude/project-management/`
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, component interactions, data flow |
-| [SEARCH_ARCHITECTURE.md](docs/SEARCH_ARCHITECTURE.md) | Elasticsearch search design and ranking algorithm |
-| [MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md) | MCP protocol integration with provider failover |
-| [WORKFLOW_GUIDE.md](docs/WORKFLOW_GUIDE.md) | Temporal workflow definitions and saga patterns |
-| [EVENT_STREAMING.md](docs/EVENT_STREAMING.md) | Kafka event streaming architecture and schemas |
-| [FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md) | Frontend architecture for both React applications |
+| [Project Management README](.claude/project-management/README.md) | **⭐ Complete project overview and status** |
+| [Pending Tasks Summary](.claude/project-management/PENDING_TASKS_SUMMARY.md) | 7 task groups, 40+ subtasks with priorities |
+| [Agent Workflow Guide](.claude/project-management/AGENT_WORKFLOW_GUIDE.md) | Working with AI agents for parallel development |
+| [Architecture Index](.claude/project-management/architecture/index.md) | 27 architecture files, component status |
+| [Requirements Index](.claude/project-management/requirements/README.md) | 47 requirements files, 89% complete |
+| [Tasks Index](.claude/project-management/tasks/index.md) | Task organization and tracking |
+| [Implementation Status](.claude/project-management/architecture/implementation-status.md) | Detailed component completion status |
 
-### API Reference
+### Architecture Documentation
+
+| Location | Description |
+|----------|-------------|
+| [.claude/project-management/architecture/](.claude/project-management/architecture/) | Complete architecture documentation |
+| [Component Architecture](.claude/project-management/architecture/component-architecture.md) | System components and interactions |
+| [Kafka Event Streaming](.claude/project-management/architecture/integration/kafka-event-streaming.md) | Event streaming architecture |
+| [Elasticsearch Search](.claude/project-management/architecture/data/elasticsearch-search.md) | Search architecture and indexing |
+| [Deployment Architecture](.claude/project-management/architecture/deployment/deployment-architecture.md) | Docker, K8s, AWS deployment |
+
+### Requirements Documentation
+
+| Location | Description |
+|----------|-------------|
+| [.claude/project-management/requirements/](.claude/project-management/requirements/) | 47 functional requirements |
+| [Customer Agent Requirements](.claude/project-management/requirements/customer-agent/) | 15 requirements, 92% complete |
+| [Restaurant Agent Requirements](.claude/project-management/requirements/restaurant-agent/) | 5 requirements, 67% complete |
+| [MCP Layer Requirements](.claude/project-management/requirements/mcp-layer/) | 5 requirements, 75% complete |
+| [Workflow Requirements](.claude/project-management/requirements/workflows/) | 15 requirements, 100% complete |
+
+### Development Standards
 
 | Document | Description |
 |----------|-------------|
-| [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) | Complete REST API endpoint reference |
-| [gateway-api/swagger.yaml](apps/gateway-api/swagger.yaml) | OpenAPI 3.0 spec for Gateway API |
-| [mcp-adapter/swagger.yaml](services/mcp-adapter/swagger.yaml) | OpenAPI 3.0 spec for MCP Adapter |
-| [search-orchestrator/swagger.yaml](services/search-orchestrator/swagger.yaml) | OpenAPI 3.0 spec for Search Orchestrator |
-
-### Development Guides
-
-| Document | Description |
-|----------|-------------|
-| [QUICKSTART.md](QUICKSTART.md) | **⭐ Quick start guide with wrapper script commands** |
-| [WRAPPER_SCRIPT_GUIDE.md](docs/WRAPPER_SCRIPT_GUIDE.md) | Complete reference for the `./foodbot` wrapper script |
-| [WRAPPER_SCRIPT_IMPLEMENTATION.md](WRAPPER_SCRIPT_IMPLEMENTATION.md) | Wrapper script implementation details and summary |
+| [Development Guardrails](.claude/rules/development-guardrails.md) | **⭐ Enforced coding standards and quality rules** |
 | [scripts/README.md](scripts/README.md) | Database and utility scripts documentation |
-| [DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) | Local development environment setup |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Git workflow, PR process, coding standards |
-| [CODE_STANDARDS.md](docs/CODE_STANDARDS.md) | TypeScript/Java guidelines, naming conventions |
-| [TESTING.md](docs/TESTING.md) | Testing strategy, patterns, and coverage |
-| [Development Guardrails](.claude/rules/development-guardrails.md) | Enforced coding standards and quality rules |
-
-### Operations
-
-| Document | Description |
-|----------|-------------|
-| [PRODUCTION_READINESS_SUMMARY.md](docs/PRODUCTION_READINESS_SUMMARY.md) | **✅ Production readiness status (12 tasks complete)** |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker Compose and Kubernetes deployment |
-| [PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) | Pre-launch verification checklist |
-| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues, debugging, useful commands |
-| [SECURITY.md](docs/SECURITY.md) | Authentication, authorization, encryption |
 
 ### Production Scripts & Automation
 
@@ -2071,17 +2094,15 @@ FoodBot/
 | [.github/workflows/security-scan.yml](.github/workflows/security-scan.yml) | **🔐 Daily security scans (8 tools)** |
 | [.github/workflows/dependency-update.yml](.github/workflows/dependency-update.yml) | **📦 Weekly dependency updates (automated PRs)** |
 
-### Diagrams
+### Additional Documentation
 
-All architecture diagrams are in `docs/diagrams/` as ASCII art:
-
-- [system-architecture.txt](docs/diagrams/system-architecture.txt) - Full system overview
-- [data-flow.txt](docs/diagrams/data-flow.txt) - Data flow across services
-- [deployment-architecture.txt](docs/diagrams/deployment-architecture.txt) - Docker and Kubernetes
-- [mcp-integration-flow.txt](docs/diagrams/mcp-integration-flow.txt) - MCP provider routing
-- [search-orchestration-flow.txt](docs/diagrams/search-orchestration-flow.txt) - Search pipeline
-- [order-workflow.txt](docs/diagrams/order-workflow.txt) - Order placement saga
-- [authentication-flow.txt](docs/diagrams/authentication-flow.txt) - JWT auth lifecycle
+| Location | Description |
+|----------|-------------|
+| [docs/](docs/) | 13 markdown files covering guides, operations, integrations |
+| [docs/guide/](docs/guide/) | Development and operational guides |
+| [docs/api-specifications/](docs/api-specifications/) | API specs and contracts |
+| [docs/integrations/](docs/integrations/) | Third-party integration guides |
+| [prompt-docs/](prompt-docs/) | AI development prompts and reports (archived) |
 
 ### Service READMEs
 
@@ -2098,20 +2119,23 @@ Each service has its own README with setup, API, configuration, and development 
 
 ### Project Metrics
 
-- **Total Lines:** 26,545 lines of TypeScript/TSX/Java
-- **Test Coverage:** 75% (206 tests across 41 files)
+- **Total Lines:** ~109,000 lines of TypeScript/TSX/Java (523 TS files, 73 Java files)
+- **Test Status:** 314 passing, 767 failing (1,081 total across 106 test files) ⚠️ **Tests need attention**
+- **Test Coverage:** Coverage report needed (80% threshold configured)
 - **Architecture Complete:** 69% (18/26 components)
-- **Production Readiness:** 42% (11/26 components production-ready)
 - **Requirements Complete:** 89% (40/45 requirements)
 - **Tasks Complete:** 35% (8/23 tasks)
-- **Security:** OWASP Top 10 compliant
-- **Performance:** <500ms p95 for API responses
+- **Production Status:** ⚠️ Active development - test suite needs stabilization before production
+- **Security:** OWASP Top 10 compliant design
+- **Performance Target:** <500ms p95 for API responses
+
+**⚠️ Current Focus:** Stabilizing test suite (71% tests failing, primarily Temporal workflow timeouts)
 
 ---
 
 ## Contributing
 
-We welcome contributions. Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for full details.
+We welcome contributions. Please follow the guidelines below and see [Development Guardrails](.claude/rules/development-guardrails.md) for detailed standards.
 
 ### Quick Reference
 
