@@ -137,41 +137,71 @@ export class MockActivity<TArgs extends any[] = any[], TResult = any> {
   private currentIndex = 0;
 
   /**
-   * Set up the activity to return specific responses in sequence
+   * The original fn implementation, saved so reset() can restore it
+   * after tests that replace fn with a custom implementation.
+   */
+  private readonly originalFn: (...args: TArgs) => Promise<TResult>;
+
+  constructor() {
+    // Bind the default implementation and save a reference for reset
+    this.originalFn = this.defaultFn.bind(this);
+    this.fn = this.originalFn;
+  }
+
+  /**
+   * Set up the activity to return specific responses in sequence.
+   * When chained after throwErrors(), responses begin after all errors have been thrown.
    */
   respondWith(...responses: TResult[]): this {
     this.responses = responses;
-    this.currentIndex = 0;
     return this;
   }
 
   /**
-   * Set up the activity to throw specific errors in sequence
+   * Set up the activity to throw specific errors in sequence.
+   * Can be chained with respondWith() to succeed after errors are exhausted.
+   * If no respondWith() is chained, keeps throwing the last error indefinitely.
    */
   throwErrors(...errors: Error[]): this {
     this.errors = errors;
-    this.currentIndex = 0;
     return this;
   }
 
   /**
-   * The mock function to use as an activity
+   * The default mock function implementation
    */
-  fn = async (...args: TArgs): Promise<TResult> => {
+  private async defaultFn(...args: TArgs): Promise<TResult> {
     this.calls.push(args);
 
-    if (this.errors.length > 0 && this.currentIndex < this.errors.length) {
-      throw this.errors[this.currentIndex++];
+    const callIndex = this.calls.length - 1;
+
+    // Throw errors for calls within the errors range
+    if (callIndex < this.errors.length) {
+      throw this.errors[callIndex];
     }
 
+    // If we have responses, return from the responses array
+    // The response index is offset by the number of errors
     if (this.responses.length > 0) {
-      const response = this.responses[this.currentIndex % this.responses.length];
-      this.currentIndex++;
+      const responseIndex = callIndex - this.errors.length;
+      const response = this.responses[responseIndex % this.responses.length];
       return response;
     }
 
+    // If we had errors but no responses, keep throwing the last error
+    if (this.errors.length > 0) {
+      throw this.errors[this.errors.length - 1];
+    }
+
     return {} as TResult;
-  };
+  }
+
+  /**
+   * The mock function to use as an activity.
+   * Can be replaced by tests for custom behavior, but will be
+   * restored to the default implementation on reset().
+   */
+  fn: (...args: TArgs) => Promise<TResult>;
 
   /**
    * Get all calls made to this activity
@@ -195,13 +225,14 @@ export class MockActivity<TArgs extends any[] = any[], TResult = any> {
   }
 
   /**
-   * Reset the mock
+   * Reset the mock, restoring the original fn implementation
    */
   reset(): void {
     this.calls = [];
     this.responses = [];
     this.errors = [];
     this.currentIndex = 0;
+    this.fn = this.originalFn;
   }
 }
 

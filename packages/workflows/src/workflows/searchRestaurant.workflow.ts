@@ -130,8 +130,22 @@ export async function searchRestaurantWorkflow(
       results = await callMCPSearch(searchParams);
       log.info('MCP search completed', { count: results.length });
     } catch (error) {
-      log.error('MCP search failed after retries', { error });
-      throw error;
+      log.warn('Primary MCP search failed, attempting fallback', { error });
+
+      // Fallback: retry with broader search parameters
+      try {
+        const fallbackParams = {
+          query: input.query,
+          location: searchParams.location,
+          radius: (searchParams.radius || 5000) * 2, // Double the radius for fallback
+          fallback: true,
+        };
+        results = await callMCPSearch(fallbackParams);
+        log.info('Fallback search completed', { count: results.length });
+      } catch (fallbackError) {
+        log.error('Fallback search also failed', { fallbackError });
+        throw fallbackError;
+      }
     }
 
     // Handle empty results

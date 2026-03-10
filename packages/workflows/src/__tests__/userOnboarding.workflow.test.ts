@@ -27,7 +27,7 @@ describe('UserOnboardingWorkflow', () => {
   let testEnv: TestWorkflowEnvironment;
 
   beforeAll(async () => {
-    testEnv = await TestWorkflowEnvironment.createLocal();
+    testEnv = await TestWorkflowEnvironment.createTimeSkipping();
   });
 
   afterAll(async () => {

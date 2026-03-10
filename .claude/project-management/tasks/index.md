@@ -1,6 +1,6 @@
 # Tasks - Master Task List
 
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-23
 **Status:** Active
 
 ---
@@ -11,12 +11,13 @@
 |----------|-------|--------|
 | **Completed** | 8 | ✅ Done |
 | **In Progress** | 1 | 🚧 Active |
-| **Pending** | 7 | 🟡 Ready to start |
+| **Pending (Existing)** | 7 | 🟡 Ready to start |
+| **New Tasks (Batched)** | 22 | 🆕 Planned |
 | **Backlog** | 2 | 📦 Future |
 | **Technical Debt** | 2 | ⚠️ Needs attention |
 | **Technical Tasks** | 2 | 📝 Test specifications |
 | **Bug Fixes** | 1 | 🐛 Needs fixing |
-| **Total** | **23** | - |
+| **Total** | **45** | - |
 
 ---
 
@@ -25,24 +26,25 @@
 ### Overall Progress
 
 ```
-Total Tasks: 23
-├── Completed: 8 (35%)
-├── In Progress: 1 (4%)
-├── Pending: 7 (30%)
-├── Backlog: 2 (9%)
-├── Technical Debt: 2 (9%)
-├── Technical Tasks: 2 (9%)
-└── Bug Fixes: 1 (4%)
+Total Tasks: 45
+├── Completed: 8 (18%)
+├── In Progress: 1 (2%)
+├── Pending (Existing): 7 (16%)
+├── New Batched Tasks: 22 (49%)
+├── Backlog: 2 (4%)
+├── Technical Debt: 2 (4%)
+├── Technical Tasks: 2 (4%)
+└── Bug Fixes: 1 (2%)
 ```
 
 ### By Priority
 
 | Priority | Count | Percentage |
 |----------|-------|------------|
-| **Critical (P0)** | 3 | 13% |
-| **High (P1)** | 9 | 39% |
-| **Medium (P2)** | 7 | 30% |
-| **Low (P3)** | 4 | 17% |
+| **Critical (P0)** | 7 | 16% |
+| **High (P1)** | 17 | 38% |
+| **Medium (P2)** | 15 | 33% |
+| **Low (P3)** | 6 | 13% |
 
 ---
 
@@ -68,9 +70,13 @@ Total Tasks: 23
 | [gateway-api-implementation-tasks.md](./pending/gateway-api-implementation-tasks.md) | Gateway API Implementation | P0 Critical | 3-4 weeks | Entire backend MVP |
 | [database-migrations.md](./pending/database-migrations.md) | Database Schema Migrations | P0 Critical | 1 week | Data persistence |
 | [TASK-MCP-002](./pending/TASK-MCP-002-implement-provider-order-placement.md) | Provider Order Placement | P0 Critical | 2 weeks | Order fulfillment |
+| TASK-DB-001 | Complete Database Schema & Migrations | P0 Critical | 12 days | Data persistence |
+| TASK-OAUTH-002 | Complete OAuth 2.1 & Provider Auth | P0 Critical | 14 days | Provider integration |
+| TASK-MCP-004 | Production MCP Order Placement | P0 Critical | 18 days | Order fulfillment |
+| TASK-MCP-005 | Complete MCP Test Coverage | P0 Critical | 10 days | Production readiness |
 
 **Impact:** Backend non-functional, cannot launch MVP
-**Immediate Action Required:** Start Gateway API implementation
+**Immediate Action Required:** Start Batch 1 (Foundation) tasks
 
 ---
 
@@ -109,9 +115,9 @@ Total Tasks: 23
 
 ---
 
-### 🟡 Pending Tasks (7)
+### 🟡 Pending Tasks (7) - Legacy
 
-High-priority tasks ready to start:
+High-priority tasks ready to start (from previous planning):
 
 | ID | Title | Priority | Estimate | Dependencies |
 |----|-------|----------|----------|--------------|
@@ -128,6 +134,286 @@ High-priority tasks ready to start:
 2. Database Migrations (blocking data persistence)
 3. Complete OAuth (blocking MCP providers)
 4. Provider Order Placement (blocking order fulfillment)
+
+---
+
+## 🆕 New Batched Tasks (22 Tasks, ~347 Days Total Effort)
+
+> **Execution Model:** 5 tasks running in parallel per batch.
+> **Total Estimated Effort:** ~347 days (significantly reduced with parallelism).
+
+---
+
+### Batch 1: Critical/High - Foundation (5 Tasks, ~64 Days)
+
+> **Focus:** Core infrastructure, authentication, MCP production readiness.
+> **Parallelism:** All 5 tasks can begin in parallel where dependencies allow.
+
+| # | ID | Title | Priority | Estimate | Dependencies |
+|---|-----|-------|----------|----------|--------------|
+| 1 | TASK-DB-001 | Complete Database Schema & Migrations | P0 Critical | 12 days | None |
+| 2 | TASK-OAUTH-002 | Complete OAuth 2.1 & Provider Auth | P0 Critical | 14 days | None |
+| 3 | TASK-MCP-004 | Production MCP Order Placement | P0 Critical | 18 days | TASK-OAUTH-002 |
+| 4 | TASK-MCP-005 | Complete MCP Test Coverage | P0 Critical | 10 days | None |
+| 5 | TASK-DEPLOY-003 | Production Docker & K8s Deployment | P1 High | 10 days | TASK-DB-001 |
+
+**Batch 1 Details:**
+
+- **TASK-DB-001** - Complete Database Schema & Migrations (P0, 12 days)
+  - PostgreSQL schema design & migrations for all entities
+  - Elasticsearch index mappings
+  - Kafka topic provisioning
+  - Seed data and migration scripts
+  - Blocks: TASK-DEPLOY-003, all data persistence
+
+- **TASK-OAUTH-002** - Complete OAuth 2.1 & Provider Auth (P0, 14 days)
+  - Full OAuth 2.1 token exchange flow
+  - Encrypted token storage (AES-256-GCM)
+  - Token refresh mechanism with retry
+  - Provider-specific auth (Swiggy, Zomato)
+  - Multi-tenant auth support
+  - Blocks: TASK-MCP-004
+
+- **TASK-MCP-004** - Production MCP Order Placement (P0, 18 days)
+  - Order placement API via MCP adapter
+  - Provider-specific order format transformations
+  - Error handling, retry, and circuit breaker
+  - Order status tracking and webhook integration
+  - Real provider integration testing
+  - Depends on: TASK-OAUTH-002
+
+- **TASK-MCP-005** - Complete MCP Test Coverage (P0, 10 days)
+  - Unit tests for all provider classes
+  - Integration tests for end-to-end flows
+  - Performance tests (1000 concurrent, <500ms p95)
+  - Coverage target: 80% minimum
+  - Circuit breaker and failover testing
+
+- **TASK-DEPLOY-003** - Production Docker & K8s Deployment (P1, 10 days)
+  - Multi-stage Docker builds for all services
+  - Kubernetes manifests with HPA
+  - Helm charts for environment management
+  - CI/CD pipeline for production deployment
+  - Health checks, readiness probes, rolling updates
+  - Depends on: TASK-DB-001
+
+---
+
+### Batch 2: High - Data & Search (5 Tasks, ~95 Days)
+
+> **Focus:** Data layer enhancements, semantic capabilities, planning features.
+> **Parallelism:** TASK-VECTOR-001 and TASK-GRAPH-001 can run in parallel.
+
+| # | ID | Title | Priority | Estimate | Dependencies |
+|---|-----|-------|----------|----------|--------------|
+| 6 | TASK-VECTOR-001 | Vector DB & Semantic Caching | P1 High | 14 days | TASK-DB-001 |
+| 7 | TASK-GRAPH-001 | Neo4j User Preference Graph | P1 High | 14 days | TASK-DB-001 |
+| 8 | TASK-SEARCH-002 | Production Search Enhancements | P1 High | 22 days | TASK-VECTOR-001 |
+| 9 | TASK-PLANNER-001 | Party Planner Feature | P2 Medium | 20 days | TASK-SEARCH-002 |
+| 10 | TASK-PLANNER-002 | Diet Planner Feature | P2 Medium | 25 days | TASK-GRAPH-001 |
+
+**Batch 2 Details:**
+
+- **TASK-VECTOR-001** - Vector DB & Semantic Caching (P1, 14 days)
+  - Pinecone/Weaviate integration
+  - Embedding generation for restaurants and dishes
+  - Semantic similarity search
+  - Hybrid search (keyword + semantic)
+  - Semantic caching layer for query results
+  - Depends on: TASK-DB-001
+
+- **TASK-GRAPH-001** - Neo4j User Preference Graph (P1, 14 days)
+  - Neo4j schema design and setup
+  - User preference graph modeling
+  - Collaborative filtering via graph traversal
+  - Recommendation engine integration
+  - Real-time preference updates
+  - Depends on: TASK-DB-001
+
+- **TASK-SEARCH-002** - Production Search Enhancements (P1, 22 days)
+  - Personalized search ranking (user preference learning)
+  - Semantic search with embeddings
+  - Voice search support (speech-to-text)
+  - Search analytics dashboard
+  - Advanced filters (dietary, delivery time, price, rating)
+  - Depends on: TASK-VECTOR-001
+
+- **TASK-PLANNER-001** - Party Planner Feature (P2, 20 days)
+  - Group ordering support
+  - Menu curation for events
+  - Budget splitting and management
+  - Guest preference aggregation
+  - Timeline and delivery scheduling
+  - Depends on: TASK-SEARCH-002
+
+- **TASK-PLANNER-002** - Diet Planner Feature (P2, 25 days)
+  - Nutritional tracking and analysis
+  - Meal plan generation (weekly/monthly)
+  - Dietary restriction management
+  - Calorie and macro tracking
+  - Health goal integration
+  - Depends on: TASK-GRAPH-001
+
+---
+
+### Batch 3: Medium - Features (5 Tasks, ~95 Days)
+
+> **Focus:** Feature expansion, analytics, mobile, and provider integration.
+> **Parallelism:** Most tasks can run in parallel.
+
+| # | ID | Title | Priority | Estimate | Dependencies |
+|---|-----|-------|----------|----------|--------------|
+| 11 | TASK-PLANNER-003 | Bulk Ordering System | P2 Medium | 14 days | TASK-MCP-004 |
+| 12 | TASK-RA-001 | Restaurant Analytics Platform | P2 Medium | 20 days | TASK-DB-001 |
+| 13 | TASK-ES-001 | Event Streaming Enhancements | P2 Medium | 18 days | TASK-DB-001 |
+| 14 | TASK-MOBILE-001 | Capacitor Native Mobile Apps | P1 High | 18 days | TASK-DEPLOY-003 |
+| 15 | TASK-PROVIDER-001 | Real Provider Integration | P2 Medium | 25 days | TASK-OAUTH-002, TASK-MCP-004 |
+
+**Batch 3 Details:**
+
+- **TASK-PLANNER-003** - Bulk Ordering System (P2, 14 days)
+  - Bulk order creation and management
+  - Corporate ordering support
+  - Volume discounts and pricing tiers
+  - Delivery coordination for large orders
+  - Order splitting across providers
+  - Depends on: TASK-MCP-004
+
+- **TASK-RA-001** - Restaurant Analytics Platform (P2, 20 days)
+  - Restaurant performance dashboard
+  - Order analytics and trends
+  - Revenue and cost analysis
+  - Customer feedback aggregation
+  - Competitive benchmarking
+  - Depends on: TASK-DB-001
+
+- **TASK-ES-001** - Event Streaming Enhancements (P2, 18 days)
+  - Schema Registry integration (Confluent)
+  - Event replay mechanism
+  - Dead Letter Queue dashboard
+  - Event sourcing for orders
+  - Cross-region replication
+  - Depends on: TASK-DB-001
+
+- **TASK-MOBILE-001** - Capacitor Native Mobile Apps (P1, 18 days)
+  - iOS native initialization and configuration
+  - Android native initialization and configuration
+  - Push notification integration
+  - Native camera/location access
+  - App Store/Play Store build pipeline
+  - Depends on: TASK-DEPLOY-003
+
+- **TASK-PROVIDER-001** - Real Provider Integration (P2, 25 days)
+  - Real Swiggy API integration
+  - Real Zomato API integration
+  - Provider health monitoring
+  - Failover and fallback handling
+  - Provider onboarding automation
+  - Depends on: TASK-OAUTH-002, TASK-MCP-004
+
+---
+
+### Batch 4: Platform (5 Tasks, ~76 Days)
+
+> **Focus:** Platform capabilities, workflow engine, automation, CI/CD.
+> **Parallelism:** TASK-CICD-001 and TASK-NOTIF-001 can start early.
+
+| # | ID | Title | Priority | Estimate | Dependencies |
+|---|-----|-------|----------|----------|--------------|
+| 16 | TASK-WF-001 | Multi-Mode Workflow Engine | P1 High | 22 days | TASK-DB-001 |
+| 17 | TASK-BROWSER-001 | Browser Automation Engine | P2 Medium | 18 days | TASK-MCP-004 |
+| 18 | TASK-ML-001 | ML Provider Routing | P3 Low | 14 days | TASK-GRAPH-001 |
+| 19 | TASK-CICD-001 | Complete CI/CD Pipeline | P1 High | 10 days | TASK-DEPLOY-003 |
+| 20 | TASK-NOTIF-001 | Notification Service | P1 High | 12 days | TASK-DB-001 |
+
+**Batch 4 Details:**
+
+- **TASK-WF-001** - Multi-Mode Workflow Engine (P1, 22 days)
+  - Preference learning workflow
+  - Analytics workflow
+  - Recommendation workflow
+  - Multi-step workflow orchestration
+  - Workflow monitoring and retry logic
+  - Depends on: TASK-DB-001
+
+- **TASK-BROWSER-001** - Browser Automation Engine (P2, 18 days)
+  - Headless browser automation (Playwright)
+  - Provider page scraping and interaction
+  - Order placement via browser automation
+  - Anti-detection and rate limiting
+  - Session management and cookies
+  - Depends on: TASK-MCP-004
+
+- **TASK-ML-001** - ML Provider Routing (P3, 14 days)
+  - ML model for provider selection
+  - Feature engineering (latency, quality, cost)
+  - A/B testing framework for routing
+  - Model training pipeline
+  - Real-time scoring and routing
+  - Depends on: TASK-GRAPH-001
+
+- **TASK-CICD-001** - Complete CI/CD Pipeline (P1, 10 days)
+  - GitHub Actions workflows for all services
+  - Automated testing on PR
+  - Staging and production deployment pipelines
+  - Rollback automation
+  - Secret management integration
+  - Depends on: TASK-DEPLOY-003
+
+- **TASK-NOTIF-001** - Notification Service (P1, 12 days)
+  - Email notification provider configuration
+  - SMS provider integration
+  - Push notification service
+  - In-app notification system
+  - Notification preferences and opt-out
+  - Depends on: TASK-DB-001
+
+---
+
+### Batch 5: Quality (2 Tasks, ~26 Days)
+
+> **Focus:** Technical debt resolution and security hardening.
+> **Parallelism:** Both tasks can run in parallel.
+
+| # | ID | Title | Priority | Estimate | Dependencies |
+|---|-----|-------|----------|----------|--------------|
+| 21 | TASK-TD-001 | Technical Debt Resolution | P2 Medium | 12 days | All Batch 1-4 |
+| 22 | TASK-SEC-001 | Security Audit & Hardening | P1 High | 14 days | All Batch 1-4 |
+
+**Batch 5 Details:**
+
+- **TASK-TD-001** - Technical Debt Resolution (P2, 12 days)
+  - Cart workflow complexity refactoring
+  - OAuth service extraction
+  - Code duplication cleanup
+  - Dependency updates
+  - Documentation debt resolution
+  - Performance optimization pass
+  - Depends on: All Batch 1-4 tasks
+
+- **TASK-SEC-001** - Security Audit & Hardening (P1, 14 days)
+  - OWASP Top 10 compliance audit
+  - Penetration testing
+  - Secret scanning and rotation
+  - Input validation hardening
+  - Rate limiting and DDoS protection
+  - Security monitoring and alerting
+  - Depends on: All Batch 1-4 tasks
+
+---
+
+### Batch Execution Timeline
+
+```
+Batch 1 (Foundation)  ████████████████████  ~14 days (parallel)  ← CURRENT
+Batch 2 (Data/Search) ████████████████████████████  ~25 days (parallel)
+Batch 3 (Features)    ████████████████████████████  ~25 days (parallel)
+Batch 4 (Platform)    ████████████████████████  ~22 days (parallel)
+Batch 5 (Quality)     ██████████████  ~14 days (parallel)
+                      ─────────────────────────────────────────────
+                      Total: ~100 days with 5-task parallelism
+                      (347 days sequential effort)
+```
 
 ---
 
@@ -172,42 +458,50 @@ Test specification documents:
 
 ## 🎯 Sprint Planning
 
-### Current Sprint: Infrastructure & Backend Foundation
+### Current Sprint: Batch 1 - Foundation
 
-**Sprint Goal:** Complete Gateway API implementation and database migrations
+**Sprint Goal:** Complete critical foundation tasks (DB, OAuth, MCP, Deployment)
 
 **Duration:** 3 weeks
-**Start:** 2026-02-20
-**End:** 2026-03-13
+**Start:** 2026-02-23
+**End:** 2026-03-16
 
 #### Sprint Backlog:
 
-**Week 1 (Feb 20-27):**
-- [ ] Start Gateway API implementation
-- [ ] Complete database schema design
-- [ ] Continue OAuth implementation
+**Week 1 (Feb 23 - Mar 1):**
+- [ ] TASK-DB-001: Database schema design and initial migrations
+- [ ] TASK-OAUTH-002: Token exchange flow implementation
+- [ ] TASK-MCP-005: Unit test coverage for MCP providers
+- [ ] Continue Gateway API implementation (legacy pending)
 
-**Week 2 (Feb 28 - Mar 6):**
-- [ ] Gateway API modules (auth, restaurant, dish, cart)
-- [ ] Run database migrations
-- [ ] Complete OAuth integration
+**Week 2 (Mar 2-8):**
+- [ ] TASK-DB-001: Elasticsearch mappings and Kafka topics
+- [ ] TASK-OAUTH-002: Encrypted storage and refresh mechanism
+- [ ] TASK-MCP-004: Order placement API (after OAUTH-002)
+- [ ] TASK-DEPLOY-003: Docker multi-stage builds
 
-**Week 3 (Mar 7-13):**
-- [ ] Gateway API modules (order, payment, search)
-- [ ] Integration testing
-- [ ] Provider order placement
+**Week 3 (Mar 9-16):**
+- [ ] TASK-MCP-004: Provider-specific transformations and testing
+- [ ] TASK-MCP-005: Integration and performance tests
+- [ ] TASK-DEPLOY-003: Kubernetes manifests and Helm charts
+- [ ] Integration testing across all Batch 1 deliverables
 
 ---
 
-## 🚀 Next Sprint: MCP & Deployment
+## 🚀 Next Sprint: Batch 2 - Data & Search
 
-**Sprint Goal:** Complete MCP provider integration and deployment automation
+**Sprint Goal:** Data layer enhancements and semantic search capabilities
+
+**Duration:** 4 weeks
+**Start:** 2026-03-16
+**End:** 2026-04-13
 
 **Tasks:**
-- [ ] Real Swiggy/Zomato integration (if APIs available)
-- [ ] Docker build automation
-- [ ] Kubernetes deployment
-- [ ] Complete test coverage
+- [ ] TASK-VECTOR-001: Vector DB & Semantic Caching (14 days)
+- [ ] TASK-GRAPH-001: Neo4j User Preference Graph (14 days)
+- [ ] TASK-SEARCH-002: Production Search Enhancements (22 days)
+- [ ] TASK-PLANNER-001: Party Planner Feature (20 days)
+- [ ] TASK-PLANNER-002: Diet Planner Feature (25 days)
 
 ---
 
@@ -219,20 +513,28 @@ Test specification documents:
 Completed Last Week: 0 tasks
 Completed Last Month: 8 tasks
 Average Completion Rate: 2 tasks/week
+New Tasks Added: 22 (batched)
+Total Remaining Effort: ~347 days (sequential) / ~100 days (parallel)
 ```
 
 ### By Component:
 
-| Component | Tasks | Completed | In Progress | Pending |
-|-----------|-------|-----------|-------------|---------|
-| MCP Layer | 7 | 1 (14%) | 1 (14%) | 5 (71%) |
+| Component | Tasks | Completed | In Progress | Pending/New |
+|-----------|-------|-----------|-------------|-------------|
+| MCP Layer | 11 | 1 (9%) | 1 (9%) | 9 (82%) |
 | Gateway API | 3 | 0 (0%) | 0 (0%) | 3 (100%) |
-| Frontend | 3 | 2 (67%) | 0 (0%) | 1 (33%) |
-| Infrastructure | 4 | 1 (25%) | 0 (0%) | 3 (75%) |
-| Workflows | 2 | 1 (50%) | 0 (0%) | 1 (50%) |
-| Search | 2 | 1 (50%) | 0 (0%) | 1 (50%) |
-| Events | 1 | 1 (100%) | 0 (0%) | 0 (0%) |
+| Database | 2 | 0 (0%) | 0 (0%) | 2 (100%) |
+| Frontend/Mobile | 4 | 2 (50%) | 0 (0%) | 2 (50%) |
+| Infrastructure | 6 | 1 (17%) | 0 (0%) | 5 (83%) |
+| Workflows | 3 | 1 (33%) | 0 (0%) | 2 (67%) |
+| Search | 4 | 1 (25%) | 0 (0%) | 3 (75%) |
+| Data (Vector/Graph) | 2 | 0 (0%) | 0 (0%) | 2 (100%) |
+| Events | 2 | 1 (50%) | 0 (0%) | 1 (50%) |
+| Planners | 3 | 0 (0%) | 0 (0%) | 3 (100%) |
+| Analytics | 1 | 0 (0%) | 0 (0%) | 1 (100%) |
+| Security/Quality | 2 | 0 (0%) | 0 (0%) | 2 (100%) |
 | Chrome Ext | 1 | 1 (100%) | 0 (0%) | 0 (0%) |
+| Browser Auto | 1 | 0 (0%) | 0 (0%) | 1 (100%) |
 
 ---
 
@@ -333,15 +635,30 @@ Format: `TASK-{COMPONENT}-{NUMBER}-{slug}.md`
 
 **Components:**
 - MCP = MCP Layer
+- DB = Database
+- OAUTH = Authentication/OAuth
 - DEPLOY = Deployment
 - SEARCH = Search
-- EVENTS = Event Streaming
-- WORKFLOWS = Temporal Workflows
+- VECTOR = Vector Database
+- GRAPH = Graph Database (Neo4j)
+- PLANNER = Planner Features (Party, Diet, Bulk)
+- RA = Restaurant Analytics
+- ES = Event Streaming
+- WF = Workflow Engine
+- BROWSER = Browser Automation
+- ML = Machine Learning
+- CICD = CI/CD Pipeline
+- NOTIF = Notification Service
+- MOBILE = Mobile Apps
+- PROVIDER = Provider Integration
+- SEC = Security
+- TD = Technical Debt
+- EVENTS = Event Streaming (legacy)
+- WORKFLOWS = Temporal Workflows (legacy)
 - FRONTEND = Frontend Apps
 - CHROME = Chrome Extension
 - LLM = LLM Orchestration
 - OPS = Operations/DevOps
-- TD = Technical Debt
 - BUG = Bug Fix
 
 **Example:** `TASK-MCP-001-complete-oauth-implementation.md`

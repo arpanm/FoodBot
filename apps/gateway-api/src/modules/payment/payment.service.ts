@@ -78,16 +78,26 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('Order not found');
     }
 
-    // Validate card number
+    // Validate card number and mask sensitive data
     if (data.paymentMethod === 'card' && data.cardDetails) {
       const cardNumber = data.cardDetails.cardNumber as string;
       if (cardNumber && cardNumber.length < 16) {
         throw new BadRequestException('Invalid card number');
       }
+      // SECURITY: In production, send to PCI-compliant tokenization service
       // Test card that declines
       if (cardNumber === '4000000000000002') {
         throw new BadRequestException('Payment declined');
       }
+
+      // SECURITY: Mask card details immediately after validation - never store or log raw PAN/CVV
+      const maskedCard = {
+        lastFourDigits: String(cardNumber).slice(-4),
+        brand: (data.cardDetails.brand as string) || 'unknown',
+        expiryMonth: data.cardDetails.expiryMonth,
+        expiryYear: data.cardDetails.expiryYear,
+      };
+      data.cardDetails = maskedCard;
     }
 
     // Simulate insufficient funds for large wallet payments
@@ -123,8 +133,18 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('Payment not found');
     }
 
-    if (payment.confirmationToken && payment.confirmationToken !== confirmationToken) {
-      throw new BadRequestException('Invalid confirmation token');
+    if (payment.userId !== userId) {
+      throw new ForbiddenException('Forbidden resource');
+    }
+
+    if (payment.confirmationToken) {
+      const expectedToken = Buffer.from(payment.confirmationToken, 'utf8');
+      const providedToken = Buffer.from(confirmationToken, 'utf8');
+      const isValid = expectedToken.length === providedToken.length &&
+        crypto.timingSafeEqual(expectedToken, providedToken);
+      if (!isValid) {
+        throw new BadRequestException('Invalid confirmation token');
+      }
     }
 
     if (payment.status === 'completed') {
@@ -165,7 +185,11 @@ export class PaymentService implements OnModuleInit {
     }
 
     // Verify webhook signature using crypto.timingSafeEqual to prevent timing attacks
-    const secret = process.env.PAYMENT_WEBHOOK_SECRET || 'test-webhook-secret';
+    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET || (isTestEnv ? 'test-webhook-secret' : undefined);
+    if (!secret) {
+      throw new InternalServerErrorException('PAYMENT_WEBHOOK_SECRET is not configured');
+    }
     const expectedSignature = this.computeWebhookSignature(data, secret);
 
     if (!this.verifySignature(webhookSignature, expectedSignature)) {
@@ -185,7 +209,7 @@ export class PaymentService implements OnModuleInit {
     return { received: true };
   }
 
-  private computeWebhookSignature(payload: any, secret: string): string {
+  private computeWebhookSignature(payload: Record<string, unknown>, secret: string): string {
     return crypto
       .createHmac('sha256', secret)
       .update(JSON.stringify(payload))

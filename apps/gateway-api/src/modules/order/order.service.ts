@@ -3,19 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { OrderItem } from '../../entities/order-item.entity';
-import { Order } from '../../entities/order.entity';
+import { Order, OrderStatus, OrderPaymentStatus } from '../../entities/order.entity';
 import { OrderEventProducer } from '../../events/producers/order-event.producer';
-
-const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-  pending: ['confirmed', 'preparing', 'cancelled'],
-  confirmed: ['preparing', 'cancelled'],
-  preparing: ['ready', 'cancelled'],
-  ready: ['out_for_delivery', 'out-for-delivery'],
-  'out_for_delivery': ['delivered'],
-  'out-for-delivery': ['delivered'],
-  delivered: [],
-  cancelled: ['pending', 'confirmed', 'preparing'],
-};
+import { ORDER_STATUS_TRANSITIONS } from './order-status-transitions';
 
 const VALID_PAYMENT_METHODS = ['card', 'cash', 'upi', 'wallet'];
 
@@ -36,6 +26,10 @@ export class OrderService implements OnModuleInit {
   }
 
   private async seedTestOrders() {
+    if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
+      return;
+    }
+
     const testOrders = [
       {
         id: 'order-123',
@@ -46,9 +40,9 @@ export class OrderService implements OnModuleInit {
         tax: 2.60,
         discount: 0,
         total: 32.57,
-        status: 'confirmed',
+        status: OrderStatus.CONFIRMED,
         paymentMethod: 'card',
-        paymentStatus: 'pending',
+        paymentStatus: OrderPaymentStatus.PENDING,
         deliveryAddress: { street: '123 Main St', city: 'SF', state: 'CA', zipCode: '94105', country: 'USA' },
         estimatedDeliveryTime: new Date(Date.now() + 30 * 60 * 1000),
         trackingUpdates: [
@@ -64,9 +58,9 @@ export class OrderService implements OnModuleInit {
         tax: 1.30,
         discount: 0,
         total: 18.28,
-        status: 'delivered',
+        status: OrderStatus.DELIVERED,
         paymentMethod: 'card',
-        paymentStatus: 'completed',
+        paymentStatus: OrderPaymentStatus.COMPLETED,
         deliveryAddress: { street: '123 Main St', city: 'SF', state: 'CA', zipCode: '94105', country: 'USA' },
         estimatedDeliveryTime: new Date(Date.now() - 30 * 60 * 1000),
         actualDeliveryTime: new Date(),
@@ -84,9 +78,9 @@ export class OrderService implements OnModuleInit {
         tax: 1.30,
         discount: 0,
         total: 18.28,
-        status: 'pending',
+        status: OrderStatus.PENDING,
         paymentMethod: 'card',
-        paymentStatus: 'pending',
+        paymentStatus: OrderPaymentStatus.PENDING,
         deliveryAddress: { street: '456 Elm St', city: 'SF', state: 'CA', zipCode: '94105', country: 'USA' },
         estimatedDeliveryTime: new Date(Date.now() + 45 * 60 * 1000),
         trackingUpdates: [
@@ -149,9 +143,9 @@ export class OrderService implements OnModuleInit {
       tax,
       discount: 0,
       total: subtotal + deliveryFee + tax,
-      status: 'pending',
+      status: OrderStatus.PENDING,
       paymentMethod: data.paymentMethod,
-      paymentStatus: 'pending',
+      paymentStatus: OrderPaymentStatus.PENDING,
       deliveryAddress: data.deliveryAddress,
       specialInstructions: data.specialInstructions,
       estimatedDeliveryTime: new Date(Date.now() + 45 * 60 * 1000),
@@ -193,22 +187,24 @@ export class OrderService implements OnModuleInit {
     page: number;
     limit: number;
   }> {
-    let allOrders = await this.orderRepository.find({
-      where: { userId },
-      relations: ['items'],
-    });
+    const page = filters.page || 1;
+    const limit = Math.min(Number(filters.limit) || 20, 100); // Max 100 per page
+    const skip = (page - 1) * limit;
 
+    const whereCondition: Record<string, unknown> = { userId };
     if (filters.status) {
-      allOrders = allOrders.filter((o) => o.status === filters.status);
+      whereCondition.status = filters.status;
     }
 
-    const total = allOrders.length;
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const start = (page - 1) * limit;
-    const paginated = allOrders.slice(start, start + limit);
+    const [orders, total] = await this.orderRepository.findAndCount({
+      where: whereCondition,
+      relations: ['items'],
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
 
-    return { orders: paginated, total, page, limit };
+    return { orders, total, page, limit };
   }
 
   async findById(id: string, userId: string): Promise<Order> {
@@ -282,7 +278,7 @@ export class OrderService implements OnModuleInit {
     return saved;
   }
 
-  async updateStatus(id: string, newStatus: string): Promise<Order> {
+  async updateStatus(id: string, newStatus: string, requestingUserId?: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id },
       relations: ['items'],
@@ -291,7 +287,22 @@ export class OrderService implements OnModuleInit {
       throw new NotFoundException('Order not found');
     }
 
-    const allowedTransitions = VALID_STATUS_TRANSITIONS[order.status];
+    // SEC-002: Ownership verification for non-admin callers.
+    // When requestingUserId is provided (restaurant owner context), verify that the
+    // requesting user actually owns the restaurant associated with this order.
+    // Currently the order has a restaurantId field but there is no restaurant-to-owner
+    // mapping available in this service to perform full verification.
+    // TODO: Implement full restaurant ownership verification once a RestaurantService
+    // or restaurant-owner mapping repository is available. The check should confirm that
+    // requestingUserId is the owner of order.restaurantId before allowing status updates.
+    if (requestingUserId) {
+      this.logger.warn(
+        `Order status update by user ${requestingUserId} for order ${id} ` +
+        `(restaurantId: ${order.restaurantId}) - full restaurant ownership verification not yet implemented`
+      );
+    }
+
+    const allowedTransitions = ORDER_STATUS_TRANSITIONS[order.status];
     if (!allowedTransitions || !allowedTransitions.includes(newStatus)) {
       throw new BadRequestException(`Invalid status transition from ${order.status} to ${newStatus}`);
     }
@@ -331,21 +342,23 @@ export class OrderService implements OnModuleInit {
     page: number;
     limit: number;
   }> {
-    let allOrders = await this.orderRepository.find({
-      where: { restaurantId },
-      relations: ['items'],
-    });
+    const page = filters.page || 1;
+    const limit = Math.min(Number(filters.limit) || 20, 100); // Max 100 per page
+    const skip = (page - 1) * limit;
 
+    const whereCondition: Record<string, unknown> = { restaurantId };
     if (filters.status) {
-      allOrders = allOrders.filter((o) => o.status === filters.status);
+      whereCondition.status = filters.status;
     }
 
-    const total = allOrders.length;
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const start = (page - 1) * limit;
-    const paginated = allOrders.slice(start, start + limit);
+    const [orders, total] = await this.orderRepository.findAndCount({
+      where: whereCondition,
+      relations: ['items'],
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
 
-    return { orders: paginated, total, page, limit };
+    return { orders, total, page, limit };
   }
 }

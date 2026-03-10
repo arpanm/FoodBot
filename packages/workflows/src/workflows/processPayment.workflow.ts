@@ -20,7 +20,7 @@
  * - Maximum attempts: 5
  */
 
-import { proxyActivities, log } from '@temporalio/workflow';
+import { proxyActivities, log, ApplicationFailure } from '@temporalio/workflow';
 
 // Type definitions
 interface PaymentDetails {
@@ -113,7 +113,7 @@ export async function processPaymentWorkflow(
     // Step 2: Validate payment details
     log.info('Validating payment details', { method: paymentDetails.method });
     if (paymentDetails.amount <= 0) {
-      throw new Error('Invalid amount');
+      throw ApplicationFailure.nonRetryable('Invalid amount', 'INVALID_PAYMENT');
     }
 
     // Step 3: Save initial payment record
@@ -214,7 +214,10 @@ export async function processPaymentWorkflow(
         log.error('Failed to notify customer of payment failure', { notifyError });
       }
 
-      throw new Error(`Payment failed: ${paymentResult.errorMessage}`);
+      throw ApplicationFailure.nonRetryable(
+        `Payment failed: ${paymentResult.errorMessage}`,
+        'PAYMENT_DECLINED'
+      );
     }
 
     // Step 7: Handle partial authorization
@@ -231,7 +234,7 @@ export async function processPaymentWorkflow(
           errorMessage: 'Partial payment not allowed',
           updatedAt: new Date(),
         });
-        throw new Error('Partial payment not allowed');
+        throw ApplicationFailure.nonRetryable('Partial payment not allowed', 'PARTIAL_NOT_ALLOWED');
       }
     }
 

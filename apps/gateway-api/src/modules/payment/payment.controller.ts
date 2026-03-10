@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 
 import { Public } from '../auth/decorators/public.decorator';
@@ -25,6 +26,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('payments')
+@Throttle({ default: { limit: 20, ttl: 60000 } })
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
@@ -48,6 +50,7 @@ export class PaymentController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   handleWebhook(

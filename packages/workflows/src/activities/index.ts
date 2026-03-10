@@ -104,3 +104,26 @@ export {
   searchDishes,
   initializeLLMService,
 } from './llm.activities';
+
+// ============================================================================
+// Party Planner Activities
+// ============================================================================
+export {
+  validateRestaurantAvailability,
+  placePartyOrder,
+  notifyPartyStatus,
+  cancelPartyOrder,
+  initializePartyServices,
+} from './party-activities';
+
+// ============================================================================
+// Diet Planner Activities
+// ============================================================================
+export {
+  getMealsForToday,
+  validateMealAvailability,
+  placeMealOrder,
+  updateNutritionLog,
+  generateWeeklyMeals,
+  notifyMealPlanReady,
+} from './diet.activities';

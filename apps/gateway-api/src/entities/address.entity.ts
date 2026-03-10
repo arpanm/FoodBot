@@ -3,7 +3,6 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   Index,
@@ -11,7 +10,7 @@ import {
 
 import { User } from './user.entity';
 
-@Entity('addresses')
+@Entity('user_addresses')
 export class Address {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -27,8 +26,11 @@ export class Address {
   @Column({ type: 'varchar', length: 50 })
   label!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  street!: string;
+  @Column({ type: 'varchar', length: 255, name: 'address_line_1' })
+  addressLine1!: string;
+
+  @Column({ type: 'varchar', length: 255, name: 'address_line_2', nullable: true })
+  addressLine2!: string | null;
 
   @Column({ type: 'varchar', length: 100 })
   city!: string;
@@ -36,24 +38,18 @@ export class Address {
   @Column({ type: 'varchar', length: 100 })
   state!: string;
 
-  @Column({ type: 'varchar', length: 20, name: 'zip_code' })
-  zipCode!: string;
+  @Column({ type: 'varchar', length: 20 })
+  pincode!: string;
 
-  @Column({ type: 'varchar', length: 100, default: 'USA' })
-  country!: string;
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lat!: number | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, default: 0 })
-  latitude!: number;
-
-  @Column({ type: 'decimal', precision: 10, scale: 7, default: 0 })
-  longitude!: number;
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lng!: number | null;
 
   @Column({ type: 'boolean', default: false, name: 'is_default' })
   isDefault!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

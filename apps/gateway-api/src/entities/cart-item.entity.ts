@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 
 import { Cart } from './cart.entity';
+import { Dish } from './dish.entity';
 
 @Entity('cart_items')
 export class CartItem {
@@ -22,21 +23,23 @@ export class CartItem {
   @JoinColumn({ name: 'cart_id' })
   cart!: Cart;
 
-  @Column({ type: 'varchar', length: 255, name: 'dish_id' })
+  @Index()
+  @Column({ type: 'uuid', name: 'dish_id' })
   dishId!: string;
 
-  @Column({ type: 'varchar', length: 255, name: 'dish_name' })
-  dishName!: string;
-
-  @Column({ type: 'varchar', length: 255, name: 'restaurant_id' })
-  restaurantId!: string;
+  @ManyToOne(() => Dish, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'dish_id' })
+  dish!: Dish;
 
   @Column({ type: 'integer' })
   quantity!: number;
 
-  @Column({ type: 'decimal', precision: 8, scale: 2 })
-  price!: number;
+  @Column({ type: 'simple-json', name: 'customizations_json', nullable: true })
+  customizationsJson!: Record<string, unknown> | null;
 
-  @Column({ type: 'text', nullable: true, name: 'special_instructions' })
-  specialInstructions?: string;
+  @Column({ type: 'decimal', precision: 8, scale: 2, name: 'unit_price' })
+  unitPrice!: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_price' })
+  totalPrice!: number;
 }

@@ -11,6 +11,7 @@
  * - Delivery partner re-assignment on timeout
  */
 
+import { ApplicationFailure } from '@temporalio/common';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
 
@@ -132,8 +133,12 @@ describe('OrderFulfillmentWorkflow', () => {
         { id: 'order_2', status: 'out_for_delivery' },
         { id: 'order_2', status: 'delivered' }
       );
-      mockNotifyRestaurant.throwErrors(new Error('Notification service down'));
-      mockNotifyCustomer.throwErrors(new Error('Push service unavailable'));
+      // Use nonRetryable errors to prevent Temporal from retrying (which would cause real backoff delays)
+      const notifError = ApplicationFailure.nonRetryable('Notification service down', 'NOTIFICATION_FAILED');
+      const pushError = ApplicationFailure.nonRetryable('Push service unavailable', 'NOTIFICATION_FAILED');
+      // Provide enough errors for all notification calls throughout the workflow
+      mockNotifyRestaurant.throwErrors(notifError, notifError, notifError, notifError, notifError);
+      mockNotifyCustomer.throwErrors(pushError, pushError, pushError, pushError, pushError, pushError, pushError, pushError);
       mockAssignDeliveryPartner.respondWith({
         partnerId: 'partner_2',
         partnerName: 'Test Driver 2',

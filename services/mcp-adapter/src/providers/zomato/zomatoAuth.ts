@@ -3,7 +3,7 @@
  * Supports dual auth: API key (read-only) and session token (full access).
  */
 
-import type { TokenManager } from '../../auth/TokenManager.js';
+import type { TokenManager } from '../../auth/token-manager.js';
 import type { GeoLocation } from '../../types/common.types.js';
 
 export interface ZomatoUserContext {

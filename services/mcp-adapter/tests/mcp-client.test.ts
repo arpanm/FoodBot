@@ -118,9 +118,17 @@ describe('MCPClient Integration Tests', () => {
       });
 
       global.fetch = jest.fn().mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(() => resolve({ ok: true }), 1000);
+        (_url: string, init?: RequestInit) =>
+          new Promise((resolve, reject) => {
+            const timer = setTimeout(() => resolve({ ok: true }), 1000);
+            if (init?.signal) {
+              init.signal.addEventListener('abort', () => {
+                clearTimeout(timer);
+                const abortError = new Error('The operation was aborted');
+                abortError.name = 'AbortError';
+                reject(abortError);
+              });
+            }
           })
       );
 

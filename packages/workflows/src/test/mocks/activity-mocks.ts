@@ -104,6 +104,24 @@ export const mockNotifyRestaurant = createMockActivity<[string], void>();
 export const mockNotifyCustomer = createMockActivity<[string, string], void>();
 export const mockCancelOrder = createMockActivity<[string], Order>();
 
+// Additional PlaceOrder workflow activities
+export const mockValidateOrderActivity = createMockActivity<
+  [string, CartItem[]],
+  { valid: boolean; unavailableItems: string[] }
+>();
+export const mockCalculatePricingActivity = createMockActivity<
+  [CartItem[], string],
+  { subtotal: number; tax: number; deliveryFee: number; discount: number; total: number }
+>();
+export const mockRouteToProviderActivity = createMockActivity<
+  [string, CartItem[]],
+  { provider: string; fallbackUsed: boolean; subOrderId: string }
+>();
+export const mockMonitorFulfillmentActivity = createMockActivity<
+  [string, string],
+  { status: string; estimatedDeliveryTime: string }
+>();
+
 // ============================================================================
 // Recommendation Activities
 // ============================================================================
@@ -215,6 +233,17 @@ export const mockCallDeliveryService = createMockActivity<[string], any>();
 export const mockCallInventoryService = createMockActivity<[string], any>();
 
 // ============================================================================
+// Diet Planner Activities
+// ============================================================================
+
+export const mockGetMealsForToday = createMockActivity<[string, string], any[]>();
+export const mockValidateMealAvailability = createMockActivity<[any[]], any>();
+export const mockPlaceMealOrder = createMockActivity<[string, any], void>();
+export const mockUpdateNutritionLog = createMockActivity<[string, string, number], void>();
+export const mockGenerateWeeklyMeals = createMockActivity<[string], boolean>();
+export const mockNotifyMealPlanReady = createMockActivity<[string, string], void>();
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
@@ -240,6 +269,10 @@ export function resetAllMocks(): void {
   mockNotifyRestaurant.reset();
   mockNotifyCustomer.reset();
   mockCancelOrder.reset();
+  mockValidateOrderActivity.reset();
+  mockCalculatePricingActivity.reset();
+  mockRouteToProviderActivity.reset();
+  mockMonitorFulfillmentActivity.reset();
 
   mockLoadPreferenceGraph.reset();
   mockGenerateRecommendations.reset();
@@ -273,6 +306,13 @@ export function resetAllMocks(): void {
   mockCallPaymentGateway.reset();
   mockCallDeliveryService.reset();
   mockCallInventoryService.reset();
+
+  mockGetMealsForToday.reset();
+  mockValidateMealAvailability.reset();
+  mockPlaceMealOrder.reset();
+  mockUpdateNutritionLog.reset();
+  mockGenerateWeeklyMeals.reset();
+  mockNotifyMealPlanReady.reset();
 }
 
 /**
@@ -298,6 +338,11 @@ export function getAllMockActivities(): Record<string, any> {
     notifyRestaurant: mockNotifyRestaurant.fn,
     notifyCustomer: mockNotifyCustomer.fn,
     cancelOrder: mockCancelOrder.fn,
+    validateOrderActivity: mockValidateOrderActivity.fn,
+    calculatePricingActivity: mockCalculatePricingActivity.fn,
+    routeToProviderActivity: mockRouteToProviderActivity.fn,
+    monitorFulfillmentActivity: mockMonitorFulfillmentActivity.fn,
+    processRefundActivity: mockRefundPayment.fn,
 
     loadPreferenceGraph: mockLoadPreferenceGraph.fn,
     generateRecommendations: mockGenerateRecommendations.fn,
@@ -331,5 +376,12 @@ export function getAllMockActivities(): Record<string, any> {
     callPaymentGateway: mockCallPaymentGateway.fn,
     callDeliveryService: mockCallDeliveryService.fn,
     callInventoryService: mockCallInventoryService.fn,
+
+    getMealsForToday: mockGetMealsForToday.fn,
+    validateMealAvailability: mockValidateMealAvailability.fn,
+    placeMealOrder: mockPlaceMealOrder.fn,
+    updateNutritionLog: mockUpdateNutritionLog.fn,
+    generateWeeklyMeals: mockGenerateWeeklyMeals.fn,
+    notifyMealPlanReady: mockNotifyMealPlanReady.fn,
   };
 }

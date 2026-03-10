@@ -6,7 +6,7 @@ import { loadConfig, type AdapterConfig } from './config/adapter.config.js';
 import { loadSwiggyConfig } from './config/swiggy.config.js';
 import { loadZomatoConfig } from './config/zomato.config.js';
 import { CacheManager, InMemoryCacheBackend } from './cache/CacheManager.js';
-import { TokenManager, InMemoryTokenStore } from './auth/TokenManager.js';
+import { TokenManager, InMemoryTokenStore } from './auth/token-manager.js';
 import { SwiggyAuth } from './providers/swiggy/swiggyAuth.js';
 import { SwiggyAPIProvider } from './providers/swiggy/SwiggyAPIProvider.js';
 import { ZomatoAuth } from './providers/zomato/zomatoAuth.js';
@@ -42,7 +42,10 @@ export function createApp(): AppContext {
 
   // Token management
   const tokenStore = new InMemoryTokenStore();
-  const tokenManager = new TokenManager(tokenStore, config.encryption.tokenEncryptionKey);
+  const tokenManager = new TokenManager(tokenStore, {
+    primaryKeyHex: config.encryption.tokenEncryptionKey,
+    primaryKeyVersion: 1,
+  });
 
   // Auth managers
   const swiggyAuth = new SwiggyAuth(tokenManager);

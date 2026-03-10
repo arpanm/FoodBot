@@ -2,8 +2,8 @@
  * Integration tests for OAuth 2.1 implementation
  */
 
-import { OAuthManager } from '../src/auth/OAuthManager.js';
-import type { TokenStore } from '../src/auth/TokenManager.js';
+import { OAuthManager } from '../src/auth/oauth-manager.js';
+import type { TokenStore } from '../src/auth/auth.types.js';
 
 describe('OAuthManager Integration Tests', () => {
   let oauthManager: OAuthManager;
@@ -40,7 +40,7 @@ describe('OAuthManager Integration Tests', () => {
       );
       expect(result.authUrl).toContain('client_id=test-client-id');
       expect(result.authUrl).toContain('response_type=code');
-      expect(result.authUrl).toContain('scope=read%20write');
+      expect(result.authUrl).toMatch(/scope=read[+%20]write/);
       expect(result.state).toBeTruthy();
     });
 

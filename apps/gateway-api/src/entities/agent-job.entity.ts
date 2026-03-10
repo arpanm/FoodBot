@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum JobStatus {
@@ -26,48 +27,53 @@ export enum JobAction {
 @Entity('agent_jobs')
 export class AgentJob {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
+  @Index()
   @Column({ type: 'uuid' })
-  userId: string;
+  userId!: string;
 
+  @Index()
   @Column({
-    type: 'enum',
+    type: 'varchar',
+    length: 30,
     enum: JobStatus,
     default: JobStatus.PENDING,
   })
-  status: JobStatus;
+  status!: JobStatus;
 
+  @Index()
   @Column({
-    type: 'enum',
+    type: 'varchar',
+    length: 30,
     enum: JobAction,
   })
-  action: JobAction;
+  action!: JobAction;
 
   @Column({ type: 'varchar', length: 50 })
-  platform: string;
+  platform!: string;
 
-  @Column({ type: 'jsonb' })
-  payload: Record<string, any>;
+  @Column({ type: 'simple-json' })
+  payload!: Record<string, unknown>;
 
-  @Column({ type: 'jsonb', nullable: true })
-  result: Record<string, any> | null;
+  @Column({ type: 'simple-json', nullable: true })
+  result!: Record<string, unknown> | null;
 
   @Column({ type: 'text', nullable: true })
-  currentStep: string | null;
+  currentStep!: string | null;
 
   @Column({ type: 'int', default: 0 })
-  progress: number;
+  progress!: number;
 
   @Column({ type: 'text', nullable: true })
-  errorMessage: string | null;
+  errorMessage!: string | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date | null;
+  completedAt!: Date | null;
 }

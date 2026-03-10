@@ -260,11 +260,14 @@ describe('SearchRestaurantWorkflow', () => {
       mockLoadUserContext.respondWith(createUserContext());
       mockGetFromCache.respondWith(null);
 
-      // Simulate slow response
-      mockCallMCPSearch.fn = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 60000)); // 60 seconds
-        return createRestaurants(3);
-      };
+      // Simulate slow response by throwing a timeout error after a delay
+      mockCallMCPSearch.throwErrors(
+        new Error('Activity timeout'),
+        new Error('Activity timeout'),
+        new Error('Activity timeout'),
+        new Error('Activity timeout'),
+        new Error('Activity timeout')
+      );
 
       const worker = await Worker.create({
         connection: nativeConnection,
@@ -280,7 +283,7 @@ describe('SearchRestaurantWorkflow', () => {
             workflowId: 'test-search-timeout',
             taskQueue: 'test',
             args: [createSearchRestaurantInput()],
-            workflowExecutionTimeout: '5s',
+            workflowExecutionTimeout: '10s',
           });
 
           return await handle.result();

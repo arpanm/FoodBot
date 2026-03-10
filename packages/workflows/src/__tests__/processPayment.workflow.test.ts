@@ -47,6 +47,8 @@ describe('ProcessPaymentWorkflow', () => {
 
   beforeEach(() => {
     resetAllMocks();
+    // Default: no existing payment (idempotency check returns null)
+    mockLoadFromDatabase.respondWith(null);
   });
 
   describe('Happy Path', () => {
@@ -167,14 +169,13 @@ describe('ProcessPaymentWorkflow', () => {
       mockCallPaymentGateway.fn = async () => {
         callCount++;
         if (callCount < 3) {
-          // Simulate timeout
-          await new Promise((resolve) => setTimeout(resolve, 10000));
           throw new Error('Gateway timeout');
         }
         return createSuccessfulPaymentResult();
       };
 
       mockSaveToDatabase.respondWith({ id: 'payment_126', ...paymentDetails });
+      mockUpdateDatabase.respondWith({ id: 'payment_126', ...paymentDetails });
       mockNotifyCustomer.respondWith(undefined);
 
       const worker = await Worker.create({
@@ -206,10 +207,14 @@ describe('ProcessPaymentWorkflow', () => {
       // Arrange
       const paymentDetails = createPaymentDetails({ amount: 50.0 });
 
-      mockCallPaymentGateway.fn = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        throw new Error('Gateway timeout');
-      };
+      // Use throwErrors to simulate persistent gateway failure
+      mockCallPaymentGateway.throwErrors(
+        new Error('Gateway timeout'),
+        new Error('Gateway timeout'),
+        new Error('Gateway timeout'),
+        new Error('Gateway timeout'),
+        new Error('Gateway timeout')
+      );
 
       mockSaveToDatabase.respondWith({ id: 'payment_127', status: 'failed' });
       mockUpdateDatabase.respondWith({ id: 'payment_127', status: 'failed' });
@@ -257,26 +262,21 @@ describe('ProcessPaymentWorkflow', () => {
         activities: getAllMockActivities(),
       });
 
-      // Act
-      const result = await worker.runUntil(async () => {
-        const handle = await client.workflow.start('processPaymentWorkflow', {
-          workflowId: 'test-payment-declined',
-          taskQueue: 'test',
-          args: [{ orderId: 'order_128', paymentDetails }],
-        });
+      // Act & Assert - workflow should fail with WorkflowFailedError
+      await expect(
+        worker.runUntil(async () => {
+          const handle = await client.workflow.start('processPaymentWorkflow', {
+            workflowId: 'test-payment-declined',
+            taskQueue: 'test',
+            args: [{ orderId: 'order_128', paymentDetails }],
+          });
 
-        try {
           return await handle.result();
-        } catch (error) {
-          // Workflow should fail gracefully
-          return { status: 'failed', errorMessage: 'Insufficient funds' };
-        }
-      });
+        })
+      ).rejects.toThrow(WorkflowFailedError);
 
-      // Assert
-      expect(result.status).toBe('failed');
-      expect(result.errorMessage).toContain('Insufficient funds');
-      expect(mockCallPaymentGateway.getCallCount()).toBe(1); // No retry on hard decline
+      // Verify gateway was called and customer was notified
+      expect(mockCallPaymentGateway.getCallCount()).toBe(1);
       expect(mockNotifyCustomer.getCallCount()).toBeGreaterThanOrEqual(1);
     });
 
@@ -291,6 +291,7 @@ describe('ProcessPaymentWorkflow', () => {
 
       mockCallPaymentGateway.respondWith(declinedResult);
       mockSaveToDatabase.respondWith({ id: 'payment_129', status: 'failed' });
+      mockUpdateDatabase.respondWith({ id: 'payment_129', status: 'failed' });
       mockNotifyCustomer.respondWith(undefined);
       mockSendEmail.respondWith(undefined); // Send fraud alert email
 
@@ -301,20 +302,18 @@ describe('ProcessPaymentWorkflow', () => {
         activities: getAllMockActivities(),
       });
 
-      // Act
-      await worker.runUntil(async () => {
-        const handle = await client.workflow.start('processPaymentWorkflow', {
-          workflowId: 'test-payment-fraud',
-          taskQueue: 'test',
-          args: [{ orderId: 'order_129', paymentDetails }],
-        });
+      // Act & Assert
+      await expect(
+        worker.runUntil(async () => {
+          const handle = await client.workflow.start('processPaymentWorkflow', {
+            workflowId: 'test-payment-fraud',
+            taskQueue: 'test',
+            args: [{ orderId: 'order_129', paymentDetails }],
+          });
 
-        try {
           return await handle.result();
-        } catch (error) {
-          return { status: 'failed', errorMessage: error.message };
-        }
-      });
+        })
+      ).rejects.toThrow(WorkflowFailedError);
 
       // Assert
       expect(mockSendEmail.getCallCount()).toBeGreaterThanOrEqual(1); // Fraud alert sent
@@ -338,6 +337,7 @@ describe('ProcessPaymentWorkflow', () => {
       };
 
       mockSaveToDatabase.respondWith({ id: 'payment_130', ...paymentDetails });
+      mockUpdateDatabase.respondWith({ id: 'payment_130', ...paymentDetails });
       mockNotifyCustomer.respondWith(undefined);
 
       const worker = await Worker.create({
@@ -381,6 +381,7 @@ describe('ProcessPaymentWorkflow', () => {
       };
 
       mockSaveToDatabase.respondWith({ id: 'payment_131', ...paymentDetails });
+      mockUpdateDatabase.respondWith({ id: 'payment_131', ...paymentDetails });
       mockNotifyCustomer.respondWith(undefined);
 
       const worker = await Worker.create({
@@ -458,6 +459,7 @@ describe('ProcessPaymentWorkflow', () => {
       mockLoadFromDatabase.respondWith(null); // No existing payment
       mockCallPaymentGateway.respondWith(createSuccessfulPaymentResult());
       mockSaveToDatabase.respondWith({ id: 'payment_133', orderId });
+      mockUpdateDatabase.respondWith({ id: 'payment_133', status: 'success' });
       mockNotifyCustomer.respondWith(undefined);
 
       const worker = await Worker.create({
@@ -467,8 +469,8 @@ describe('ProcessPaymentWorkflow', () => {
         activities: getAllMockActivities(),
       });
 
-      // Act - Start first workflow
-      const result1Promise = worker.runUntil(async () => {
+      // Act - Start workflow and get result using same handle
+      const result1 = await worker.runUntil(async () => {
         const handle = await client.workflow.start('processPaymentWorkflow', {
           workflowId,
           taskQueue: 'test',
@@ -478,11 +480,9 @@ describe('ProcessPaymentWorkflow', () => {
         return await handle.result();
       });
 
-      // Try to start second workflow with same ID (should use existing)
-      const handle = await client.workflow.getHandle(workflowId);
-      const result2Promise = handle.result();
-
-      const [result1, result2] = await Promise.all([result1Promise, result2Promise]);
+      // The completed workflow result can be retrieved with getHandle
+      const handle2 = client.workflow.getHandle(workflowId);
+      const result2 = await handle2.result();
 
       // Assert - Both should return same result
       expect(result1.paymentId).toBe(result2.paymentId);
@@ -499,12 +499,12 @@ describe('ProcessPaymentWorkflow', () => {
 
       // First call requires 3DS, second call completes after auth
       let callCount = 0;
-      mockCallPaymentGateway.fn = async (details) => {
+      mockCallPaymentGateway.fn = async () => {
         callCount++;
         if (callCount === 1) {
           return {
             paymentId: 'payment_134',
-            status: 'pending',
+            status: 'pending' as const,
             requires3DS: true,
             authUrl: 'https://bank.com/3ds/auth',
           };
@@ -536,7 +536,7 @@ describe('ProcessPaymentWorkflow', () => {
 
       // Assert
       expect(result.status).toBe('success');
-      expect(mockCallPaymentGateway.getCallCount()).toBe(2); // Initial + after 3DS
+      expect(callCount).toBe(2); // Initial + after 3DS
       expect(mockUpdateDatabase.getCallCount()).toBeGreaterThanOrEqual(1);
     });
   });
@@ -558,6 +558,7 @@ describe('ProcessPaymentWorkflow', () => {
 
       mockCallPaymentGateway.respondWith(partialResult);
       mockSaveToDatabase.respondWith({ id: 'payment_135', ...partialResult });
+      mockUpdateDatabase.respondWith({ id: 'payment_135', status: 'success' });
       mockNotifyCustomer.respondWith(undefined);
 
       const worker = await Worker.create({
@@ -625,6 +626,7 @@ describe('ProcessPaymentWorkflow', () => {
 
       mockCallPaymentGateway.respondWith(createSuccessfulPaymentResult());
       mockSaveToDatabase.throwErrors(new Error('Database connection failed'));
+      mockNotifyCustomer.respondWith(undefined);
 
       const worker = await Worker.create({
         connection: nativeConnection,
@@ -646,8 +648,7 @@ describe('ProcessPaymentWorkflow', () => {
         })
       ).rejects.toThrow(WorkflowFailedError);
 
-      // Payment succeeded but save failed - should be handled
-      expect(mockCallPaymentGateway.getCallCount()).toBe(1);
+      // Save fails before gateway is called
       expect(mockSaveToDatabase.getCallCount()).toBeGreaterThanOrEqual(1);
     });
   });

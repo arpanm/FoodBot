@@ -31,6 +31,9 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { RestaurantModule } from './modules/restaurant/restaurant.module';
 import { SearchModule } from './modules/search/search.module';
 import { UserModule } from './modules/user/user.module';
+import { BulkOrderModule } from './bulk-order/bulk-order.module';
+import { DietPlannerModule } from './diet-planner/diet-planner.module';
+import { PartyPlannerModule } from './party-planner/party-planner.module';
 
 @Module({
   imports: [
@@ -75,6 +78,9 @@ import { UserModule } from './modules/user/user.module';
     AdminModule,
     HealthModule,
     JobsModule,
+    PartyPlannerModule,
+    DietPlannerModule,
+    BulkOrderModule,
   ],
   providers: [
     {
